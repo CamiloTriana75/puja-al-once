@@ -11,10 +11,8 @@
     "typecheck": "pnpm -r typecheck",
     "dataset:check": "tsx scripts/check-dataset.ts"
   },
-  "dependencies": {
-    "@fut/shared": "workspace:*"
-  },
   "devDependencies": {
+    "@fut/shared": "workspace:*",
     "@types/node": "26.4.1",
     "tsx": "4.23.13",
     "typescript": "6.0.3"

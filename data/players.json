@@ -154,15 +154,15 @@
     "silhouetteId": "sergio-ramos-01"
   },
   {
-    "cardId": "maldini-1994",
+    "cardId": "maldini-2003",
     "name": "Paolo Maldini",
-    "season": 1994,
+    "season": 2003,
     "birthYear": 1968,
     "club": "AC Milan",
     "league": "Serie A",
     "nation": "ITA",
     "slot": "CB1",
-    "rating": 93,
+    "rating": 90,
     "heightCm": 186,
     "foot": "L",
     "silhouetteId": "maldini-01"
@@ -284,7 +284,7 @@
     "name": "Cafu",
     "season": 2002,
     "birthYear": 1970,
-    "club": "AC Milan",
+    "club": "AS Roma",
     "league": "Serie A",
     "nation": "BRA",
     "slot": "RB",
@@ -676,7 +676,7 @@
     "name": "Luis Figo",
     "season": 2000,
     "birthYear": 1972,
-    "club": "FC Barcelona",
+    "club": "Real Madrid",
     "league": "LaLiga",
     "nation": "POR",
     "slot": "RW",
@@ -714,9 +714,9 @@
     "silhouetteId": "ronaldo-nazario-01"
   },
   {
-    "cardId": "ronaldo-nazario-2008",
+    "cardId": "ronaldo-nazario-2009",
     "name": "Ronaldo Nazario",
-    "season": 2008,
+    "season": 2009,
     "birthYear": 1976,
     "club": "Corinthians",
     "league": "Serie A (BRA)",

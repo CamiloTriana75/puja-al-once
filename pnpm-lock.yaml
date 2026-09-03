@@ -7,11 +7,10 @@ settings:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
       '@fut/shared':
         specifier: workspace:*
         version: link:packages/shared
-    devDependencies:
       '@types/node':
         specifier: 26.4.1
         version: 26.4.1
