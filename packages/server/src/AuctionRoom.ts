@@ -1,14 +1,15 @@
 import { Client, Room } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
 import {
-  applyBid, applyOutcome, canBid, cardsBySlot, currentSlot, DEFAULT_RULES, parseDataset, resolveAuction, SLOTS,
-  type AuctionState, type CardSource, type Rng, type Rules, type Slot,
+  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, currentSlot, DEFAULT_RULES, parseDataset,
+  playersNeedingSlot, resolveAuction, resolveSkipVote, SLOTS, toPrivate, toPublic,
+  type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { AuctionRoomState } from "./schema.js";
+import { AuctionRoomState, RevealedCardSchema } from "./schema.js";
 import { projectState } from "./project.js";
 import { drawRound } from "./setup.js";
 
@@ -91,6 +92,9 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.onMessage("ready", (client) => this.onReady(client));
     this.onMessage("bid", (client, message: { amount?: unknown }) => {
       this.onBid(client, message?.amount);
+    });
+    this.onMessage("voteSkip", (client, message: { skip?: unknown }) => {
+      this.onVoteSkip(client, message?.skip === true);
     });
     this.sync();
   }
@@ -236,6 +240,130 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     if (this.game.phase !== "BIDDING") return;
     const outcome = resolveAuction(this.game, this.rules, this.rng);
     this.game = applyOutcome(this.game, outcome);
+
+    if (outcome.kind === "OPEN_SKIP_VOTE") {
+      this.game.endsAt = Date.now() + this.rules.skipVoteMs;
+      this.timer?.clear();
+      this.timer = this.clock.setTimeout(() => this.onSkipTimeout(), this.rules.skipVoteMs);
+      this.sync();
+      return;
+    }
+
+    this.enterReveal(outcome);
+  }
+
+  private onVoteSkip(client: Client, skip: boolean): void {
+    if (this.game.phase !== "SKIP_VOTE") return;
+    this.game.skipVotes = { ...this.game.skipVotes, [client.sessionId]: skip };
+    this.sync();
+
+    // Si ya votaron todos los que podian, no hace falta agotar los 10 s.
+    const pending = playersNeedingSlot(this.game).filter(
+      (p) => this.game.skipVotes[p.playerId] === undefined,
+    );
+    if (pending.length === 0) this.onSkipTimeout();
+  }
+
+  protected onSkipTimeout(): void {
+    if (this.game.phase !== "SKIP_VOTE") return;
+    const outcome = resolveSkipVote(this.game);
+
+    if (outcome.kind === "SKIPPED") {
+      // applyOutcome es quien saca la carta de la ronda y limpia
+      // restrictedBidders y skipVotes. enterReveal solo publica.
+      const cardId = currentCardId(this.game)!;
+      const discarded = { kind: "DISCARDED", cardId } as const;
+      this.game = applyOutcome(this.game, discarded);
+      this.enterReveal(discarded);
+      return;
+    }
+
+    // Reanudar restringido: solo pueden pujar los que votaron en contra.
+    this.game = {
+      ...this.game,
+      phase: "BIDDING",
+      restrictedBidders: outcome.restrictedBidders,
+      skipVotes: {},
+      endsAt: Date.now() + this.rules.bidTimerMs,
+    };
+    this.armTimer(this.rules.bidTimerMs);
+    this.sync();
+  }
+
+  /**
+   * Publica los campos privados de la carta. Es el unico sitio del servidor
+   * autorizado a hacerlo.
+   */
+  private enterReveal(outcome: AuctionOutcome): void {
+    if (outcome.kind === "OPEN_SKIP_VOTE") throw new Error("enterReveal con OPEN_SKIP_VOTE");
+
+    const card = this.byId.get(outcome.cardId);
+    if (!card) throw new Error(`cardId desconocido: ${outcome.cardId}`);
+    const priv = toPrivate(card);
+    const pub = toPublic(card);
+
+    const row = new RevealedCardSchema();
+    row.cardId = priv.cardId;
+    row.slot = pub.slot;
+    row.silhouetteId = card.silhouetteId;
+    row.name = priv.name;
+    row.season = priv.season;
+    row.club = priv.club;
+    row.league = priv.league;
+    row.nation = priv.nation;
+    row.rating = priv.rating;
+    row.ownerId = outcome.kind === "DISCARDED" ? "" : outcome.playerId;
+    row.price = outcome.kind === "DISCARDED" ? 0 : outcome.price;
+    this.state.revealedCards.set(row.cardId, row);
+
+    this.game.phase = "REVEAL";
+    this.game.endsAt = Date.now() + this.rules.revealMs;
+    this.sync();
+
+    // La carta de la mesa se mantiene visible con sus campos ya publicados.
+    const tableCard = this.state.currentCard;
+    if (tableCard && tableCard.publicId === this.cardIdToPublicId.get(row.cardId)) {
+      tableCard.revealed = true;
+      tableCard.name = row.name;
+      tableCard.season = row.season;
+      tableCard.club = row.club;
+      tableCard.league = row.league;
+      tableCard.nation = row.nation;
+      tableCard.rating = row.rating;
+    }
+
+    this.timer?.clear();
+    this.timer = this.clock.setTimeout(() => this.onRevealTimeout(), this.rules.revealMs);
+  }
+
+  protected onRevealTimeout(): void {
+    if (this.game.phase !== "REVEAL") return;
+    this.advance();
+  }
+
+  /** Siguiente carta de la ronda, o siguiente hueco, o fin de partida. */
+  protected advance(): void {
+    const stillNeeding = playersNeedingSlot(this.game).length;
+
+    if (stillNeeding > 0 && this.game.remainingCards.length > 0) {
+      this.state.currentCard = undefined; // fuerza a proyectar la carta nueva
+      this.openBidding();
+      return;
+    }
+
+    const next = this.game.slotIndex + 1;
+    if (next >= SLOTS.length) {
+      this.finish();
+      return;
+    }
+
+    this.state.currentCard = undefined;
+    this.startRound(next);
+  }
+
+  /** Se implementa en la Task 11 (puntuacion final). Cierra la fase por ahora. */
+  protected finish(): void {
+    this.game.phase = "RESULTS";
     this.sync();
   }
 
