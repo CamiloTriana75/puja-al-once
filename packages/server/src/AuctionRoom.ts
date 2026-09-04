@@ -269,12 +269,18 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     const outcome = resolveSkipVote(this.game);
 
     if (outcome.kind === "SKIPPED") {
-      // applyOutcome es quien saca la carta de la ronda y limpia
-      // restrictedBidders y skipVotes. enterReveal solo publica.
-      const cardId = currentCardId(this.game)!;
-      const discarded = { kind: "DISCARDED", cardId } as const;
-      this.game = applyOutcome(this.game, discarded);
-      this.enterReveal(discarded);
+      this.discardCurrentCard();
+      return;
+    }
+
+    if (outcome.restrictedBidders.length === 0) {
+      // Sin unanimidad pero tambien sin nadie que votara explicitamente en
+      // contra (una sala entera ausente, o solo abstenciones): reabrir
+      // BIDDING con restrictedBidders vacio dejaria 15 s de reloj corriendo
+      // con la puja rechazando a todo el mundo (NOT_ALLOWED_TO_BID) antes de
+      // terminar igual en descarte. Se adelanta el desenlace inevitable en
+      // vez de atravesar esa fase muerta.
+      this.discardCurrentCard();
       return;
     }
 
@@ -288,6 +294,20 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     };
     this.armTimer(this.rules.bidTimerMs);
     this.sync();
+  }
+
+  /**
+   * Descarta la carta de la mesa: applyOutcome saca la carta de la ronda y
+   * limpia restrictedBidders/skipVotes, enterReveal solo publica. Sale de
+   * onSkipTimeout por las dos ramas que terminan en descarte (unanimidad y
+   * voto fallido sin nadie en contra) para que ninguna duplique la llamada
+   * a applyOutcome.
+   */
+  private discardCurrentCard(): void {
+    const cardId = currentCardId(this.game)!;
+    const discarded = { kind: "DISCARDED", cardId } as const;
+    this.game = applyOutcome(this.game, discarded);
+    this.enterReveal(discarded);
   }
 
   /**
@@ -316,21 +336,34 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     row.price = outcome.kind === "DISCARDED" ? 0 : outcome.price;
     this.state.revealedCards.set(row.cardId, row);
 
-    this.game.phase = "REVEAL";
+    // La fase ya la puso applyOutcome (llamado por el caller antes de
+    // enterReveal, siempre): reafirmarla aqui enmascararia el contrato -- si
+    // algun dia se llamara a enterReveal sin pasar por applyOutcome antes,
+    // la fase quedaria bien puesta pero la carta seguiria sin salir de
+    // remainingCards, que es justo el fallo que el reparto de
+    // responsabilidades entre ambos existe para hacer imposible.
     this.game.endsAt = Date.now() + this.rules.revealMs;
     this.sync();
 
     // La carta de la mesa se mantiene visible con sus campos ya publicados.
+    // Si no coincidiera seria un fallo de sincronizacion entre el estado
+    // puro y el Schema: en la ruta que sostiene el secreto del juego un
+    // desajuste asi no puede quedar mudo, o el cliente se queda mirando una
+    // carta sin revelar durante los 6 s del reveal sin ninguna pista de
+    // por que. Las otras dos comprobaciones de este metodo (carta
+    // desconocida) tambien lanzan; esta se alinea con ellas.
     const tableCard = this.state.currentCard;
-    if (tableCard && tableCard.publicId === this.cardIdToPublicId.get(row.cardId)) {
-      tableCard.revealed = true;
-      tableCard.name = row.name;
-      tableCard.season = row.season;
-      tableCard.club = row.club;
-      tableCard.league = row.league;
-      tableCard.nation = row.nation;
-      tableCard.rating = row.rating;
+    const expectedPublicId = this.cardIdToPublicId.get(row.cardId);
+    if (!tableCard || tableCard.publicId !== expectedPublicId) {
+      throw new Error(`La carta de la mesa no coincide con la revelada: ${row.cardId}`);
     }
+    tableCard.revealed = true;
+    tableCard.name = row.name;
+    tableCard.season = row.season;
+    tableCard.club = row.club;
+    tableCard.league = row.league;
+    tableCard.nation = row.nation;
+    tableCard.rating = row.rating;
 
     this.timer?.clear();
     this.timer = this.clock.setTimeout(() => this.onRevealTimeout(), this.rules.revealMs);
@@ -351,6 +384,20 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       return;
     }
 
+    // Invariante que sostiene la rama de abajo: si stillNeeding > 0 llega
+    // hasta aqui (remainingCards ya vacio), este bloque pasa al siguiente
+    // hueco EN SILENCIO dejando a ese jugador sin fichar el actual. Hoy es
+    // inalcanzable porque remainingCards.length nunca cae por debajo de
+    // stillNeeding: drawRound reparte jugadores+1 cartas, resolveAuction
+    // fuerza por sorteo en cuanto el margen se agota (skipAllowed) en vez
+    // de permitir mas descartes de los que soporta, y el numero de
+    // jugadores conectados no cambia mientras dura una ronda. La Task 11
+    // (reconexion) puede romper esa ultima asuncion: si alguien reconecta
+    // (connected pasa a true) a mitad de ronda, stillNeeding puede subir
+    // por encima de remainingCards.length sin que este metodo se entere.
+    // Quien implemente la reconexion tiene que volver a evaluar esta rama
+    // explicitamente, no asumir que remainingCards vacio implica "todos
+    // fichados".
     const next = this.game.slotIndex + 1;
     if (next >= SLOTS.length) {
       this.finish();
