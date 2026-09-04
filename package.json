@@ -6,15 +6,25 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && pnpm test:tools",
+    "test:tools": "vitest run tools",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "dataset:check": "tsx scripts/check-dataset.ts"
+    "dataset:check": "tsx scripts/check-dataset.ts",
+    "silhouettes:build": "tsx tools/build-silhouettes.ts"
   },
   "devDependencies": {
     "@fut/shared": "workspace:*",
+    "@imgly/background-removal-node": "1.4.5",
     "@types/node": "26.4.1",
+    "sharp": "0.32.6",
     "tsx": "4.23.13",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  },
+  "pnpm": {
+    "overrides": {
+      "sharp": "0.32.6"
+    }
   }
 }
