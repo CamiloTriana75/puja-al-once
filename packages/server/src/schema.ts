@@ -22,14 +22,20 @@ defineTypes(PlayerSchema, {
 /**
  * La carta sobre la mesa.
  *
+ * `publicId` es un identificador opaco, aleatorio y valido solo para esta
+ * partida -- NUNCA `cardId`. El `cardId` real ES la respuesta (identifica
+ * jugador y temporada), asi que no puede viajar en claro antes del reveal.
+ * Tampoco viaja `silhouetteId`: el navegador pediria la imagen por su nombre
+ * de fichero real, filtrando al jugador por la URL aunque el Schema estuviera
+ * limpio. La ruta de siluetas resuelve `publicId` -> fichero en el servidor.
+ *
  * Los seis campos privados (`name`, `season`, `club`, `league`, `nation`,
  * `rating`) se quedan en su valor vacio hasta la fase REVEAL. Escribirlos antes
  * los publica al navegador: el Schema entero se sincroniza y se lee en DevTools.
  */
 export class PublicCardSchema extends Schema {
-  cardId!: string;
+  publicId!: string;
   slot!: string;
-  silhouetteId!: string;
   heightCm!: number;
   foot!: string;
   ageBand!: string;
@@ -45,9 +51,8 @@ export class PublicCardSchema extends Schema {
   rating = 0;
 }
 defineTypes(PublicCardSchema, {
-  cardId: "string",
+  publicId: "string",
   slot: "string",
-  silhouetteId: "string",
   heightCm: "number",
   foot: "string",
   ageBand: "string",

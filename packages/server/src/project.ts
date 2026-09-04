@@ -1,5 +1,5 @@
 import {
-  currentCardId, currentSlot, minimumBid, skipAllowed,
+  currentCardId, minimumBid, skipAllowed, SLOTS,
   toPublic, type AuctionState, type CardSource, type Rules,
 } from "@fut/shared";
 import { ArraySchema, MapSchema } from "@colyseus/schema";
@@ -8,16 +8,23 @@ import { AuctionRoomState, PlayerSchema, PublicCardSchema } from "./schema.js";
 /**
  * Copia el estado puro sobre el Schema. Es el unico punto donde se decide que
  * ve el navegador: si un campo no se escribe aqui, no viaja.
+ *
+ * `publicIds` es el mapa cardId -> publicId de la sala (ver AuctionRoom): el
+ * Schema solo puede llevar el identificador opaco, nunca el cardId real.
  */
 export function projectState(
   game: AuctionState,
   schema: AuctionRoomState,
   rules: Rules,
   cards: Map<string, CardSource>,
+  publicIds: Map<string, string>,
 ): void {
   schema.phase = game.phase;
   schema.slotIndex = game.slotIndex;
-  schema.currentSlot = game.phase === "LOBBY" ? "" : currentSlot(game);
+  // SLOTS[game.slotIndex] y no currentSlot(game): currentSlot() lanza
+  // RangeError fuera de [0, SLOTS.length), y slotIndex vale eso (11) en
+  // cuanto se completa la ultima ronda y la partida pasa a RESULTS.
+  schema.currentSlot = SLOTS[game.slotIndex] ?? "";
   schema.currentBid = game.currentBid;
   schema.currentBidderId = game.currentBidderId ?? "";
   schema.minimumBid = minimumBid(game, rules);
@@ -29,6 +36,13 @@ export function projectState(
   for (const [playerId, vote] of Object.entries(game.skipVotes)) schema.skipVotes.set(playerId, vote);
 
   schema.restrictedBidders = new ArraySchema<string>(...(game.restrictedBidders ?? []));
+
+  // Barre del Schema a quien ya no esta en el estado puro (se fue durante el
+  // lobby). Sin esto quedan filas fantasma: el Schema solo sabe anadir.
+  const currentPlayerIds = new Set(game.players.map((p) => p.playerId));
+  for (const playerId of [...schema.players.keys()]) {
+    if (!currentPlayerIds.has(playerId)) schema.players.delete(playerId);
+  }
 
   for (const player of game.players) {
     let row = schema.players.get(player.playerId);
@@ -58,14 +72,16 @@ export function projectState(
     return;
   }
 
-  if (schema.currentCard?.cardId !== cardId) {
+  const publicId = publicIds.get(cardId);
+  if (!publicId) throw new Error(`cardId sin publicId asignado en esta partida: ${cardId}`);
+
+  if (schema.currentCard?.publicId !== publicId) {
     const card = cards.get(cardId);
     if (!card) throw new Error(`cardId desconocido en el dataset: ${cardId}`);
     const pub = toPublic(card);
     const node = new PublicCardSchema();
-    node.cardId = pub.cardId;
+    node.publicId = publicId;
     node.slot = pub.slot;
-    node.silhouetteId = pub.silhouetteId;
     node.heightCm = pub.heightCm;
     node.foot = pub.foot;
     node.ageBand = pub.ageBand;
