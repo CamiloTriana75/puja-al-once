@@ -22,10 +22,16 @@ export const CardSourceSchema = z.object({
 
 export type CardSource = z.infer<typeof CardSourceSchema>;
 
+/**
+ * Lo que hay aqui es publicable, sin asteriscos: nada de `cardId` ni
+ * `silhouetteId`. El `cardId` identifica jugador y temporada -- es la
+ * respuesta. La URL de la silueta filtra al jugador por su nombre de fichero
+ * real aunque el resto vaya limpio. Si algun sitio necesita el `cardId`, que
+ * lo saque de `CardSource` (el tipo que sí lo tiene, y cuyo nombre no
+ * promete que sea publico) -- nunca de aqui.
+ */
 export interface CardPublic {
-  cardId: string;
   slot: Slot;
-  silhouetteId: string;
   heightCm: number;
   foot: "L" | "R" | "B";
   ageBand: AgeBand;
@@ -79,9 +85,7 @@ export function continentOf(nation: string): Continent {
  */
 export function toPublic(card: CardSource): CardPublic {
   return {
-    cardId: card.cardId,
     slot: card.slot,
-    silhouetteId: card.silhouetteId,
     heightCm: card.heightCm,
     foot: card.foot,
     ageBand: ageBandOf(card.season, card.birthYear),

@@ -46,19 +46,20 @@ describe("derivados", () => {
 });
 
 describe("toPublic", () => {
-  it("no deja pasar ningun campo privado", () => {
+  it("no deja pasar ningun campo privado ni identificador", () => {
     const pub = toPublic(ronaldinho2006);
     expect(pub).toEqual({
-      cardId: "ronaldinho-2006",
       slot: "CAM",
-      silhouetteId: "ronaldinho-01",
       heightCm: 182,
       foot: "R",
       ageBand: "26-30",
       continent: "SA",
       decade: "2000s",
     });
-    for (const leaked of ["name", "season", "club", "league", "nation", "rating"]) {
+    // cardId y silhouetteId tampoco son publicos: el cardId identifica
+    // jugador y temporada (es la respuesta), y la URL de la silueta filtra
+    // al jugador por su nombre de fichero real aunque el resto vaya limpio.
+    for (const leaked of ["cardId", "silhouetteId", "name", "season", "club", "league", "nation", "rating"]) {
       expect(Object.hasOwn(pub, leaked)).toBe(false);
     }
   });

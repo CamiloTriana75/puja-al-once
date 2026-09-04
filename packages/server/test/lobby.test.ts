@@ -104,6 +104,30 @@ describe("lobby", () => {
     expect(room.state.phase).toBe("BIDDING");
   });
 
+  it("tambien arranca si los que quedan ya estaban listos antes de que el ultimo se fuera", async () => {
+    // Orden inverso del test anterior: aqui los tres primeros marcan listo
+    // MIENTRAS el cuarto sigue conectado (asi que la condicion de arranque
+    // no se cumple todavia), y solo se cumple cuando el cuarto se va. Sin el
+    // reintento en onLeave, nadie vuelve a evaluar la condicion y la sala se
+    // queda encallada en LOBBY para siempre.
+    const room = await colyseus.createRoom("auction", {});
+    const clients = [];
+    for (const name of ["Ana", "Bea", "Cid", "Dan"]) {
+      clients.push(await colyseus.connectTo(room, { name }));
+    }
+
+    for (const client of clients.slice(0, 3)) {
+      client.send("ready", {});
+      await room.waitForMessage("ready");
+    }
+    expect(room.state.phase).toBe("LOBBY");
+
+    await clients[3]!.leave();
+    await room.waitForNextPatch();
+
+    expect(room.state.phase).toBe("BIDDING");
+  });
+
   it("rechaza a un jugador nuevo si la partida ya empezo", async () => {
     const room = await colyseus.createRoom("auction", {});
     const ana = await colyseus.connectTo(room, { name: "Ana" });

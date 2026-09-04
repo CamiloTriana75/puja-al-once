@@ -113,10 +113,16 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       // "ready" compara para siempre contra un asiento que nunca volvera.
       this.game.players = this.game.players.filter((p) => p.playerId !== client.sessionId);
       this.ready.delete(client.sessionId);
+      this.sync();
+      // Simetrico al caso de onReady: si los que quedan ya estaban TODOS
+      // listos antes de que este se fuera, nadie mas va a volver a marcar
+      // "ready" -- sin este reintento la sala se queda encallada igual,
+      // solo que por el otro lado.
+      this.tryStartRound();
     } else {
       this.setConnected(client.sessionId, false);
+      this.sync();
     }
-    this.sync();
   }
 
   /** Copia el estado puro sobre el Schema. Se llama tras cada cambio. */
@@ -132,10 +138,18 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   private onReady(client: Client): void {
     if (this.game.phase !== "LOBBY") return;
     this.ready.add(client.sessionId);
+    this.tryStartRound();
+  }
 
-    const connectedPlayers = this.game.players.filter((p) => p.connected);
-    if (connectedPlayers.length < 2) return;
-    if (!connectedPlayers.every((p) => this.ready.has(p.playerId))) return;
+  /**
+   * Arranca la ronda si el lobby cumple la condicion de arranque; si no, no
+   * hace nada. La llaman tanto "ready" como "leave": la condicion tiene que
+   * volver a evaluarse en las dos direcciones, porque cualquiera de las dos
+   * puede ser la que la cumpla por ultima vez (alguien pulsa listo el
+   * ultimo, o alguien se va y deja a los demas ya listos de antes).
+   */
+  private tryStartRound(): void {
+    if (this.game.phase !== "LOBBY" || !this.allConnectedPlayersReady()) return;
 
     try {
       this.startRound(0);
@@ -146,6 +160,12 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       // lleno, asi que ningun "ready" futuro volveria a intentar arrancar.
       this.ready.clear();
     }
+  }
+
+  /** Todos los jugadores conectados han pulsado "ready", con un minimo de dos. */
+  private allConnectedPlayersReady(): boolean {
+    const connectedPlayers = this.game.players.filter((p) => p.connected);
+    return connectedPlayers.length >= 2 && connectedPlayers.every((p) => this.ready.has(p.playerId));
   }
 
   /** Arranca la ronda del hueco `slotIndex` repartiendo jugadores + 1 candidatos. */
