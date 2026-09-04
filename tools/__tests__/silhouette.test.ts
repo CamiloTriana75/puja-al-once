@@ -32,16 +32,19 @@ describe("toSilhouette", () => {
     const { data, info } = await sharp(out).raw().toBuffer({ resolveWithObject: true });
     expect(info.channels).toBe(4);
 
+    // toSilhouette normaliza a 512px de alto (aqui, 1024x512 = ~524k pixeles).
+    // expect() por pixel dispara ~1.5M aserciones y hace que Vitest supere el
+    // timeout global; se cuenta en un bucle plano y se afirma una sola vez.
     let opaque = 0;
+    let notPureBlack = 0;
     for (let i = 0; i < data.length; i += 4) {
       if (data[i + 3]! > 0) {
         opaque++;
-        expect(data[i]).toBe(0);
-        expect(data[i + 1]).toBe(0);
-        expect(data[i + 2]).toBe(0);
+        if (data[i] !== 0 || data[i + 1] !== 0 || data[i + 2] !== 0) notPureBlack++;
       }
     }
     expect(opaque).toBeGreaterThan(0);
+    expect(notPureBlack).toBe(0);
   });
 
   it("una foto sin transparencia real (JPEG opaco) NO debe producir un rectangulo negro solido", async () => {

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { boot, ColyseusTestServer } from "@colyseus/testing";
-import type { CardSource } from "@fut/shared";
+import { DEFAULT_RULES, type CardSource } from "@fut/shared";
 import appConfig from "../src/index.js";
 
 let colyseus: ColyseusTestServer;
@@ -134,5 +134,25 @@ describe("lobby", () => {
 
     expect(message.message).toMatch(/GK/);
     expect(room.state.phase).toBe("LOBBY");
+  });
+
+  it("ignora dataset/rng/rules inyectados fuera de test, sin avisar", async () => {
+    // La costura de inyeccion de onCreate solo existe para poder testear en
+    // aislamiento; fuera de NODE_ENV=test cualquier cliente podria crear una
+    // sala con presupuesto inflado o un mazo trucado. Se fuerza otro valor
+    // aqui para probar la puerta cerrada -- Vitest la deja en "test" siempre,
+    // asi que hay que empujarla a mano y devolverla al terminar.
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
+    try {
+      const room = await colyseus.createRoom("auction", {
+        rules: { ...DEFAULT_RULES, startingBudget: 999_999_999 },
+      });
+      await colyseus.connectTo(room, { name: "Ana" });
+
+      expect([...room.state.players.values()][0]?.budget).toBe(DEFAULT_RULES.startingBudget);
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
   });
 });

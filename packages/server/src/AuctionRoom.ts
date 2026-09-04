@@ -60,9 +60,17 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   private publicIdToCardId = new Map<string, string>();
 
   onCreate(options?: AuctionRoomOptions): void {
-    const dataset = options?.dataset ?? DEFAULT_DATASET;
-    this.rng = options?.rng ?? Math.random;
-    this.rules = options?.rules ?? DEFAULT_RULES;
+    // `options` es exactamente lo que el cliente manda en `client.create(...)`
+    // -- Colyseus no filtra nada. Fuera de test, cualquiera podria crear una
+    // sala con presupuesto inflado o un mazo trucado y meter a otros
+    // jugadores en una partida amanada sin que lo sepan. La costura de
+    // inyeccion solo existe para poder testear drawRound/projectState en
+    // aislamiento: se ignora en silencio (sin lanzar, para no dar pistas a
+    // quien sondee) fuera de NODE_ENV=test, que Vitest fija por su cuenta.
+    const testOverridesAllowed = process.env.NODE_ENV === "test";
+    const dataset = (testOverridesAllowed ? options?.dataset : undefined) ?? DEFAULT_DATASET;
+    this.rng = (testOverridesAllowed ? options?.rng : undefined) ?? Math.random;
+    this.rules = (testOverridesAllowed ? options?.rules : undefined) ?? DEFAULT_RULES;
 
     this.bySlot = cardsBySlot(dataset);
     this.byId = new Map(dataset.map((card) => [card.cardId, card]));
