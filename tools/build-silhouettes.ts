@@ -5,6 +5,14 @@ import sharp from "sharp";
 const HEIGHT = 512;
 /** Por debajo de esto un pixel se considera fondo y se descarta. */
 const ALPHA_CUTOFF = 128;
+/**
+ * Fraccion minima del area de la imagen que el blob conservado debe cubrir
+ * para contar como "hay una persona ahi". Por debajo de esto (mascara vacia
+ * o casi vacia porque el segmentador no encontro a nadie en un encuadre
+ * atipico, sombras fuertes, compresion agresiva) se trata como fallo de
+ * segmentacion, no como silueta valida.
+ */
+const MIN_SUBJECT_FRACTION = 0.01;
 
 interface Source {
   silhouetteId: string;
@@ -96,8 +104,13 @@ interface Mask {
  *
  * Implementado con flood fill iterativo (pila explicita, sin recursion) para
  * no depender de una libreria de vision por computador solo para esto.
+ *
+ * Devuelve tambien `size`, el numero de pixeles del blob conservado (0 si la
+ * mascara de entrada no tenia ningun pixel opaco), para que quien llama pueda
+ * decidir si el blob es lo bastante grande para ser una persona sin tener que
+ * recontar la mascara de salida.
  */
-export function keepLargestBlob(mask: Mask, cutoff: number = ALPHA_CUTOFF): Mask {
+export function keepLargestBlob(mask: Mask, cutoff: number = ALPHA_CUTOFF): Mask & { size: number } {
   const { width, height, data } = mask;
   const size = width * height;
   const labels = new Int32Array(size).fill(-1);
@@ -147,15 +160,28 @@ export function keepLargestBlob(mask: Mask, cutoff: number = ALPHA_CUTOFF): Mask
       out[i] = labels[i] === bestLabel ? data[i]! : 0;
     }
   }
-  return { width, height, data: out };
+  return { width, height, data: out, size: bestSize };
+}
+
+interface SubjectResult {
+  png: Buffer;
+  /** Pixeles opacos que sobrevivieron en el componente conexo mas grande. */
+  blobPixels: number;
+  /** Ancho * alto de la imagen procesada, para expresar blobPixels como fraccion. */
+  totalPixels: number;
 }
 
 /**
  * Aplica keepLargestBlob() al canal alfa de una imagen RGBA real (la salida
  * de removeBackground()). Es el punto de union entre la funcion pura testeable
  * y el pipeline real de sharp/PNG.
+ *
+ * Devuelve blobPixels/totalPixels junto con el PNG para que quien llama pueda
+ * decidir si el sujeto detectado es lo bastante grande para ser una persona
+ * (ver MIN_SUBJECT_FRACTION en main()) sin tener que recorrer la imagen otra
+ * vez -- keepLargestBlob ya cuenta el blob por dentro.
  */
-export async function keepLargestSubject(input: Buffer): Promise<Buffer> {
+export async function keepLargestSubject(input: Buffer): Promise<SubjectResult> {
   const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height } = info;
 
@@ -167,7 +193,8 @@ export async function keepLargestSubject(input: Buffer): Promise<Buffer> {
   const out = Buffer.from(data);
   for (let i = 0, p = 0; i < out.length; i += 4, p++) out[i + 3] = cleaned.data[p]!;
 
-  return sharp(out, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  const png = await sharp(out, { raw: { width, height, channels: 4 } }).png().toBuffer();
+  return { png, blobPixels: cleaned.size, totalPixels: width * height };
 }
 
 /**
@@ -295,7 +322,22 @@ async function main(): Promise<void> {
         // Ruling D: descarta manchas de ruido y personas secundarias antes
         // de aplanar a negro, quedandose solo con el blob mas grande.
         const cleaned = await keepLargestSubject(segmented);
-        png = await toSilhouette(cleaned);
+        // Ruling T7-J: una mascara vacia o casi vacia (removeBackground no
+        // encontro a nadie -- encuadre atipico, sombras fuertes, compresion
+        // agresiva) no lanza por si sola: keepLargestBlob simplemente deja
+        // bestLabel en -1 y produce una mascara toda transparente, que
+        // toSilhouette convertiria en un PNG valido pero invisible,
+        // acreditado como si fuese foto real. Se trata expresamente como
+        // fallo de segmentacion para caer al catch y terminar en
+        // genericSilhouette(), igual que un fallo de red.
+        const blobFraction = cleaned.blobPixels / cleaned.totalPixels;
+        if (blobFraction < MIN_SUBJECT_FRACTION) {
+          throw new Error(
+            `el segmentador no encontro a nadie: blob de ${cleaned.blobPixels} px ` +
+              `(${(blobFraction * 100).toFixed(2)}% de la imagen), por debajo del umbral del ${MIN_SUBJECT_FRACTION * 100}%`,
+          );
+        }
+        png = await toSilhouette(cleaned.png);
         const { url: _url, ...credit } = source;
         attributions.push(credit);
         console.log(`ok    ${silhouetteId} (foto)`);

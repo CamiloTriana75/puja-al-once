@@ -174,6 +174,19 @@ describe("keepLargestBlob", () => {
     const mask = maskFromAscii(["###", "###", "###"]);
     const cleaned = keepLargestBlob(mask);
     expect(Array.from(cleaned.data)).toEqual(Array.from(mask.data));
+    expect(cleaned.size).toBe(9);
+  });
+
+  it("una mascara enteramente por debajo del umbral no lanza y reporta tamano de blob 0", () => {
+    // El caso que dispara el hallazgo de la ronda de revision: removeBackground()
+    // no encontro a nadie (encuadre atipico, sombras fuertes, compresion agresiva)
+    // y la mascara de entrada llega vacia. keepLargestBlob no debe lanzar --
+    // debe devolver todo transparente y size 0, para que quien llama (main())
+    // pueda decidir tratarlo como fallo de segmentacion.
+    const mask = maskFromAscii(["...", "...", "..."]);
+    const cleaned = keepLargestBlob(mask);
+    expect(cleaned.size).toBe(0);
+    expect(Array.from(cleaned.data)).toEqual(new Array(mask.width * mask.height).fill(0));
   });
 });
 
@@ -204,7 +217,7 @@ describe("keepLargestSubject", () => {
       .toBuffer();
 
     const cleaned = await keepLargestSubject(composed);
-    const { data, info } = await sharp(cleaned).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { data, info } = await sharp(cleaned.png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
     // Dentro del blob grande sigue opaco.
     const bigPixel = (30 * info.width + 30) * 4;
@@ -213,6 +226,10 @@ describe("keepLargestSubject", () => {
     // Donde estaba el blob pequeno ahora es transparente.
     const smallPixel = (94 * info.width + 94) * 4;
     expect(data[smallPixel + 3]).toBe(0);
+
+    // El blob grande (60x60 = 3600px) sobrevive entero, el pequeno (8x8) no cuenta.
+    expect(cleaned.blobPixels).toBe(60 * 60);
+    expect(cleaned.totalPixels).toBe(100 * 100);
   });
 });
 
