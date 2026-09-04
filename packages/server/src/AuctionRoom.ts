@@ -1,6 +1,7 @@
 import { Client, Room } from "@colyseus/core";
+import type { Delayed } from "@colyseus/core";
 import {
-  cardsBySlot, currentSlot, DEFAULT_RULES, parseDataset, SLOTS,
+  applyBid, applyOutcome, canBid, cardsBySlot, currentSlot, DEFAULT_RULES, parseDataset, resolveAuction, SLOTS,
   type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
 import { randomUUID } from "node:crypto";
@@ -59,6 +60,9 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   private cardIdToPublicId = new Map<string, string>();
   private publicIdToCardId = new Map<string, string>();
 
+  /** Reloj de cierre de la subasta vigente. Nunca hay dos vivos a la vez. */
+  private timer: Delayed | undefined;
+
   onCreate(options?: AuctionRoomOptions): void {
     // `options` es exactamente lo que el cliente manda en `client.create(...)`
     // -- Colyseus no filtra nada. Fuera de test, cualquiera podria crear una
@@ -85,6 +89,9 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
     this.setState(new AuctionRoomState());
     this.onMessage("ready", (client) => this.onReady(client));
+    this.onMessage("bid", (client, message: { amount?: unknown }) => {
+      this.onBid(client, message?.amount);
+    });
     this.sync();
   }
 
@@ -193,6 +200,42 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.game.currentBidderId = null;
     this.game.skipVotes = {};
     this.game.endsAt = Date.now() + this.rules.bidTimerMs;
+    this.armTimer(this.rules.bidTimerMs);
+    this.sync();
+  }
+
+  private onBid(client: Client, amount: unknown): void {
+    if (typeof amount !== "number") {
+      client.send("bid:rejected", { reason: "BID_TOO_LOW" });
+      return;
+    }
+
+    // La hora del servidor al entrar aqui es la unica que cuenta: si se
+    // leyera algo que mandara el cliente, cualquiera podria alargar su propia
+    // ventana de puja o esquivar el cierre desde el navegador.
+    const now = Date.now();
+    const verdict = canBid(this.game, this.rules, client.sessionId, amount, now);
+    if (!verdict.ok) {
+      client.send("bid:rejected", { reason: verdict.error });
+      return;
+    }
+
+    this.game = applyBid(this.game, this.rules, client.sessionId, amount, now);
+    this.armTimer(this.game.endsAt - now);
+    this.sync();
+  }
+
+  /** Reprograma el cierre. Cancela el anterior: nunca hay dos relojes vivos. */
+  protected armTimer(delayMs: number): void {
+    this.timer?.clear();
+    this.timer = this.clock.setTimeout(() => this.onBidTimeout(), Math.max(0, delayMs));
+  }
+
+  /** Se dispara al agotarse el reloj de la subasta. */
+  protected onBidTimeout(): void {
+    if (this.game.phase !== "BIDDING") return;
+    const outcome = resolveAuction(this.game, this.rules, this.rng);
+    this.game = applyOutcome(this.game, outcome);
     this.sync();
   }
 
