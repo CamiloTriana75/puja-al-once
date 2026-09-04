@@ -1,15 +1,16 @@
 import { Client, Room } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
+import { ArraySchema } from "@colyseus/schema";
 import {
   applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, currentSlot, DEFAULT_RULES, parseDataset,
-  playersNeedingSlot, resolveAuction, resolveSkipVote, SLOTS, toPrivate, toPublic,
+  playersNeedingSlot, resolveAuction, resolveSkipVote, scoreMatch, SLOTS, toPrivate, toPublic,
   type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { AuctionRoomState, RevealedCardSchema } from "./schema.js";
+import { AuctionRoomState, RevealedCardSchema, StandingSchema } from "./schema.js";
 import { projectState } from "./project.js";
 import { drawRound } from "./setup.js";
 
@@ -47,6 +48,13 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   private rng: Rng = Math.random;
   private ready = new Set<string>();
   private usedCards = new Set<string>();
+  /**
+   * Jugadores cuyo `allowReconnection` se resolvio a mitad de una ronda. No
+   * se marcan `connected = true` al momento -- ver el comentario grande en
+   * advance() -- se aparcan aqui hasta que esa ronda cruce su siguiente
+   * frontera, momento en el que flushPendingRejoins() los aplica de verdad.
+   */
+  private pendingRejoins = new Set<string>();
 
   private bySlot: Record<Slot, CardSource[]> = cardsBySlot([]);
   private byId = new Map<string, CardSource>();
@@ -117,7 +125,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.sync();
   }
 
-  onLeave(client: Client): void {
+  async onLeave(client: Client, consented?: boolean): Promise<void> {
     if (this.game.phase === "LOBBY") {
       // En el lobby no hay partida a la que reconectarse: si solo se marca
       // "connected = false" el jugador se queda fantasma en game.players y
@@ -130,10 +138,60 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       // "ready" -- sin este reintento la sala se queda encallada igual,
       // solo que por el otro lado.
       this.tryStartRound();
-    } else {
-      this.setConnected(client.sessionId, false);
-      this.sync();
+      return;
     }
+
+    this.setConnected(client.sessionId, false);
+    // Por si quedaba un reingreso aparcado de un ciclo de desconexion
+    // anterior DENTRO DE LA MISMA RONDA (reconecto y volvio a caerse antes
+    // de que esa ronda cruzara su siguiente frontera): sin este borrado,
+    // flushPendingRejoins lo marcaria conectado aunque ahora mismo este
+    // fuera de verdad.
+    this.pendingRejoins.delete(client.sessionId);
+    this.sync();
+
+    if (consented) return; // Se fue a proposito: no se ofrece reconexion.
+
+    try {
+      await this.allowReconnection(client, this.rules.reconnectSeconds);
+      this.onReconnected(client.sessionId);
+    } catch {
+      // No volvio dentro del margen (rules.reconnectSeconds): sus huecos
+      // quedan vacios y suman 0 -- scoreMatch nunca puntua un hueco sin
+      // cardId, y playersNeedingSlot ya lo excluye por seguir desconectado.
+    }
+  }
+
+  /**
+   * Aplica un `allowReconnection` que acaba de resolverse.
+   *
+   * Si la partida ya esta en RESULTS no hay ninguna ronda que proteger: se
+   * marca conectado al momento. Si hay una ronda en curso, NO se marca
+   * todavia -- se aparca en pendingRejoins hasta que advance() cruce la
+   * siguiente frontera entre rondas. Mientras tanto el jugador ve la
+   * partida (su cliente ya recibe patches) pero sigue contando como
+   * desconectado para canBid y playersNeedingSlot: puede mirar, no puja en
+   * la ronda en curso. Ver el comentario grande en advance() para el porque.
+   */
+  private onReconnected(playerId: string): void {
+    if (this.game.phase === "RESULTS") {
+      this.setConnected(playerId, true);
+      this.sync();
+      return;
+    }
+    this.pendingRejoins.add(playerId);
+  }
+
+  /**
+   * Aplica los reingresos aparcados por onReconnected(). Solo se llama
+   * desde la frontera segura entre rondas, en advance(): nunca a mitad de
+   * una. No sincroniza por si misma -- igual que setConnected(), a quien
+   * llama le toca hacerlo -- y aqui el llamador (startRound u openBidding,
+   * via finish() o startRound()) sincroniza enseguida de todos modos.
+   */
+  private flushPendingRejoins(): void {
+    for (const playerId of this.pendingRejoins) this.setConnected(playerId, true);
+    this.pendingRejoins.clear();
   }
 
   /** Copia el estado puro sobre el Schema. Se llama tras cada cambio. */
@@ -386,18 +444,21 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
     // Invariante que sostiene la rama de abajo: si stillNeeding > 0 llega
     // hasta aqui (remainingCards ya vacio), este bloque pasa al siguiente
-    // hueco EN SILENCIO dejando a ese jugador sin fichar el actual. Hoy es
-    // inalcanzable porque remainingCards.length nunca cae por debajo de
+    // hueco EN SILENCIO dejando a ese jugador sin fichar el actual. Se
+    // mantiene porque remainingCards.length nunca cae por debajo de
     // stillNeeding: drawRound reparte jugadores+1 cartas, resolveAuction
     // fuerza por sorteo en cuanto el margen se agota (skipAllowed) en vez
-    // de permitir mas descartes de los que soporta, y el numero de
-    // jugadores conectados no cambia mientras dura una ronda. La Task 11
-    // (reconexion) puede romper esa ultima asuncion: si alguien reconecta
-    // (connected pasa a true) a mitad de ronda, stillNeeding puede subir
-    // por encima de remainingCards.length sin que este metodo se entere.
-    // Quien implemente la reconexion tiene que volver a evaluar esta rama
-    // explicitamente, no asumir que remainingCards vacio implica "todos
-    // fichados".
+    // de permitir mas descartes de los que soporta, y -- esto es lo que la
+    // Task 11 (reconexion) tiene que blindar a proposito -- el numero de
+    // jugadores que CUENTAN como conectados no cambia mientras dura una
+    // ronda. Un reingreso a mitad de ronda no marca `connected = true` al
+    // instante (ver onReconnected): se aparca en pendingRejoins y solo se
+    // aplica aqui, en la frontera entre rondas, justo antes de decidir el
+    // siguiente paso. Si se aplicara al instante, playersNeedingSlot lo
+    // contaria de golpe en una ronda cuyo reparto nunca lo tuvo en cuenta, y
+    // stillNeeding si podria superar a remainingCards.
+    this.flushPendingRejoins();
+
     const next = this.game.slotIndex + 1;
     if (next >= SLOTS.length) {
       this.finish();
@@ -408,9 +469,35 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.startRound(next);
   }
 
-  /** Se implementa en la Task 11 (puntuacion final). Cierra la fase por ahora. */
+  /**
+   * Puntua la partida completa y proyecta la clasificacion final. El rating
+   * es dato privado del servidor (scoreMatch lo pide por inyeccion, nunca
+   * lo lee directamente): aqui, y solo aqui, se le da acceso via byId -- la
+   * partida ya termino, asi que publicarlo en `standings` no revela nada
+   * que REVEAL no haya revelado ya carta a carta.
+   */
   protected finish(): void {
+    this.timer?.clear();
     this.game.phase = "RESULTS";
+
+    const table = scoreMatch(this.game.players, (cardId) => {
+      const card = this.byId.get(cardId);
+      if (!card) throw new Error(`cardId desconocido al puntuar: ${cardId}`);
+      return card.rating;
+    });
+
+    this.state.standings = new ArraySchema<StandingSchema>(
+      ...table.map((row) => {
+        const node = new StandingSchema();
+        node.playerId = row.playerId;
+        node.points = row.points;
+        node.totalRating = row.totalRating;
+        node.budgetLeft = row.budgetLeft;
+        node.rank = row.rank;
+        return node;
+      }),
+    );
+
     this.sync();
   }
 
