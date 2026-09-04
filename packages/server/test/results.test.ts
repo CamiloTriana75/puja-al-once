@@ -37,9 +37,16 @@ async function playFullMatch() {
 
 describe("resultados", () => {
   it("termina en RESULTS con una fila por jugador", async () => {
-    const { room } = await playFullMatch();
+    const { room, clients } = await playFullMatch();
     expect(room.state.phase).toBe("RESULTS");
     expect(room.state.standings.length).toBe(4);
+    // Lo que importa de standings es que llegue al navegador, y finish()
+    // lo escribe reemplazando la coleccion entera (`this.state.standings =
+    // new ArraySchema(...)`) en vez de mutarla in-place -- exactamente el
+    // tipo de escritura que Colyseus podria no codificar en el patch si se
+    // hiciera mal. Comprobar el estado de un CLIENTE, no solo el de la
+    // sala, es lo unico que de verdad demuestra que la sincronizacion llego.
+    expect(clients[0]!.state.standings.length).toBe(4);
   });
 
   it("reparte exactamente 11 puntos entre los cuatro", async () => {
@@ -55,6 +62,43 @@ describe("resultados", () => {
     for (let i = 1; i < rows.length; i++) {
       expect(rows[i]!.points).toBeLessThanOrEqual(rows[i - 1]!.points);
     }
+  });
+
+  it("no arrastra restos de la ultima ronda jugada", async () => {
+    // playFullMatch() nunca descarta, asi que la ultima ronda (RW) reparte
+    // 5 candidatos y solo se subastan 4 -- sobra uno sin jugar. Sin la
+    // limpieza de finish(), ese sobrante se proyectaba como si fuera la
+    // "carta actual": una carta de RW jamas subastada, colgando en la
+    // pantalla de resultados junto a un currentSlot de la ultima posicion y
+    // un endsAt de un reloj que ya no corre.
+    const { room } = await playFullMatch();
+    expect(room.state.phase).toBe("RESULTS");
+    expect(room.state.currentSlot).toBe("");
+    expect(room.state.remainingCount).toBe(0);
+    expect(room.state.endsAt).toBe(0);
+    expect(room.state.currentCard).toBeUndefined();
+  });
+
+  it("tras RESULTS, disparar los relojes a mano no altera fase ni clasificacion", async () => {
+    // "nunca dos relojes vivos" es una restriccion global del proyecto:
+    // finish() para this.timer explicitamente. Esta prueba no distingue
+    // POR QUE se mantiene quieto (los guards de fase de onBidTimeout/
+    // onRevealTimeout ya bastarian por si solos) -- protege el
+    // comportamiento observable en si, que es lo que de verdad importa
+    // para la pantalla de resultados: una vez ahi, nada debe volver a
+    // moverla.
+    const { room } = await playFullMatch();
+    expect(room.state.phase).toBe("RESULTS");
+    const before = [...room.state.standings].map((s) => `${s.playerId}:${s.points}:${s.rank}`);
+
+    const hooks = room as unknown as Hooks;
+    hooks.onBidTimeout();
+    hooks.onRevealTimeout();
+    await room.waitForNextPatch();
+
+    expect(room.state.phase).toBe("RESULTS");
+    const after = [...room.state.standings].map((s) => `${s.playerId}:${s.points}:${s.rank}`);
+    expect(after).toEqual(before);
   });
 });
 

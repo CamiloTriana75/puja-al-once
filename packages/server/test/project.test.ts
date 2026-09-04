@@ -23,7 +23,9 @@ describe("projectState", () => {
     const schema = new AuctionRoomState();
     const game = baseGame({ phase: "RESULTS", slotIndex: 11 });
 
-    expect(() => projectState(game, schema, DEFAULT_RULES, new Map<string, CardSource>(), new Map())).not.toThrow();
+    expect(() =>
+      projectState(game, schema, DEFAULT_RULES, new Map<string, CardSource>(), new Map(), new Set()),
+    ).not.toThrow();
     expect(schema.currentSlot).toBe("");
   });
 
@@ -38,16 +40,35 @@ describe("projectState", () => {
         { playerId: "b", name: "Bea", budget: 100, squad: {}, connected: true },
       ],
     });
-    projectState(withTwo, schema, DEFAULT_RULES, cards, publicIds);
+    projectState(withTwo, schema, DEFAULT_RULES, cards, publicIds, new Set());
     expect(schema.players.size).toBe(2);
 
     const withOne = baseGame({
       players: [{ playerId: "a", name: "Ana", budget: 100, squad: {}, connected: true }],
     });
-    projectState(withOne, schema, DEFAULT_RULES, cards, publicIds);
+    projectState(withOne, schema, DEFAULT_RULES, cards, publicIds, new Set());
 
     expect(schema.players.size).toBe(1);
     expect(schema.players.has("b")).toBe(false);
     expect(schema.players.has("a")).toBe(true);
+  });
+
+  it("proyecta rejoinPending por separado de connected", () => {
+    const schema = new AuctionRoomState();
+    const cards = new Map<string, CardSource>();
+    const publicIds = new Map<string, string>();
+    // connected: false representa tanto "se cayo" como "volvio pero la
+    // ronda en curso todavia no lo cuenta" -- pendingRejoins es lo unico
+    // que distingue el segundo caso para el Schema.
+    const game = baseGame({
+      players: [{ playerId: "a", name: "Ana", budget: 100, squad: {}, connected: false }],
+    });
+
+    projectState(game, schema, DEFAULT_RULES, cards, publicIds, new Set(["a"]));
+    expect(schema.players.get("a")?.connected).toBe(false);
+    expect(schema.players.get("a")?.rejoinPending).toBe(true);
+
+    projectState(game, schema, DEFAULT_RULES, cards, publicIds, new Set());
+    expect(schema.players.get("a")?.rejoinPending).toBe(false);
   });
 });

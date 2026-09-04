@@ -2,7 +2,7 @@ import { Client, Room } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
-  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, currentSlot, DEFAULT_RULES, parseDataset,
+  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, parseDataset,
   playersNeedingSlot, resolveAuction, resolveSkipVote, scoreMatch, SLOTS, toPrivate, toPublic,
   type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
@@ -152,14 +152,22 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
     if (consented) return; // Se fue a proposito: no se ofrece reconexion.
 
+    // onReconnected() queda FUERA del try: esta linea solo captura el
+    // fracaso de allowReconnection (no volvio dentro del margen). Si
+    // onReconnected (via setConnected/sync -> projectState) lanzara por
+    // cualquier motivo legitimo, meterlo dentro del try lo confundiria con
+    // "no volvio" y el jugador se quedaria desconectado para siempre sin
+    // una sola linea de log.
+    let returned = false;
     try {
       await this.allowReconnection(client, this.rules.reconnectSeconds);
-      this.onReconnected(client.sessionId);
+      returned = true;
     } catch {
       // No volvio dentro del margen (rules.reconnectSeconds): sus huecos
       // quedan vacios y suman 0 -- scoreMatch nunca puntua un hueco sin
       // cardId, y playersNeedingSlot ya lo excluye por seguir desconectado.
     }
+    if (returned) this.onReconnected(client.sessionId);
   }
 
   /**
@@ -172,6 +180,12 @@ export class AuctionRoom extends Room<AuctionRoomState> {
    * partida (su cliente ya recibe patches) pero sigue contando como
    * desconectado para canBid y playersNeedingSlot: puede mirar, no puja en
    * la ronda en curso. Ver el comentario grande en advance() para el porque.
+   *
+   * Las dos ramas sincronizan: aunque la rama de aparcar no toca
+   * `connected`, si cambia `rejoinPending` (via pendingRejoins, que
+   * projectState lee en cada sync) -- sin el sync aqui el navegador seguiria
+   * viendo al jugador como "caido" en vez de "aparcado" hasta el proximo
+   * cambio de estado que sea por otro motivo.
    */
   private onReconnected(playerId: string): void {
     if (this.game.phase === "RESULTS") {
@@ -180,6 +194,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       return;
     }
     this.pendingRejoins.add(playerId);
+    this.sync();
   }
 
   /**
@@ -196,7 +211,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
   /** Copia el estado puro sobre el Schema. Se llama tras cada cambio. */
   protected sync(): void {
-    projectState(this.game, this.state, this.rules, this.byId, this.cardIdToPublicId);
+    projectState(this.game, this.state, this.rules, this.byId, this.cardIdToPublicId, this.pendingRejoins);
   }
 
   protected setConnected(playerId: string, connected: boolean): void {
@@ -278,7 +293,17 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     const now = Date.now();
     const verdict = canBid(this.game, this.rules, client.sessionId, amount, now);
     if (!verdict.ok) {
-      client.send("bid:rejected", { reason: verdict.error });
+      // DISCONNECTED es tecnicamente correcto para un reingreso aparcado
+      // (game.players[].connected sigue en false a proposito mientras
+      // pendingRejoins lo retiene -- ver onReconnected), pero decirle
+      // "estas desconectado" a alguien cuyo socket funciona es justo lo que
+      // rejoinPending existe para distinguir. Mismo caso, mensaje mas
+      // honesto para quien SI esta ahi mirando.
+      const reason =
+        verdict.error === "DISCONNECTED" && this.pendingRejoins.has(client.sessionId)
+          ? "REJOIN_PENDING"
+          : verdict.error;
+      client.send("bid:rejected", { reason });
       return;
     }
 
@@ -312,6 +337,14 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
   private onVoteSkip(client: Client, skip: boolean): void {
     if (this.game.phase !== "SKIP_VOTE") return;
+    // Solo cuenta el voto de quien de verdad necesita el hueco en juego:
+    // resolveSkipVote ya ignora a cualquier otro al construir `eligible`,
+    // pero sin este filtro su voto igual queda escrito en skipVotes y
+    // viaja al Schema -- visible para todos, sin afectar el desenlace pero
+    // sembrando un voto fantasma de alguien desconectado (o de un
+    // reingreso aparcado: mismo caso, ver onReconnected) que no debería
+    // poder votar nada.
+    if (!playersNeedingSlot(this.game).some((p) => p.playerId === client.sessionId)) return;
     this.game.skipVotes = { ...this.game.skipVotes, [client.sessionId]: skip };
     this.sync();
 
@@ -479,6 +512,19 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   protected finish(): void {
     this.timer?.clear();
     this.game.phase = "RESULTS";
+    // Limpia los restos de la ultima ronda jugada: sin esto, RESULTS
+    // arrastra el currentSlot de la ultima posicion, una carta sobrante que
+    // drawRound repartio pero nadie llego a subastar (remainingCount > 0
+    // le habria dado a projectState un cardId valido para proyectar como
+    // "carta actual" -- una carta fantasma, nunca revelada, que no pinta
+    // nada en la pantalla de resultados) y un endsAt de un reloj que ya no
+    // corre. slotIndex a SLOTS.length (no un indice de SLOTS) es a
+    // proposito: project.ts ya lee `SLOTS[slotIndex] ?? ""` en vez de
+    // currentSlot() precisamente para tolerar esto sin lanzar.
+    this.game.slotIndex = SLOTS.length;
+    this.game.remainingCards = [];
+    this.game.endsAt = 0;
+    this.state.currentCard = undefined;
 
     const table = scoreMatch(this.game.players, (cardId) => {
       const card = this.byId.get(cardId);
@@ -512,10 +558,5 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     const cardId = this.publicIdToCardId.get(publicId);
     if (!cardId) return undefined;
     return this.byId.get(cardId)?.silhouetteId;
-  }
-
-  /** Expuesto para los tests: el hueco que se subasta ahora. */
-  get slot(): string {
-    return currentSlot(this.game);
   }
 }

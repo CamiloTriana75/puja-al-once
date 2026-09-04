@@ -149,9 +149,38 @@ describe("invariante bajo reconexion a mitad de ronda", () => {
     const reconnected = await colyseus.sdk.reconnect(danToken);
     await room.waitForNextPatch();
     expect(reconnected.sessionId).toBe(danId);
-    // Sigue sin contar como conectado a efectos de ronda: si esto fuera
-    // `true` aqui, needing subiria a 4 con solo 3 cartas en mesa.
+    // CARGA DE LA PRUEBA -- no borrar aunque parezca redundante con las
+    // comprobaciones de huecos del final. Sin esta linea el test sigue
+    // "pasando" contra una mutacion que marca conectado al instante tres de
+    // cada cuatro veces: el sorteo forzado de mas abajo reparte entre 4
+    // candidatos con solo 3 cartas, y si el que se queda corto es uno de
+    // los tres originales (Ana/Bea/Cid) el bucle de huecos vacios del final
+    // lo detecta -- pero si el sorteo deja corto al propio Dan, eso
+    // coincide por pura casualidad con el patron que este test espera de
+    // todos modos ("Dan sin GK ni LB"), y la mutacion pasaria colada. Esta
+    // linea comprueba el mecanismo (el flag, en el instante exacto) en vez
+    // del sintoma (quien queda corto), asi que es determinista pase lo que
+    // pase en el sorteo. Sigue sin contar como conectado a efectos de
+    // ronda: si esto fuera `true` aqui, needing subiria a 4 con solo 3
+    // cartas en mesa.
     expect(room.state.players.get(danId)?.connected).toBe(false);
+    // rejoinPending es la otra cara de la misma decision: distingue "se
+    // cayo" de "volvio pero la ronda en curso todavia no lo cuenta" de cara
+    // al navegador (ver PlayerSchema) -- ahora mismo Dan esta en el segundo
+    // caso, no en el primero.
+    expect(room.state.players.get(danId)?.rejoinPending).toBe(true);
+
+    // Y si el propio Dan -- socket ya vivo -- intenta pujar mientras sigue
+    // aparcado, el rechazo tiene que decirle la verdad en vez de
+    // "desconectado", que seria falso para alguien que esta ahi mirando.
+    const rejection = new Promise<{ reason: string }>((resolve) => {
+      reconnected.onMessage("bid:rejected", resolve);
+    });
+    reconnected.send("bid", { amount: 2 });
+    expect((await rejection).reason).toBe("REJOIN_PENDING");
+    // El intento de puja no debe haber movido nada de la subasta en curso.
+    expect(room.state.currentBidderId).toBe("");
+    expect(room.state.remainingCount).toBe(3);
 
     // Termina LB. Si el invariante se hubiera roto, alguno de los tres
     // originales (o el propio Dan, segun a quien le tocara el sorteo)
@@ -159,9 +188,10 @@ describe("invariante bajo reconexion a mitad de ronda", () => {
     // remainingCount en un valor inconsistente en vez de agotarse limpio.
     while (room.state.currentSlot === "LB") await resolveOneCard();
 
-    // A partir de aqui Dan vuelve a contar de verdad.
+    // A partir de aqui Dan vuelve a contar de verdad, en los dos sentidos.
     expect(room.state.currentSlot).toBe("CB1");
     expect(room.state.players.get(danId)?.connected).toBe(true);
+    expect(room.state.players.get(danId)?.rejoinPending).toBe(false);
     clients[3] = reconnected; // la referencia vieja ya no tiene conexion.
 
     // Termina el resto de la partida lo mas hostil posible, los 4 conectados.

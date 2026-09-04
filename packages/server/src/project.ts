@@ -11,6 +11,13 @@ import { AuctionRoomState, PlayerSchema, PublicCardSchema } from "./schema.js";
  *
  * `publicIds` es el mapa cardId -> publicId de la sala (ver AuctionRoom): el
  * Schema solo puede llevar el identificador opaco, nunca el cardId real.
+ *
+ * `pendingRejoins` es el mismo set que AuctionRoom usa para no contar a un
+ * reingreso a mitad de ronda como "necesitando" el hueco todavia (ver
+ * AuctionRoom.onReconnected/flushPendingRejoins): se proyecta como
+ * `rejoinPending` para que el navegador pueda distinguir "se cayo" de
+ * "volvio y espera a la ronda siguiente", dos casos que `connected` por si
+ * solo no diferencia.
  */
 export function projectState(
   game: AuctionState,
@@ -18,6 +25,7 @@ export function projectState(
   rules: Rules,
   cards: Map<string, CardSource>,
   publicIds: Map<string, string>,
+  pendingRejoins: Set<string>,
 ): void {
   schema.phase = game.phase;
   schema.slotIndex = game.slotIndex;
@@ -55,6 +63,7 @@ export function projectState(
     row.name = player.name;
     row.budget = player.budget;
     row.connected = player.connected;
+    row.rejoinPending = pendingRejoins.has(player.playerId);
     for (const [slot, cardId] of Object.entries(player.squad)) {
       if (cardId !== undefined) row.squad.set(slot, cardId);
     }

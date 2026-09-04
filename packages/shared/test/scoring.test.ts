@@ -43,10 +43,33 @@ describe("scoreMatch", () => {
   });
 
   it("desempata por suma total de ratings", () => {
-    const players = [player("a"), player("b")];
-    // a y b empatan a 5.5 puntos; a suma mas rating total
-    const table = scoreMatch(players, ratings({ "a-GK": 99, "b-GK": 99, "a-LB": 71, "b-LB": 71 }));
-    expect(table[0]?.playerId).toBe("a");
+    const players = [player("a"), player("b")]; // "a" va primero en el array de entrada.
+    // OJO: el fixture original ponia el mismo rating a los dos en GK Y en
+    // LB ({ "a-GK": 99, "b-GK": 99, "a-LB": 71, "b-LB": 71 }) -- eso empata
+    // tambien el rating total (800 vs 800), asi que el test pasaba por el
+    // orden estable de sort() (JS conserva el orden de entrada entre
+    // iguales -- "a" primero en `players`, "a" primero en `table`), no
+    // porque el desempate por rating se ejercitara: sustituir el termino de
+    // desempate por `0` dejaba los 6 tests igual de verdes.
+    //
+    // Para que el test SI dependa del comparador, quien gana el desempate
+    // tiene que ser justo el que NO va primero en el array de entrada --
+    // si no, un comparador roto podria acertar por la misma razon de
+    // estabilidad que rompio el fixture original. Aqui cada uno gana un
+    // hueco distinto -- b gana GK, a gana LB -- para que los PUNTOS se
+    // mantengan empatados a 5.5 (a: 0+1+4.5; b: 1+0+4.5), con margenes
+    // distintos (b gana GK por 2, a gana LB por 1) para que el rating total
+    // SI difiera y el ganador sea "b": a = 97+72+630 = 799,
+    // b = 99+71+630 = 800. Confirmado por mutacion: sustituir el termino de
+    // desempate por `0` en scoring.ts hace fallar `table[0]?.playerId` (que
+    // sin comparador real se quedaria en "a", el orden de entrada) contra
+    // este fixture, cosa que el original nunca detectaba.
+    const table = scoreMatch(players, ratings({ "a-GK": 97, "b-GK": 99, "a-LB": 72, "b-LB": 71 }));
+    expect(table.find((s) => s.playerId === "a")?.points).toBe(5.5);
+    expect(table.find((s) => s.playerId === "b")?.points).toBe(5.5);
+    expect(table.find((s) => s.playerId === "a")?.totalRating).toBe(799);
+    expect(table.find((s) => s.playerId === "b")?.totalRating).toBe(800);
+    expect(table[0]?.playerId).toBe("b");
     expect(table[0]?.rank).toBe(1);
   });
 

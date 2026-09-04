@@ -3,12 +3,21 @@ import { ArraySchema, defineTypes, MapSchema, Schema } from "@colyseus/schema";
 /**
  * Un jugador humano de la sala.
  * `squad` mapea hueco de la formacion -> cardId fichado.
+ *
+ * `connected` mezcla dos cosas para las reglas del juego: "se le cayo la
+ * conexion" y "ha vuelto pero la ronda en curso todavia no cuenta con el"
+ * (ver AuctionRoom.onReconnected/flushPendingRejoins) -- ambas se proyectan
+ * como `connected = false` a proposito, porque para pujar y para
+ * playersNeedingSlot son el mismo caso. `rejoinPending` distingue las dos
+ * de cara al navegador: con el socket vivo, decirle a alguien "estas
+ * desconectado" cuando no lo esta es la parte que mas duele.
  */
 export class PlayerSchema extends Schema {
   playerId!: string;
   name!: string;
   budget!: number;
   connected!: boolean;
+  rejoinPending = false;
   squad = new MapSchema<string>();
 }
 defineTypes(PlayerSchema, {
@@ -16,6 +25,7 @@ defineTypes(PlayerSchema, {
   name: "string",
   budget: "number",
   connected: "boolean",
+  rejoinPending: "boolean",
   squad: { map: "string" },
 });
 
