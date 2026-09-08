@@ -38,6 +38,30 @@ body {
   outline-offset: 2px;
 }
 
+/*
+ * La revelacion es el unico momento coreografiado (MASTER.md S1/S5): la
+ * silueta cruza a la foto (opacity) y el nombre entra desde la izquierda
+ * (transform + opacity), con 150ms de retraso sobre la silueta. Solo estas
+ * dos propiedades -- nunca width/height/top -- para que el bloque de
+ * prefers-reduced-motion de aqui abajo pueda anularlas sin dejar nada a
+ * medio animar.
+ */
+@keyframes card-reveal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes card-reveal-slide {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.reveal-fade {
+  animation: card-reveal-fade 450ms cubic-bezier(.16, 1, .3, 1) both;
+}
+.reveal-slide {
+  animation: card-reveal-slide 450ms cubic-bezier(.16, 1, .3, 1) both;
+  animation-delay: 150ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

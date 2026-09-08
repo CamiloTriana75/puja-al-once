@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { HTTP_URL } from "./endpoints.js";
 
 /**
  * Cuenta atras hasta `endsAt`, que es hora del SERVIDOR. El navegador puede ir
@@ -14,7 +15,7 @@ export function useServerClock(endsAt: number): number {
     const sample = async () => {
       try {
         const sentAt = Date.now();
-        const response = await fetch(`${import.meta.env.VITE_HTTP_URL ?? "http://localhost:2567"}/time`);
+        const response = await fetch(`${HTTP_URL}/time`);
         const { now } = (await response.json()) as { now: number };
         const roundTrip = Date.now() - sentAt;
         if (!cancelled) offsetRef.current = now + roundTrip / 2 - Date.now();
