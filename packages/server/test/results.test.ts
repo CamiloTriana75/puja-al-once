@@ -24,7 +24,7 @@ async function playFullMatch() {
   const hooks = room as unknown as Hooks;
   for (let slot = 0; slot < SLOTS.length; slot++) {
     for (const client of clients) {
-      client.send("bid", { amount: 2 });
+      client.send("bid", { amount: room.state.minimumBid });
       await room.waitForNextPatch();
       hooks.onBidTimeout();
       await room.waitForNextPatch();
@@ -147,7 +147,7 @@ describe("reconexion", () => {
     const hooks = room as unknown as Hooks;
     for (let slot = 0; slot < SLOTS.length; slot++) {
       for (const client of active) {
-        client.send("bid", { amount: 2 });
+        client.send("bid", { amount: room.state.minimumBid });
         await room.waitForNextPatch();
         hooks.onBidTimeout();
         await room.waitForNextPatch();

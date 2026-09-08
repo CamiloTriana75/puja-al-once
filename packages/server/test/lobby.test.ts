@@ -83,7 +83,7 @@ describe("lobby", () => {
   it("cada jugador arranca con el presupuesto inicial", async () => {
     const room = await colyseus.createRoom("auction", {});
     await colyseus.connectTo(room, { name: "Ana" });
-    expect([...room.state.players.values()][0]?.budget).toBe(100);
+    expect([...room.state.players.values()][0]?.budget).toBe(1000);
   });
 
   it("no se queda bloqueado para siempre si alguien se va antes de arrancar", async () => {

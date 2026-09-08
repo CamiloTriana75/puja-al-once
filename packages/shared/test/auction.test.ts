@@ -8,7 +8,7 @@ const rngFirst = () => 0;      // elige siempre el primer candidato del sorteo
 const rngLast = () => 0.999;   // elige siempre el ultimo
 
 function player(id: string, overrides: Partial<PlayerState> = {}): PlayerState {
-  return { playerId: id, name: id, budget: 100, squad: {}, connected: true, ...overrides };
+  return { playerId: id, name: id, budget: DEFAULT_RULES.startingBudget, squad: {}, connected: true, ...overrides };
 }
 
 function state(overrides: Partial<AuctionState> = {}): AuctionState {
@@ -18,6 +18,8 @@ function state(overrides: Partial<AuctionState> = {}): AuctionState {
     remainingCards: ["c1", "c2", "c3", "c4", "c5"],
     currentBid: 0,
     currentBidderId: null,
+    openingBid: DEFAULT_RULES.basePrice,
+    bidHistory: [],
     endsAt: 0,
     skipVotes: {},
     restrictedBidders: null,
@@ -82,11 +84,12 @@ describe("applyOutcome", () => {
     const s = state({ currentBid: 12, currentBidderId: "p3" });
     const next = applyOutcome(s, resolveAuction(s, DEFAULT_RULES, rngFirst));
     const p3 = next.players.find((p) => p.playerId === "p3");
-    expect(p3?.budget).toBe(88);
+    expect(p3?.budget).toBe(DEFAULT_RULES.startingBudget - 12);
     expect(p3?.squad.GK).toBe("c1");
     expect(next.remainingCards).toEqual(["c2", "c3", "c4", "c5"]);
     expect(next.currentBid).toBe(0);
     expect(next.currentBidderId).toBeNull();
+    expect(next.bidHistory).toEqual([]);
     expect(next.restrictedBidders).toBeNull();
     expect(next.skipVotes).toEqual({});
   });
@@ -95,7 +98,7 @@ describe("applyOutcome", () => {
     const s = state({ restrictedBidders: ["p2"] });
     const next = applyOutcome(s, resolveAuction(s, DEFAULT_RULES, rngFirst));
     expect(next.remainingCards).toEqual(["c2", "c3", "c4", "c5"]);
-    expect(next.players.every((p) => p.budget === 100)).toBe(true);
+    expect(next.players.every((p) => p.budget === DEFAULT_RULES.startingBudget)).toBe(true);
   });
 
   it("abrir la votacion de salto no toca las cartas", () => {

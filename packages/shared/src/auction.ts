@@ -33,7 +33,7 @@ export function resolveAuction(state: AuctionState, rules: Rules, rng: Rng): Auc
 
   const index = Math.min(eligible.length - 1, Math.floor(rng() * eligible.length));
   const winner = eligible[index]!;
-  return { kind: "FORCED", cardId, playerId: winner.playerId, price: rules.basePrice };
+  return { kind: "FORCED", cardId, playerId: winner.playerId, price: state.openingBid };
 }
 
 /** Aplica el desenlace y devuelve un estado nuevo. No muta el recibido. */
@@ -58,6 +58,7 @@ export function applyOutcome(state: AuctionState, outcome: AuctionOutcome): Auct
     remainingCards: state.remainingCards.slice(1),
     currentBid: 0,
     currentBidderId: null,
+    openingBid: 0,
     restrictedBidders: null,
     skipVotes: {},
     phase: "REVEAL",

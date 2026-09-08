@@ -93,7 +93,7 @@ describe("voto de salto", () => {
     // asi que el margen sigue existiendo. Adjudicar otra deja 3 y 2: sigue.
     // El margen solo desaparece si se descarta, no si se adjudica.
     for (let i = 0; i < 2; i++) {
-      clients[i]!.send("bid", { amount: 2 });
+      clients[i]!.send("bid", { amount: room.state.minimumBid });
       await room.waitForNextPatch();
       hooks.onBidTimeout();
       await room.waitForNextPatch();
@@ -158,7 +158,8 @@ describe("reveal y avance", () => {
     const expectedCardId = hooks.publicIdToCardId.get(pubId);
     const expectedSil = hooks.silhouetteIdFor(pubId);
 
-    clients[0]!.send("bid", { amount: 5 });
+    const winningBid = room.state.minimumBid;
+    clients[0]!.send("bid", { amount: winningBid });
     await room.waitForNextPatch();
     hooks.onBidTimeout();
     await room.waitForNextPatch();
@@ -170,7 +171,7 @@ describe("reveal y avance", () => {
     expect(revealed?.name).toBeTruthy();
     expect(revealed?.rating).toBeGreaterThan(0);
     expect(revealed?.ownerId).toBe(clients[0]!.sessionId);
-    expect(revealed?.price).toBe(5);
+    expect(revealed?.price).toBe(winningBid);
     expect(room.state.currentCard?.revealed).toBe(true);
   });
 
@@ -182,7 +183,7 @@ describe("reveal y avance", () => {
     // paquete mientras la carta siguiente, todavia sin subastar, viaja al
     // navegador con el nombre y el rating de la que se acaba de revelar.
     const { room, clients, hooks } = await startedRoom();
-    clients[0]!.send("bid", { amount: 5 });
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
     await room.waitForNextPatch();
     hooks.onBidTimeout();
     await room.waitForNextPatch();
@@ -198,7 +199,7 @@ describe("reveal y avance", () => {
   it("pasa al siguiente hueco cuando todos han fichado el actual", async () => {
     const { room, clients, hooks } = await startedRoom();
     for (const client of clients) {
-      client.send("bid", { amount: 2 });
+      client.send("bid", { amount: room.state.minimumBid });
       await room.waitForNextPatch();
       hooks.onBidTimeout();
       await room.waitForNextPatch();

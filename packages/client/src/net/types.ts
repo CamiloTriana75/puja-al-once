@@ -71,6 +71,12 @@ export interface StandingView {
   rank: number;
 }
 
+/** Oferta aceptada en la carta actual, sincronizada para toda la sala. */
+export interface BidView {
+  playerId: string;
+  amount: number;
+}
+
 export interface ClientState {
   phase: "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "RESULTS";
   slotIndex: number;
@@ -78,7 +84,9 @@ export interface ClientState {
   currentCard?: CardView;
   currentBid: number;
   currentBidderId: string;
+  openingBid: number;
   minimumBid: number;
+  bidHistory: BidView[];
   endsAt: number;
   remainingCount: number;
   skipAvailable: boolean;

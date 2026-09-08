@@ -122,6 +122,17 @@ defineTypes(StandingSchema, {
   rank: "number",
 });
 
+/** Oferta aceptada, en orden cronologico dentro de la carta actual. */
+export class BidRecordSchema extends Schema {
+  playerId!: string;
+  amount!: number;
+}
+
+defineTypes(BidRecordSchema, {
+  playerId: "string",
+  amount: "number",
+});
+
 export class AuctionRoomState extends Schema {
   phase = "LOBBY";
   slotIndex = 0;
@@ -129,7 +140,9 @@ export class AuctionRoomState extends Schema {
   currentCard: PublicCardSchema | undefined = undefined;
   currentBid = 0;
   currentBidderId = "";
+  openingBid = 0;
   minimumBid = 0;
+  bidHistory = new ArraySchema<BidRecordSchema>();
   /** Marca de tiempo absoluta del cierre, en ms. */
   endsAt = 0;
   /** Cartas que quedan por resolver en esta ronda, la de la mesa incluida. */
@@ -148,7 +161,9 @@ defineTypes(AuctionRoomState, {
   currentCard: PublicCardSchema,
   currentBid: "number",
   currentBidderId: "string",
+  openingBid: "number",
   minimumBid: "number",
+  bidHistory: [BidRecordSchema],
   endsAt: "number",
   remainingCount: "number",
   skipAvailable: "boolean",

@@ -42,20 +42,25 @@ export function AuctionCard({ card, price, roomId }: Props) {
           igual que un cutout de retransmision deportiva, nunca contenida
           con margen dentro de su caja. */}
       <img
-        key={revealed ? "revealed" : "hidden"}
         src={src}
         alt={revealed ? `${card.name}, temporada ${card.season}` : "Silueta de un futbolista sin identificar"}
-        className={`absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[8%] sm:h-[115%] ${revealed ? "reveal-fade" : ""}`}
-        style={{ filter: revealed ? "brightness(0)" : "brightness(0) invert(1)" }}
+        className="absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[8%] sm:h-[115%]"
+        style={{
+          filter: revealed ? "none" : "brightness(0) invert(1)",
+          transition: "filter 450ms cubic-bezier(.16,1,.3,1)",
+        }}
       />
 
       {/* Panel negro: el unico soporte de texto. Nunca texto blanco sobre verde. */}
       <figcaption
-        key={revealed ? "revealed-caption" : "hidden-caption"}
-        className={`panel absolute left-0 top-[8%] z-20 max-w-[70%] bg-ink px-5 py-4 pr-10 sm:top-[10%] sm:max-w-[58%] sm:px-6 sm:py-5 sm:pr-14 ${revealed ? "reveal-slide" : ""}`}
+        className="panel absolute left-0 top-[8%] z-20 max-w-[70%] bg-ink px-5 py-4 pr-10 sm:top-[10%] sm:max-w-[58%] sm:px-6 sm:py-5 sm:pr-14"
       >
         {revealed ? (
-          <>
+          // El nombre entra desde la izquierda 150ms despues de que la
+          // silueta empiece a cruzar a foto (MASTER.md S5). Este div y el
+          // filter del <img> de arriba son los dos unicos elementos
+          // animados de la vista -- presupuesto que fija S5.
+          <div className="reveal-in">
             <p className="font-display text-[clamp(1.75rem,4vw,3rem)] font-extrabold leading-[0.85] tracking-tight text-green">
               {card.name.split(" ")[0]}
             </p>
@@ -65,7 +70,7 @@ export function AuctionCard({ card, price, roomId }: Props) {
             <p className="tnum mt-3 inline-block bg-white px-3 py-1 font-display text-lg font-extrabold tracking-wide text-ink">
               {card.season}
             </p>
-          </>
+          </div>
         ) : (
           <>
             <p className="font-display text-[clamp(1.75rem,4vw,3rem)] font-extrabold uppercase leading-[0.85] tracking-tight text-white">

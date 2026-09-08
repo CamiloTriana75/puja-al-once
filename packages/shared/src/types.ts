@@ -14,16 +14,22 @@ export type Phase = "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "RE
 /** Fuente de azar inyectable. Devuelve [0, 1). */
 export type Rng = () => number;
 
+/** Precio de salida para jugadores desde `minimumRating` inclusive. */
+export interface OpeningBidTier {
+  minimumRating: number;
+  price: number;
+}
+
 export interface Rules {
   /** Presupuesto inicial de cada jugador, en millones. */
   startingBudget: number;
-  /** Precio de salida de cualquier candidato, en millones. */
+  /** Precio de salida mas bajo y reserva por cada hueco pendiente, en millones. */
   basePrice: number;
+  /** Tramos descendentes que escalan el precio de salida por valoracion. */
+  openingBidTiers: readonly OpeningBidTier[];
   /** Subida minima sobre la puja vigente, en millones. */
   minIncrement: number;
-  /** Duracion de la subasta antes de la primera puja. */
-  bidTimerMs: number;
-  /** A cuanto se empuja el cierre tras cada puja aceptada. */
+  /** Ventana que empieza con la primera puja y se reinicia con cada nueva puja. */
   antiSnipeMs: number;
   /** Duracion de la votacion de salto. */
   skipVoteMs: number;
@@ -34,11 +40,15 @@ export interface Rules {
 }
 
 export const DEFAULT_RULES: Rules = {
-  startingBudget: 100,
-  basePrice: 2,
-  minIncrement: 1,
-  bidTimerMs: 15_000,
-  antiSnipeMs: 6_000,
+  startingBudget: 1_000,
+  basePrice: 20,
+  openingBidTiers: [
+    { minimumRating: 95, price: 80 },
+    { minimumRating: 91, price: 60 },
+    { minimumRating: 87, price: 40 },
+  ],
+  minIncrement: 10,
+  antiSnipeMs: 10_000,
   skipVoteMs: 10_000,
   revealMs: 6_000,
   reconnectSeconds: 60,
@@ -54,6 +64,12 @@ export interface PlayerState {
   connected: boolean;
 }
 
+/** Oferta visible para todos durante la carta en curso. */
+export interface BidRecord {
+  playerId: string;
+  amount: number;
+}
+
 export interface AuctionState {
   phase: Phase;
   /** Indice dentro de SLOTS: la ronda en curso. */
@@ -66,7 +82,11 @@ export interface AuctionState {
   /** Puja vigente en millones. 0 significa que nadie ha pujado. */
   currentBid: number;
   currentBidderId: string | null;
-  /** Cierre de la subasta como marca de tiempo absoluta en ms. */
+  /** Precio que exige la primera puja de la carta actual. */
+  openingBid: number;
+  /** Ultimas ofertas aceptadas de la carta actual, de antigua a reciente. */
+  bidHistory: BidRecord[];
+  /** Cierre de la subasta como marca de tiempo absoluta en ms; 0 si aun no hubo oferta. */
   endsAt: number;
   /** playerId -> voto emitido en la votacion de salto. */
   skipVotes: Record<string, boolean>;

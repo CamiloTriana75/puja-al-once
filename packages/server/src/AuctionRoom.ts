@@ -2,7 +2,7 @@ import { Client, Room } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
-  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, parseDataset,
+  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, openingBidForRating, parseDataset,
   playersNeedingSlot, resolveAuction, resolveSkipVote, scoreMatch, SLOTS, toPrivate, toPublic,
   type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
@@ -38,6 +38,8 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     remainingCards: [],
     currentBid: 0,
     currentBidderId: null,
+    openingBid: 0,
+    bidHistory: [],
     endsAt: 0,
     skipVotes: {},
     restrictedBidders: null,
@@ -101,6 +103,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.onMessage("bid", (client, message: { amount?: unknown }) => {
       this.onBid(client, message?.amount);
     });
+    this.onMessage("closeWithoutBid", (client) => this.onCloseWithoutBid(client));
     this.onMessage("voteSkip", (client, message: { skip?: unknown }) => {
       this.onVoteSkip(client, message?.skip === true);
     });
@@ -270,14 +273,22 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.openBidding();
   }
 
-  /** Pone la carta de la mesa a subasta y arma el reloj de cierre. */
+  /** Pone una carta a subasta, sin reloj hasta que alguien haga una oferta. */
   protected openBidding(): void {
+    const cardId = currentCardId(this.game);
+    if (!cardId) throw new Error("openBidding sin carta sobre la mesa");
+    const card = this.byId.get(cardId);
+    if (!card) throw new Error(`cardId desconocido al abrir subasta: ${cardId}`);
+
     this.game.phase = "BIDDING";
     this.game.currentBid = 0;
     this.game.currentBidderId = null;
+    this.game.openingBid = openingBidForRating(card.rating, this.rules);
+    this.game.bidHistory = [];
     this.game.skipVotes = {};
-    this.game.endsAt = Date.now() + this.rules.bidTimerMs;
-    this.armTimer(this.rules.bidTimerMs);
+    this.game.restrictedBidders = null;
+    this.game.endsAt = 0;
+    this.timer?.clear();
     this.sync();
   }
 
@@ -310,6 +321,17 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.game = applyBid(this.game, this.rules, client.sessionId, amount, now);
     this.armTimer(this.game.endsAt - now);
     this.sync();
+  }
+
+  /**
+   * Cierra explicitamente una carta sin ofertas. Si aun sobra una carta abre
+   * la votacion de salto; en el ultimo margen resuelve el sorteo obligatorio.
+   */
+  private onCloseWithoutBid(client: Client): void {
+    if (this.game.phase !== "BIDDING" || this.game.currentBid !== 0) return;
+    if (!playersNeedingSlot(this.game).some((player) => player.playerId === client.sessionId)) return;
+    if (this.game.restrictedBidders !== null && !this.game.restrictedBidders.includes(client.sessionId)) return;
+    this.onBidTimeout();
   }
 
   /** Reprograma el cierre. Cancela el anterior: nunca hay dos relojes vivos. */
@@ -381,9 +403,11 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       phase: "BIDDING",
       restrictedBidders: outcome.restrictedBidders,
       skipVotes: {},
-      endsAt: Date.now() + this.rules.bidTimerMs,
+      // Tras un voto fallido, el postor que dijo quererla decide cuando
+      // empezar con su oferta; no hay cierre automatico sin primera puja.
+      endsAt: 0,
     };
-    this.armTimer(this.rules.bidTimerMs);
+    this.timer?.clear();
     this.sync();
   }
 

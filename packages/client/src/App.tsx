@@ -1,5 +1,6 @@
 import { Auction } from "./screens/Auction.js";
 import { Lobby } from "./screens/Lobby.js";
+import { Results } from "./screens/Results.js";
 import { useRoom } from "./net/useRoom.js";
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
           send={send}
         />
       )}
+      {inGame && state.phase === "RESULTS" && <Results state={state} />}
     </main>
   );
 }

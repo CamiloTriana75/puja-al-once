@@ -10,6 +10,8 @@ function baseGame(overrides: Partial<AuctionState> = {}): AuctionState {
     remainingCards: [],
     currentBid: 0,
     currentBidderId: null,
+    openingBid: DEFAULT_RULES.basePrice,
+    bidHistory: [],
     endsAt: 0,
     skipVotes: {},
     restrictedBidders: null,

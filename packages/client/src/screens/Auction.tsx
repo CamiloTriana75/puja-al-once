@@ -1,6 +1,7 @@
 import { AuctionCard } from "../components/AuctionCard.js";
 import { BidControls } from "../components/BidControls.js";
 import { ClueRow } from "../components/ClueRow.js";
+import { RevealBar } from "../components/RevealBar.js";
 import { useServerClock } from "../net/useServerClock.js";
 import type { ClientState } from "../net/types.js";
 
@@ -29,7 +30,9 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
   // servidor, y se explica por que junto a los controles.
   const parked = me?.rejoinPending ?? false;
   const canBid = state.phase === "BIDDING" && !alreadySigned && !restricted && !parked;
-  const urgent = remaining < 5000 && state.phase === "BIDDING";
+  const hasActiveBid = state.currentBid > 0;
+  const canCloseWithoutBid = canBid && !hasActiveBid;
+  const urgent = hasActiveBid && remaining < 5000 && state.phase === "BIDDING";
 
   // Durante REVEAL, applyOutcome ya limpio currentBid/currentBidderId al
   // entrar en la fase (ver packages/shared/src/auction.ts): el desenlace de
@@ -48,12 +51,19 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="flex flex-col gap-6">
-          {card && <ClueRow card={card} />}
+          {/* Durante REVEAL las pistas ya no sirven -- la respuesta esta delante. */}
+          {card && (state.phase === "REVEAL"
+            ? <RevealBar card={card} state={state} />
+            : <ClueRow card={card} />)}
 
           <div className="panel flex flex-wrap items-baseline gap-x-6 gap-y-2 bg-ink px-6 py-4 pr-12">
-            <p className={`tnum font-display text-5xl font-black leading-none ${urgent ? "animate-pulse text-danger" : "text-lime"}`}>
-              {(remaining / 1000).toFixed(1)}s
-            </p>
+            {state.phase === "BIDDING" && !hasActiveBid ? (
+              <p className="font-display text-xl font-black uppercase tracking-wide text-lime">Sin reloj</p>
+            ) : (
+              <p className={`tnum font-display text-5xl font-black leading-none ${urgent ? "animate-pulse text-danger" : "text-lime"}`}>
+                {(remaining / 1000).toFixed(1)}s
+              </p>
+            )}
 
             {state.phase === "REVEAL" ? (
               <p className="font-display text-xl font-bold uppercase tracking-wide text-white">
@@ -69,11 +79,16 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
               </p>
             ) : (
               <p className="font-display text-xl font-bold uppercase tracking-wide text-white">
-                {state.currentBid > 0 ? (
+                {hasActiveBid ? (
                   <>
                     <span className="tnum text-green">{state.currentBid} M</span>{" "}
                     <span className="text-mute">va ganando</span>{" "}
                     {state.players.get(state.currentBidderId)?.name}
+                  </>
+                ) : state.phase === "BIDDING" ? (
+                  <>
+                    <span className="tnum text-green">Sale desde {state.openingBid} M</span>{" "}
+                    <span className="text-mute">— esperando la primera puja</span>
                   </>
                 ) : (
                   <span className="text-mute">Nadie ha pujado todavía</span>
@@ -133,20 +148,37 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
                 </p>
               </div>
             ) : state.phase === "BIDDING" ? (
-              <BidControls
-                minimumBid={state.minimumBid}
-                disabled={!canBid}
-                error={error}
-                errorSeq={errorSeq}
-                onBid={(amount) => send("bid", { amount })}
-              />
+              <div className="flex flex-col gap-3">
+                <BidControls
+                  minimumBid={state.minimumBid}
+                  disabled={!canBid}
+                  error={error}
+                  errorSeq={errorSeq}
+                  onBid={(amount) => send("bid", { amount })}
+                />
+                {canCloseWithoutBid && (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => send("closeWithoutBid", {})}
+                      className="h-10 cursor-pointer border-2 border-white/30 px-4 font-display text-sm font-bold uppercase tracking-wide text-white transition-colors duration-200 hover:border-white"
+                    >
+                      Cerrar sin pujas
+                    </button>
+                    <p className="font-body text-sm text-mute">
+                      Si sobran cartas se vota saltarla; si no, se asigna por sorteo.
+                    </p>
+                  </div>
+                )}
+              </div>
             ) : (
               <p className="bg-ink px-3 py-2 font-body text-sm text-mute">Revelando…</p>
             )}
           </div>
         </div>
 
-        <ul className="flex flex-col gap-px bg-white/10">
+        <aside className="flex flex-col gap-4">
+          <ul className="flex flex-col gap-px bg-white/10">
           {[...state.players.values()].map((player) => {
             const leading = state.phase === "BIDDING" && player.playerId === state.currentBidderId;
             return (
@@ -178,7 +210,22 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
               </li>
             );
           })}
-        </ul>
+          </ul>
+
+          {state.bidHistory.length > 0 && (
+            <section className="border-2 border-white/10 bg-ink p-4" aria-label="Pujas recientes">
+              <h2 className="font-display text-lg font-black uppercase tracking-wide text-white">Pujas recientes</h2>
+              <ol className="mt-3 flex flex-col gap-2">
+                {[...state.bidHistory].reverse().map((bid, index) => (
+                  <li key={`${bid.playerId}-${bid.amount}-${index}`} className="flex justify-between font-body text-sm">
+                    <span className="text-mute">{state.players.get(bid.playerId)?.name ?? "Jugador"}</span>
+                    <span className="tnum font-display text-base font-extrabold text-green">{bid.amount} M</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+        </aside>
       </div>
     </div>
   );

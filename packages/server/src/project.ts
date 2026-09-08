@@ -3,7 +3,7 @@ import {
   toPublic, type AuctionState, type CardSource, type Rules,
 } from "@fut/shared";
 import { ArraySchema, MapSchema } from "@colyseus/schema";
-import { AuctionRoomState, PlayerSchema, PublicCardSchema } from "./schema.js";
+import { AuctionRoomState, BidRecordSchema, PlayerSchema, PublicCardSchema } from "./schema.js";
 
 /**
  * Copia el estado puro sobre el Schema. Es el unico punto donde se decide que
@@ -35,7 +35,16 @@ export function projectState(
   schema.currentSlot = SLOTS[game.slotIndex] ?? "";
   schema.currentBid = game.currentBid;
   schema.currentBidderId = game.currentBidderId ?? "";
+  schema.openingBid = game.openingBid;
   schema.minimumBid = minimumBid(game, rules);
+  schema.bidHistory = new ArraySchema<BidRecordSchema>(
+    ...game.bidHistory.map((bid) => {
+      const row = new BidRecordSchema();
+      row.playerId = bid.playerId;
+      row.amount = bid.amount;
+      return row;
+    }),
+  );
   schema.endsAt = game.endsAt;
   schema.remainingCount = game.remainingCards.length;
   schema.skipAvailable = game.phase === "SKIP_VOTE" && skipAllowed(game);

@@ -22,7 +22,7 @@ const REASON: Record<string, string> = {
   BID_TOO_LOW: "Esa puja no llega al mínimo.",
   OVER_BUDGET: "No puedes: te dejaría sin dinero para llenar el resto del once.",
   SLOT_ALREADY_FILLED: "Ya fichaste para este puesto.",
-  NOT_ALLOWED_TO_BID: "Votaste saltar esta carta: no puedes pujar por ella.",
+  NOT_ALLOWED_TO_BID: "No pudiste pujar por esta carta: no votaste a tiempo o votaste saltarla.",
   AUCTION_CLOSED: "La subasta ya se cerró.",
   WRONG_PHASE: "Ahora mismo no se puede pujar.",
   DISCONNECTED: "Te desconectaste.",

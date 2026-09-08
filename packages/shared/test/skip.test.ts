@@ -15,6 +15,8 @@ function state(overrides: Partial<AuctionState> = {}): AuctionState {
     remainingCards: ["c1", "c2", "c3", "c4", "c5"],
     currentBid: 0,
     currentBidderId: null,
+    openingBid: 20,
+    bidHistory: [],
     endsAt: 0,
     skipVotes: {},
     restrictedBidders: null,

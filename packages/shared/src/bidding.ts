@@ -14,9 +14,14 @@ export type BidError =
   | "BID_TOO_LOW"
   | "OVER_BUDGET";
 
+/** Precio de salida segun la valoracion privada del candidato. */
+export function openingBidForRating(rating: number, rules: Rules): number {
+  return rules.openingBidTiers.find((tier) => rating >= tier.minimumRating)?.price ?? rules.basePrice;
+}
+
 /** El importe mas bajo que ahora mismo constituye una puja valida. */
 export function minimumBid(state: AuctionState, rules: Rules): number {
-  return state.currentBid === 0 ? rules.basePrice : state.currentBid + rules.minIncrement;
+  return state.currentBid === 0 ? state.openingBid : state.currentBid + rules.minIncrement;
 }
 
 /**
@@ -31,7 +36,9 @@ export function canBid(
   now: number,
 ): Result<void, BidError> {
   if (state.phase !== "BIDDING") return err("WRONG_PHASE");
-  if (now > state.endsAt) return err("AUCTION_CLOSED");
+  // endsAt = 0 hasta que llegue la primera oferta: la carta se mantiene
+  // abierta sin reloj, pero una vez existe puja el servidor aplica la ventana.
+  if (state.endsAt !== 0 && now > state.endsAt) return err("AUCTION_CLOSED");
 
   const player = state.players.find((p) => p.playerId === playerId);
   if (!player) return err("UNKNOWN_PLAYER");
@@ -64,5 +71,6 @@ export function applyBid(
     currentBid: amount,
     currentBidderId: playerId,
     endsAt: now + rules.antiSnipeMs,
+    bidHistory: [...state.bidHistory, { playerId, amount }].slice(-5),
   };
 }
