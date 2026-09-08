@@ -1,5 +1,6 @@
 import { matchMaker } from "@colyseus/core";
 import config, { listen } from "@colyseus/tools";
+import { static as expressStatic } from "express";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +10,7 @@ import { AuctionRoom } from "./AuctionRoom.js";
 // AuctionRoom.ts: pnpm fija el cwd de cada paquete al ejecutar sus scripts.
 const SILHOUETTES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/silhouettes");
 const PHOTOS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/photos");
+const CLIENT_DIST = resolve(dirname(fileURLToPath(import.meta.url)), "../../client/dist");
 
 const app = config({
   initializeGameServer: (gameServer) => {
@@ -85,6 +87,20 @@ const app = config({
         res.status(404).end();
       }
     });
+
+    // En produccion el cliente compilado se sirve desde este mismo proceso,
+    // para que la pagina y el WebSocket compartan origen. Es lo que permite
+    // exponer el juego por un unico tunel: con dos origenes distintos, el
+    // navegador cargaria la pagina pero no podria abrir el socket.
+    //
+    // Va al final a proposito: registrado antes, el comodin de abajo se
+    // tragaria /time y las rutas de imagenes.
+    if (process.env.NODE_ENV === "production") {
+      app.use(expressStatic(CLIENT_DIST));
+      app.get("/{*splat}", (_req, res) => {
+        res.sendFile("index.html", { root: CLIENT_DIST });
+      });
+    }
   },
 });
 
