@@ -1,15 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ClientState } from "../net/types.js";
 
 interface Props {
   state: ClientState | null;
+  error: string | null;
   onJoin: (name: string) => void;
   onReady: () => void;
 }
 
-export function Lobby({ state, onJoin, onReady }: Props) {
+export function Lobby({ state, error, onJoin, onReady }: Props) {
   const [name, setName] = useState("");
   const [ready, setReady] = useState(false);
+
+  // "ready" es optimista: se marca al pulsar, antes de que el servidor
+  // conteste. Si el servidor rechaza el arranque (p.ej. el mazo no alcanza
+  // para el hueco -- ver AuctionRoom.tryStartRound, que hace
+  // broadcast("error", ...) y limpia su propio `ready` para poder
+  // reintentar), sin este efecto el boton se queda inutilizable para
+  // siempre del lado del cliente aunque el servidor ya haya vuelto a
+  // aceptar "ready".
+  useEffect(() => {
+    if (error) setReady(false);
+  }, [error]);
 
   if (!state) {
     return (

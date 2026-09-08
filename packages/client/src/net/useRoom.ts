@@ -10,6 +10,7 @@ export interface Connection {
   error: string | null;
   join: (name: string, roomId?: string) => Promise<void>;
   send: (type: string, payload?: unknown) => void;
+  leave: () => void;
 }
 
 export function useRoom(): Connection {
@@ -21,6 +22,18 @@ export function useRoom(): Connection {
   useEffect(() => {
     clientRef.current = new Client(ENDPOINT);
   }, []);
+
+  // Cierra el socket de la sala anterior en cuanto `room` cambia (un
+  // re-join tras un remount) o el componente se desmonta. Sin esto el
+  // socket viejo se queda vivo y colgado, sin que nadie lo cierre nunca --
+  // hoy es tolerable porque el lobby es la unica pantalla, pero en cuanto
+  // haya navegacion entre pantallas (Tasks 13/14) esto se vuelve una fuga
+  // de conexiones real.
+  useEffect(() => {
+    return () => {
+      room?.leave();
+    };
+  }, [room]);
 
   const join = useCallback(async (name: string, roomId?: string) => {
     const client = clientRef.current;
@@ -48,5 +61,15 @@ export function useRoom(): Connection {
     [room],
   );
 
-  return { room, state, error, join, send };
+  // Expuesto para que quien consuma el hook pueda salir explicitamente
+  // (p.ej. un boton "salir" en una pantalla futura). El efecto de arriba
+  // cubre el caso de desmontaje/remount; esto cubre el caso de salida
+  // deliberada mientras el componente sigue montado. `Room.leave()` es
+  // seguro de llamar mas de una vez -- no revienta si el socket ya esta
+  // cerrado -- asi que no hace falta guardar si ya se llamo.
+  const leave = useCallback(() => {
+    room?.leave();
+  }, [room]);
+
+  return { room, state, error, join, send, leave };
 }

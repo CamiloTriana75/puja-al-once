@@ -12,11 +12,20 @@ export function useServerClock(endsAt: number): number {
   useEffect(() => {
     let cancelled = false;
     const sample = async () => {
-      const sentAt = Date.now();
-      const response = await fetch(`${import.meta.env.VITE_HTTP_URL ?? "http://localhost:2567"}/time`);
-      const { now } = (await response.json()) as { now: number };
-      const roundTrip = Date.now() - sentAt;
-      if (!cancelled) offsetRef.current = now + roundTrip / 2 - Date.now();
+      try {
+        const sentAt = Date.now();
+        const response = await fetch(`${import.meta.env.VITE_HTTP_URL ?? "http://localhost:2567"}/time`);
+        const { now } = (await response.json()) as { now: number };
+        const roundTrip = Date.now() - sentAt;
+        if (!cancelled) offsetRef.current = now + roundTrip / 2 - Date.now();
+      } catch (cause) {
+        // Sin corregir el desfase el reloj sigue funcionando con la hora
+        // local del navegador (offsetRef.current se queda en 0) -- es
+        // decoracion, no decide nada -- pero un fallo mudo aqui deja a
+        // quien depure sin ninguna pista de por que el contador a veces se
+        // ve desfasado.
+        if (!cancelled) console.error("useServerClock: no se pudo sincronizar con /time", cause);
+      }
     };
     void sample();
     return () => {

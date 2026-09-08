@@ -553,10 +553,26 @@ export class AuctionRoom extends Room<AuctionRoomState> {
    * pertenece a esta partida. El `publicId` solo tiene sentido dentro de la
    * sala que lo emitio -- ver el informe de la Task 8 para el contrato
    * completo que necesita esa ruta (roomId + publicId).
+   *
+   * Defensa en profundidad (Ronda de arreglos 1 de la Task 12): los 55
+   * `publicId` de la partida se asignan de golpe en onCreate, asi que sin
+   * este filtro cualquier cliente que ADIVINARA un UUID valido podria pedir
+   * la silueta de una carta que ni siquiera ha salido a subasta todavia --
+   * hoy no es explotable (122 bits de entropia, y el Schema solo publica el
+   * publicId de la carta vigente), pero el secreto quedaria sostenido por
+   * la aleatoriedad del UUID en vez de por una regla explicita. Solo
+   * resuelve si el publicId es el de la carta EN LA MESA ahora mismo, o el
+   * de una carta YA REVELADA (las tareas siguientes necesitan poder pintar
+   * las plantillas ya reveladas).
    */
   public silhouetteIdFor(publicId: string): string | undefined {
     const cardId = this.publicIdToCardId.get(publicId);
     if (!cardId) return undefined;
+
+    const isCurrentCard = this.state.currentCard?.publicId === publicId;
+    const isRevealed = this.state.revealedCards.has(cardId);
+    if (!isCurrentCard && !isRevealed) return undefined;
+
     return this.byId.get(cardId)?.silhouetteId;
   }
 }
