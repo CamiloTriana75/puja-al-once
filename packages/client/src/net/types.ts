@@ -78,6 +78,14 @@ export interface BidView {
 }
 
 export interface ClientState {
+  /**
+   * Codigo de sala, legible en voz alta -- lo contrario del `publicId` de
+   * las cartas: este no es secreto, sirve para compartirse y puede ir en la
+   * URL.
+   */
+  roomCode: string;
+  /** playerId de quien creo la sala. Migra al siguiente conectado si se va antes de empezar. */
+  hostId: string;
   phase: "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "RESULTS";
   slotIndex: number;
   currentSlot: string;

@@ -5,3 +5,4 @@ export * from "./skip.js";
 export * from "./auction.js";
 export * from "./scoring.js";
 export * from "./dataset.js";
+export * from "./roomCode.js";

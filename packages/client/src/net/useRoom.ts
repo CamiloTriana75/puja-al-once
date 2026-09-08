@@ -1,6 +1,7 @@
 import { Client, type Room } from "colyseus.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { WS_URL } from "./endpoints.js";
+import { describeRoomLookupError, lookupRoomByCode } from "./roomLookup.js";
 import type { ClientState } from "./types.js";
 
 export interface Connection {
@@ -31,7 +32,15 @@ export interface Connection {
    * de un valor que el cliente escribe el mismo de forma optimista.
    */
   bidErrorSeq: number;
-  join: (name: string, roomId?: string) => Promise<void>;
+  /** Crea una sala nueva. Nunca coincide con una existente -- a diferencia de `joinOrCreate`, `create` no busca hueco en otra sala antes. */
+  createRoom: (name: string) => Promise<void>;
+  /**
+   * Resuelve el codigo por HTTP (ver roomLookup.ts) antes de intentar el
+   * join por WebSocket: es lo que permite distinguir sala inexistente,
+   * llena o ya empezada -- el rechazo de `client.joinById` a secas no lo
+   * hace (todas esas salas estan "locked" y Colyseus no dice por que).
+   */
+  joinByCode: (name: string, code: string) => Promise<void>;
   send: (type: string, payload?: unknown) => void;
   leave: () => void;
 }
@@ -60,34 +69,60 @@ export function useRoom(): Connection {
     };
   }, [room]);
 
-  const join = useCallback(async (name: string, roomId?: string) => {
-    const client = clientRef.current;
-    if (!client) return;
-    try {
-      const joined = roomId
-        ? await client.joinById<ClientState>(roomId, { name })
-        : await client.joinOrCreate<ClientState>("auction", { name });
-
-      // onStateChange dispara en cada patch: React vuelve a pintar con el objeto vivo.
-      joined.onStateChange((next) => {
-        setState({ ...next } as ClientState);
-        // Confirmacion de exito -- derivada del propio estado del servidor,
-        // nunca escrita por el cliente: si ahora soy yo quien va ganando la
-        // puja, el ultimo envio se acepto, y cualquier rechazo anterior ya
-        // no aplica. Idempotente: pisar null con null en los patches
-        // siguientes mientras siga ganando no hace nada.
-        if (next.currentBidderId === joined.sessionId) setBidError(null);
-      });
-      joined.onMessage("bid:rejected", (msg: { reason: string }) => {
-        setBidError(msg.reason);
-        setBidErrorSeq((n) => n + 1);
-      });
-      joined.onMessage("error", (msg: { message: string }) => setStartError(msg.message));
-      setRoom(joined);
-    } catch (cause) {
-      setStartError(cause instanceof Error ? cause.message : String(cause));
-    }
+  // Cablea los listeners comunes a cualquier sala recien unida (creada o
+  // encontrada por codigo, da igual): las dos rutas de entrada terminan
+  // aqui para no duplicar esta parte, que es identica en ambas.
+  const attach = useCallback((joined: Room<ClientState>) => {
+    // onStateChange dispara en cada patch: React vuelve a pintar con el objeto vivo.
+    joined.onStateChange((next) => {
+      setState({ ...next } as ClientState);
+      // Confirmacion de exito -- derivada del propio estado del servidor,
+      // nunca escrita por el cliente: si ahora soy yo quien va ganando la
+      // puja, el ultimo envio se acepto, y cualquier rechazo anterior ya
+      // no aplica. Idempotente: pisar null con null en los patches
+      // siguientes mientras siga ganando no hace nada.
+      if (next.currentBidderId === joined.sessionId) setBidError(null);
+    });
+    joined.onMessage("bid:rejected", (msg: { reason: string }) => {
+      setBidError(msg.reason);
+      setBidErrorSeq((n) => n + 1);
+    });
+    joined.onMessage("error", (msg: { message: string }) => setStartError(msg.message));
+    setRoom(joined);
   }, []);
+
+  const createRoom = useCallback(
+    async (name: string) => {
+      const client = clientRef.current;
+      if (!client) return;
+      setStartError(null);
+      try {
+        attach(await client.create<ClientState>("auction", { name }));
+      } catch (cause) {
+        setStartError(cause instanceof Error ? cause.message : String(cause));
+      }
+    },
+    [attach],
+  );
+
+  const joinByCode = useCallback(
+    async (name: string, code: string) => {
+      const client = clientRef.current;
+      if (!client) return;
+      setStartError(null);
+      try {
+        const lookup = await lookupRoomByCode(code);
+        if (!lookup.ok || !lookup.roomId) {
+          setStartError(describeRoomLookupError(lookup.reason ?? ""));
+          return;
+        }
+        attach(await client.joinById<ClientState>(lookup.roomId, { name }));
+      } catch (cause) {
+        setStartError(cause instanceof Error ? cause.message : String(cause));
+      }
+    },
+    [attach],
+  );
 
   const send = useCallback(
     (type: string, payload?: unknown) => {
@@ -121,5 +156,5 @@ export function useRoom(): Connection {
     room?.leave();
   }, [room]);
 
-  return { room, state, startError, bidError, bidErrorSeq, join, send, leave };
+  return { room, state, startError, bidError, bidErrorSeq, createRoom, joinByCode, send, leave };
 }

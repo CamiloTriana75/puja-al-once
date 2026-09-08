@@ -24,6 +24,56 @@ const app = config({
 
     app.get("/time", (_req, res) => res.json({ now: Date.now() }));
 
+    // Resuelve el codigo de sala (dictado por voz, ver
+    // `@fut/shared/roomCode.ts`) al `roomId` interno que hace falta para
+    // `client.joinById`. Al contrario que /silhouettes y /photos, aqui SI
+    // conviene distinguir el motivo del rechazo: el codigo de sala no es
+    // secreto, y decirle a quien intenta entrar "esta llena" en vez de "no
+    // existe" en vez de "ya empezo" es justo la informacion que necesita
+    // para decidir que hacer (esperar, pedir otro codigo, o nada).
+    //
+    // matchMaker.query en vez de matchMaker.getLocalRoomById directo: no
+    // hay forma de ir de codigo a roomId sin antes buscar por metadata
+    // entre las salas vivas. Una vez encontrado el roomId, se reutiliza el
+    // mismo patron que /silhouettes y /photos para leer el estado en vivo y
+    // decidir el motivo exacto.
+    app.get("/rooms/:code", async (req, res) => {
+      const code = req.params.code.toUpperCase();
+      const listings = await matchMaker.query({ name: "auction" });
+      const listing = listings.find((room) => room.metadata?.code === code);
+      if (!listing) {
+        res.status(404).json({ reason: "NOT_FOUND" });
+        return;
+      }
+
+      const room = matchMaker.getLocalRoomById(listing.roomId) as AuctionRoom | undefined;
+      // Defensa en profundidad: el listing pudo sobrevivir un instante a la
+      // sala real disponiendose (misma ventana que ya cubren /silhouettes y
+      // /photos con su propio `if (!room)`). Sin sala real que consultar,
+      // lo mas honesto es tratarlo como si no existiera -- no hay fase que
+      // leer para decidir FULL o STARTED.
+      if (!room) {
+        res.status(404).json({ reason: "NOT_FOUND" });
+        return;
+      }
+
+      // STARTED antes que FULL: una partida en curso con un asiento vacio a
+      // media ronda (alguien se desconecto, Task 11) no esta "llena" en el
+      // sentido que le importa a quien pregunta -- no puede entrar de todos
+      // modos porque la partida ya arranco. El orden de estos dos `if`
+      // decide cual de los dos motivos gana cuando ambos serian ciertos.
+      if (room.state.phase !== "LOBBY") {
+        res.status(409).json({ reason: "STARTED" });
+        return;
+      }
+      if (room.clients.length >= room.maxClients) {
+        res.status(409).json({ reason: "FULL" });
+        return;
+      }
+
+      res.json({ roomId: listing.roomId });
+    });
+
     // NUNCA `express.static("data/silhouettes")`: el fichero real se llama
     // por el jugador (p.ej. "beckham-01.png") y servirlo por su nombre
     // filtraria el secreto de la subasta por la URL. En su lugar, ruta

@@ -2,8 +2,8 @@ import { Client, Room } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
-  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, openingBidForRating, parseDataset,
-  playersNeedingSlot, resolveAuction, resolveSkipVote, scoreMatch, SLOTS, toPrivate, toPublic,
+  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
+  parseDataset, playersNeedingSlot, resolveAuction, resolveSkipVote, scoreMatch, SLOTS, toPrivate, toPublic,
   type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
 import { randomUUID } from "node:crypto";
@@ -99,6 +99,29 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     }
 
     this.setState(new AuctionRoomState());
+
+    // Codigo de sala: opuesto al `publicId` de las cartas. Aquel es secreto
+    // y aleatorio por partida para que el navegador no pueda saber que
+    // futbolista es antes del reveal; este existe justo para lo contrario,
+    // compartirse en voz alta o por URL, asi que viaja en claro en el
+    // estado. Nunca se reutiliza `this.roomId` (el identificador interno de
+    // Colyseus) para esto: ese ya se usa en la ruta de imagenes
+    // (`/silhouettes/:roomId/...`), y mezclar los dos identificadores
+    // opacos -- uno que hay que ocultar, otro que hay que anunciar --
+    // acabaria filtrando por la URL algo que uno de los dos necesita
+    // ocultar. this.rng ya esta fijado arriba (Math.random fuera de test),
+    // asi que generateRoomCode nunca llama a Math.random por su cuenta --
+    // packages/shared tiene prohibido hacerlo.
+    this.state.roomCode = generateRoomCode(this.rng);
+    // setMetadata(), no una propiedad suelta en `this.listing`: es la API
+    // publica y estable de Colyseus para datos consultables de la sala (ver
+    // el metodo GET /rooms/:code en index.ts, que resuelve por aqui via
+    // matchMaker.query). `filterBy` habria sido la alternativa, pero solo
+    // sabe leer valores que el CLIENTE manda en clientOptions al crear --
+    // aqui el codigo lo inventa el SERVIDOR dentro de onCreate, asi que
+    // filterBy nunca podria verlo a tiempo.
+    void this.setMetadata({ code: this.state.roomCode });
+
     this.onMessage("ready", (client) => this.onReady(client));
     this.onMessage("bid", (client, message: { amount?: unknown }) => {
       this.onBid(client, message?.amount);
@@ -118,6 +141,11 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       // jugadores -- la siguiente ronda pediria mas cartas de las que hay.
       throw new Error("La partida ya ha empezado");
     }
+    // El primero en entrar es el anfitrion. onLeave migra este campo al
+    // siguiente conectado si el anfitrion se va antes de que empiece la
+    // partida -- ver el comentario grande alli.
+    if (this.state.hostId === "") this.state.hostId = client.sessionId;
+
     this.game.players.push({
       playerId: client.sessionId,
       name: options?.name ?? `Jugador ${this.game.players.length + 1}`,
@@ -135,6 +163,14 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       // "ready" compara para siempre contra un asiento que nunca volvera.
       this.game.players = this.game.players.filter((p) => p.playerId !== client.sessionId);
       this.ready.delete(client.sessionId);
+      // El anfitrion se va antes de que arranque la partida: migra al
+      // siguiente conectado, en el mismo orden en que estan en
+      // game.players (quien lleva mas tiempo esperando). Si no queda
+      // nadie, hostId vuelve a "" -- el proximo en entrar por onJoin lo
+      // recoge igual que el primer anfitrion de todos.
+      if (this.state.hostId === client.sessionId) {
+        this.state.hostId = this.game.players[0]?.playerId ?? "";
+      }
       this.sync();
       // Simetrico al caso de onReady: si los que quedan ya estaban TODOS
       // listos antes de que este se fuera, nadie mas va a volver a marcar

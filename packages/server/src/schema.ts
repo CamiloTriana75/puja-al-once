@@ -134,6 +134,16 @@ defineTypes(BidRecordSchema, {
 });
 
 export class AuctionRoomState extends Schema {
+  /**
+   * Codigo de sala, legible en voz alta (ver `@fut/shared/roomCode.ts` para
+   * el alfabeto y la longitud). Al contrario que `publicId`, este
+   * identificador NO es secreto -- existe justo para compartirse, por eso
+   * viaja aqui en claro y puede ir en la URL. No confundir los dos: uno
+   * cierra una fuga, el otro abre una puerta.
+   */
+  roomCode = "";
+  /** playerId de quien creo la sala. Migra al siguiente conectado si se va antes de empezar. */
+  hostId = "";
   phase = "LOBBY";
   slotIndex = 0;
   currentSlot = "";
@@ -155,6 +165,8 @@ export class AuctionRoomState extends Schema {
   standings = new ArraySchema<StandingSchema>();
 }
 defineTypes(AuctionRoomState, {
+  roomCode: "string",
+  hostId: "string",
   phase: "string",
   slotIndex: "number",
   currentSlot: "string",
