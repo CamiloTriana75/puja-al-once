@@ -70,6 +70,34 @@
     "silhouetteId": "cech-01"
   },
   {
+    "cardId": "buffon-2003",
+    "name": "Gianluigi Buffon",
+    "season": 2003,
+    "birthYear": 1978,
+    "club": "Juventus",
+    "league": "Serie A",
+    "nation": "ITA",
+    "slot": "GK",
+    "rating": 91,
+    "heightCm": 192,
+    "foot": "R",
+    "silhouetteId": "buffon-01"
+  },
+  {
+    "cardId": "buffon-2018",
+    "name": "Gianluigi Buffon",
+    "season": 2018,
+    "birthYear": 1978,
+    "club": "Paris Saint-Germain",
+    "league": "Ligue 1",
+    "nation": "ITA",
+    "slot": "GK",
+    "rating": 82,
+    "heightCm": 192,
+    "foot": "R",
+    "silhouetteId": "buffon-01"
+  },
+  {
     "cardId": "roberto-carlos-2002",
     "name": "Roberto Carlos",
     "season": 2002,
@@ -138,6 +166,34 @@
     "heightCm": 170,
     "foot": "L",
     "silhouetteId": "jordi-alba-01"
+  },
+  {
+    "cardId": "alaba-2014",
+    "name": "David Alaba",
+    "season": 2014,
+    "birthYear": 1992,
+    "club": "Bayern Munich",
+    "league": "Bundesliga",
+    "nation": "AUT",
+    "slot": "LB",
+    "rating": 86,
+    "heightCm": 180,
+    "foot": "L",
+    "silhouetteId": "alaba-01"
+  },
+  {
+    "cardId": "evra-2010",
+    "name": "Patrice Evra",
+    "season": 2010,
+    "birthYear": 1981,
+    "club": "Manchester United",
+    "league": "Premier League",
+    "nation": "FRA",
+    "slot": "LB",
+    "rating": 85,
+    "heightCm": 174,
+    "foot": "L",
+    "silhouetteId": "evra-01"
   },
   {
     "cardId": "sergio-ramos-2018",
@@ -210,6 +266,34 @@
     "silhouetteId": "cannavaro-01"
   },
   {
+    "cardId": "pique-2012",
+    "name": "Gerard Pique",
+    "season": 2012,
+    "birthYear": 1987,
+    "club": "FC Barcelona",
+    "league": "LaLiga",
+    "nation": "ESP",
+    "slot": "CB1",
+    "rating": 88,
+    "heightCm": 194,
+    "foot": "R",
+    "silhouetteId": "pique-01"
+  },
+  {
+    "cardId": "ramos-2022",
+    "name": "Sergio Ramos",
+    "season": 2022,
+    "birthYear": 1986,
+    "club": "Paris Saint-Germain",
+    "league": "Ligue 1",
+    "nation": "ESP",
+    "slot": "CB1",
+    "rating": 81,
+    "heightCm": 184,
+    "foot": "R",
+    "silhouetteId": "sergio-ramos-01"
+  },
+  {
     "cardId": "vandijk-2019",
     "name": "Virgil van Dijk",
     "season": 2019,
@@ -278,6 +362,34 @@
     "heightCm": 178,
     "foot": "R",
     "silhouetteId": "puyol-01"
+  },
+  {
+    "cardId": "varane-2018",
+    "name": "Raphael Varane",
+    "season": 2018,
+    "birthYear": 1993,
+    "club": "Real Madrid",
+    "league": "LaLiga",
+    "nation": "FRA",
+    "slot": "CB2",
+    "rating": 87,
+    "heightCm": 191,
+    "foot": "R",
+    "silhouetteId": "varane-01"
+  },
+  {
+    "cardId": "varane-2023",
+    "name": "Raphael Varane",
+    "season": 2023,
+    "birthYear": 1993,
+    "club": "Manchester United",
+    "league": "Premier League",
+    "nation": "FRA",
+    "slot": "CB2",
+    "rating": 80,
+    "heightCm": 191,
+    "foot": "R",
+    "silhouetteId": "varane-01"
   },
   {
     "cardId": "cafu-2002",
@@ -350,6 +462,34 @@
     "silhouetteId": "trent-01"
   },
   {
+    "cardId": "cafu-2006",
+    "name": "Cafu",
+    "season": 2006,
+    "birthYear": 1970,
+    "club": "AC Milan",
+    "league": "Serie A",
+    "nation": "BRA",
+    "slot": "RB",
+    "rating": 79,
+    "heightCm": 175,
+    "foot": "R",
+    "silhouetteId": "cafu-01"
+  },
+  {
+    "cardId": "walker-2019",
+    "name": "Kyle Walker",
+    "season": 2019,
+    "birthYear": 1990,
+    "club": "Manchester City",
+    "league": "Premier League",
+    "nation": "ENG",
+    "slot": "RB",
+    "rating": 84,
+    "heightCm": 183,
+    "foot": "R",
+    "silhouetteId": "walker-01"
+  },
+  {
     "cardId": "makelele-2004",
     "name": "Claude Makelele",
     "season": 2004,
@@ -418,6 +558,34 @@
     "heightCm": 179,
     "foot": "R",
     "silhouetteId": "fernandinho-01"
+  },
+  {
+    "cardId": "casemiro-2018",
+    "name": "Casemiro",
+    "season": 2018,
+    "birthYear": 1992,
+    "club": "Real Madrid",
+    "league": "LaLiga",
+    "nation": "BRA",
+    "slot": "CDM",
+    "rating": 87,
+    "heightCm": 185,
+    "foot": "R",
+    "silhouetteId": "casemiro-01"
+  },
+  {
+    "cardId": "yaya-toure-2014",
+    "name": "Yaya Toure",
+    "season": 2014,
+    "birthYear": 1983,
+    "club": "Manchester City",
+    "league": "Premier League",
+    "nation": "CIV",
+    "slot": "CDM",
+    "rating": 88,
+    "heightCm": 191,
+    "foot": "R",
+    "silhouetteId": "yaya-toure-01"
   },
   {
     "cardId": "xavi-2010",
@@ -490,6 +658,34 @@
     "silhouetteId": "kroos-01"
   },
   {
+    "cardId": "pirlo-2006",
+    "name": "Andrea Pirlo",
+    "season": 2006,
+    "birthYear": 1979,
+    "club": "AC Milan",
+    "league": "Serie A",
+    "nation": "ITA",
+    "slot": "CM",
+    "rating": 89,
+    "heightCm": 177,
+    "foot": "R",
+    "silhouetteId": "pirlo-01"
+  },
+  {
+    "cardId": "pirlo-2015",
+    "name": "Andrea Pirlo",
+    "season": 2015,
+    "birthYear": 1979,
+    "club": "Juventus",
+    "league": "Serie A",
+    "nation": "ITA",
+    "slot": "CM",
+    "rating": 81,
+    "heightCm": 177,
+    "foot": "R",
+    "silhouetteId": "pirlo-01"
+  },
+  {
     "cardId": "ronaldinho-2006",
     "name": "Ronaldinho",
     "season": 2006,
@@ -558,6 +754,34 @@
     "heightCm": 186,
     "foot": "R",
     "silhouetteId": "kaka-01"
+  },
+  {
+    "cardId": "ozil-2014",
+    "name": "Mesut Ozil",
+    "season": 2014,
+    "birthYear": 1988,
+    "club": "Arsenal",
+    "league": "Premier League",
+    "nation": "GER",
+    "slot": "CAM",
+    "rating": 87,
+    "heightCm": 183,
+    "foot": "L",
+    "silhouetteId": "ozil-01"
+  },
+  {
+    "cardId": "riquelme-2006",
+    "name": "Juan Roman Riquelme",
+    "season": 2006,
+    "birthYear": 1978,
+    "club": "Villarreal",
+    "league": "LaLiga",
+    "nation": "ARG",
+    "slot": "CAM",
+    "rating": 88,
+    "heightCm": 178,
+    "foot": "L",
+    "silhouetteId": "riquelme-01"
   },
   {
     "cardId": "robben-2013",
@@ -630,6 +854,34 @@
     "silhouetteId": "neymar-01"
   },
   {
+    "cardId": "hazard-2015",
+    "name": "Eden Hazard",
+    "season": 2015,
+    "birthYear": 1991,
+    "club": "Chelsea",
+    "league": "Premier League",
+    "nation": "BEL",
+    "slot": "LW",
+    "rating": 90,
+    "heightCm": 173,
+    "foot": "R",
+    "silhouetteId": "hazard-01"
+  },
+  {
+    "cardId": "hazard-2021",
+    "name": "Eden Hazard",
+    "season": 2021,
+    "birthYear": 1991,
+    "club": "Real Madrid",
+    "league": "LaLiga",
+    "nation": "BEL",
+    "slot": "LW",
+    "rating": 76,
+    "heightCm": 173,
+    "foot": "R",
+    "silhouetteId": "hazard-01"
+  },
+  {
     "cardId": "cristiano-2008",
     "name": "Cristiano Ronaldo",
     "season": 2008,
@@ -700,6 +952,34 @@
     "silhouetteId": "beckham-01"
   },
   {
+    "cardId": "bale-2014",
+    "name": "Gareth Bale",
+    "season": 2014,
+    "birthYear": 1989,
+    "club": "Real Madrid",
+    "league": "LaLiga",
+    "nation": "WAL",
+    "slot": "RW",
+    "rating": 88,
+    "heightCm": 185,
+    "foot": "L",
+    "silhouetteId": "bale-01"
+  },
+  {
+    "cardId": "salah-2017",
+    "name": "Mohamed Salah",
+    "season": 2017,
+    "birthYear": 1992,
+    "club": "Liverpool",
+    "league": "Premier League",
+    "nation": "EGY",
+    "slot": "RW",
+    "rating": 89,
+    "heightCm": 175,
+    "foot": "L",
+    "silhouetteId": "salah-01"
+  },
+  {
     "cardId": "ronaldo-nazario-1997",
     "name": "Ronaldo Nazario",
     "season": 1997,
@@ -768,5 +1048,33 @@
     "heightCm": 185,
     "foot": "R",
     "silhouetteId": "lewandowski-01"
+  },
+  {
+    "cardId": "drogba-2010",
+    "name": "Didier Drogba",
+    "season": 2010,
+    "birthYear": 1978,
+    "club": "Chelsea",
+    "league": "Premier League",
+    "nation": "CIV",
+    "slot": "ST",
+    "rating": 90,
+    "heightCm": 190,
+    "foot": "R",
+    "silhouetteId": "drogba-01"
+  },
+  {
+    "cardId": "drogba-2015",
+    "name": "Didier Drogba",
+    "season": 2015,
+    "birthYear": 1978,
+    "club": "Montreal Impact",
+    "league": "MLS",
+    "nation": "CIV",
+    "slot": "ST",
+    "rating": 75,
+    "heightCm": 190,
+    "foot": "R",
+    "silhouetteId": "drogba-01"
   }
 ]

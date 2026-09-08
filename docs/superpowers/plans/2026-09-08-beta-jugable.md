@@ -1,6 +1,6 @@
 # Beta jugable — Plan
 
-**Goal:** Llevar el juego de "4 jugadores exactos, sala única, sin portada" a una beta que se pueda enseñar: salas con código, hasta 6 jugadores, landing que explica el juego enseñándolo, y las asperezas de la partida limadas.
+**Goal:** Llevar el juego de "4 jugadores exactos, sala única, sin portada" a una beta que se pueda enseñar: salas con código, landing que explica el juego enseñándolo, y las asperezas de la partida limadas.
 
 **Spec base:** [`2026-09-02-subasta-futbolera-design.md`](../specs/2026-09-02-subasta-futbolera-design.md) — sigue siendo la autoridad sobre las reglas del juego. Este plan añade envoltorio, no cambia el núcleo.
 
@@ -12,7 +12,7 @@ El mazo tiene **exactamente 5 cartas por puesto**. El reparto de cada ronda es `
 
 | Jugadores | Cartas necesarias por puesto | ¿Alcanza hoy? |
 |---|---|---|
-| 4 | 5 | sí, sin holgura |
+| 4 (la beta) | 5 | sí, pero sin holgura para saltar |
 | 5 | 6 | **no** |
 | 6 | 7 | **no** |
 
@@ -34,7 +34,7 @@ Heredadas del plan anterior y siguen vigentes:
 
 ### Task B1: Ampliar el mazo a 7 cartas por puesto
 
-**Por qué primero:** desbloquea 6 jugadores. Sin esto, B3 no puede existir.
+**Por qué:** con 7 cartas por puesto y 4 jugadores, cada ronda reparte 5 y **sobran 2**. Eso devuelve margen real al voto de salto — hoy, con 5 justas, el margen se agota casi de inmediato y el boton de saltar desaparece. Ademas da variedad entre partidas.
 
 - `data/players.json`: de 55 a **77 cartas** — 7 por cada uno de los 11 puestos, 22 nuevas.
 - Mantener la proporción de pares pico/declive: son el corazón del juego. Al menos 14 de las 77 deben ser segundas temporadas de un futbolista ya presente.
@@ -57,7 +57,11 @@ Heredadas del plan anterior y siguen vigentes:
 
 ---
 
-### Task B3: De 4 a 2-6 jugadores
+### Task B3: De 4 a 2-6 jugadores — CANCELADA
+
+**Cancelada por decisión del usuario el 2026-09-08: la beta se queda en 4 jugadores.** El mazo ampliado de B1 se mantiene igualmente, y con 7 cartas por puesto para 4 jugadores el reparto es 5 con 2 sobrantes — lo que devuelve margen real al voto de salto, que hoy se agota casi siempre.
+
+Lo que decía la tarea, por si se retoma:
 
 - `maxClients` pasa a 6. Mínimo para arrancar: 2.
 - **Verificar que la puntuación aguanta:** `scoreMatch` reparte un punto por puesto entre empatados; con 6 jugadores hay más empates posibles. Comprobar que la suma total sigue siendo 11.
@@ -90,7 +94,7 @@ Cosas que se notan jugando y hoy no están:
 
 ### Task B6: E2E y despliegue permanente
 
-- El E2E de partida completa (Task 15 del plan anterior, nunca ejecutada) adaptado a salas y a 6 jugadores.
+- El E2E de partida completa (Task 15 del plan anterior, nunca ejecutada) adaptado a salas.
 - Despliegue en Fly.io con URL estable, en sustitución del túnel temporal.
 
 ---
@@ -98,7 +102,7 @@ Cosas que se notan jugando y hoy no están:
 ## Orden y dependencias
 
 ```
-B1 (mazo)  ──►  B3 (6 jugadores)
+B1 (mazo)  ──►  (B3 cancelada)
 B2 (salas) ──►  B4 (landing)
                 B5 (asperezas)  ──►  B6 (E2E + deploy)
 ```
