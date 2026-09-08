@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "start": "node dist/index.js",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm --filter @fut/shared exec tsc -p tsconfig.build.json && tsc -p tsconfig.build.json",
+    "start:dev": "tsx src/index.ts"
   },
   "dependencies": {
     "@colyseus/core": "0.16.25",
