@@ -3,7 +3,7 @@ import { Lobby } from "./screens/Lobby.js";
 import { useRoom } from "./net/useRoom.js";
 
 export default function App() {
-  const { room, state, startError, bidError, join, send } = useRoom();
+  const { room, state, startError, bidError, bidErrorSeq, join, send } = useRoom();
   const inGame = state && state.phase !== "LOBBY";
 
   return (
@@ -14,7 +14,14 @@ export default function App() {
       {/* El error de puja NO se pinta aqui: viaja hasta BidControls y sale
           junto al campo del importe, que es donde esta el problema. */}
       {inGame && room && state.phase !== "RESULTS" && (
-        <Auction state={state} myId={room.sessionId} roomId={room.roomId} error={bidError} send={send} />
+        <Auction
+          state={state}
+          myId={room.sessionId}
+          roomId={room.roomId}
+          error={bidError}
+          errorSeq={bidErrorSeq}
+          send={send}
+        />
       )}
     </main>
   );

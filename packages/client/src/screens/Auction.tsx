@@ -11,10 +11,12 @@ interface Props {
   roomId: string;
   /** Rechazo de puja tipado por origen -- ver useRoom. Nunca el de arranque de ronda. */
   error: string | null;
+  /** Cuenta de rechazos recibidos -- ver bidErrorSeq en useRoom. Se reenvia a BidControls tal cual. */
+  errorSeq: number;
   send: (type: string, payload?: unknown) => void;
 }
 
-export function Auction({ state, myId, roomId, error, send }: Props) {
+export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
   const remaining = useServerClock(state.endsAt);
   const me = state.players.get(myId);
   const card = state.currentCard;
@@ -84,11 +86,19 @@ export function Auction({ state, myId, roomId, error, send }: Props) {
             </p>
           </div>
 
+          {/*
+            MASTER.md S2: --mute solo va sobre --ink. bg-deep (el fondo de
+            pagina que hay detras de esta columna) no cuenta -- de ahi el
+            bloque bg-ink sin bisel (el bisel es la firma de los paneles de
+            marca; estos son avisos de segundo orden, no la tarjeta).
+          */}
           {alreadySigned && (
-            <p className="font-body text-sm text-mute">Ya fichaste para este puesto. Mira cómo se pelean los demás.</p>
+            <p className="bg-ink px-3 py-2 font-body text-sm text-mute">
+              Ya fichaste para este puesto. Mira cómo se pelean los demás.
+            </p>
           )}
           {parked && (
-            <p className="font-body text-sm text-mute">
+            <p className="bg-ink px-3 py-2 font-body text-sm text-mute">
               Te reconectaste: vuelves a contar a partir de la próxima ronda. Por ahora, mira.
             </p>
           )}
@@ -118,7 +128,7 @@ export function Auction({ state, myId, roomId, error, send }: Props) {
                     La quiero
                   </button>
                 </div>
-                <p className="hidden font-body text-sm text-mute sm:block">
+                <p className="hidden bg-ink px-3 py-2 font-body text-sm text-mute sm:block">
                   Hace falta unanimidad. Si dices que la quieres, serás el único que pueda pujar por ella.
                 </p>
               </div>
@@ -127,10 +137,11 @@ export function Auction({ state, myId, roomId, error, send }: Props) {
                 minimumBid={state.minimumBid}
                 disabled={!canBid}
                 error={error}
+                errorSeq={errorSeq}
                 onBid={(amount) => send("bid", { amount })}
               />
             ) : (
-              <p className="font-body text-sm text-mute">Revelando…</p>
+              <p className="bg-ink px-3 py-2 font-body text-sm text-mute">Revelando…</p>
             )}
           </div>
         </div>
@@ -148,7 +159,15 @@ export function Auction({ state, myId, roomId, error, send }: Props) {
                   {/* El color no es el unico indicador: la etiqueta de texto va siempre con el. */}
                   {leading && <span className="ml-2 text-xs font-black tracking-widest">GANANDO</span>}
                   {player.rejoinPending ? (
-                    <span className="ml-2 text-xs font-semibold normal-case text-mute">(reconectando)</span>
+                    // --mute solo va sobre --ink (MASTER.md S2): esta fila
+                    // puede tener fondo bg-lime cuando el jugador reconectado
+                    // sigue figurando como "leading" de una puja anterior a
+                    // su caida, asi que el tono atenuado no puede ser el
+                    // token fijo -- se deriva del texto base de la fila
+                    // (ink u white) igual que hace el resto del li.
+                    <span className={`ml-2 text-xs font-semibold normal-case ${leading ? "text-ink/70" : "text-mute"}`}>
+                      (reconectando)
+                    </span>
                   ) : !player.connected ? (
                     <span className="ml-2 text-xs font-bold text-danger">SIN CONEXIÓN</span>
                   ) : null}

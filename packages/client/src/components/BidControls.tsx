@@ -5,6 +5,16 @@ interface Props {
   disabled: boolean;
   /** Motivo del ultimo rechazo, o null. Se pinta junto al campo. */
   error: string | null;
+  /**
+   * Cuenta de rechazos recibidos del servidor -- ver bidErrorSeq en useRoom.
+   * Se usa (en vez de `error`) para saber cuando el servidor acaba de
+   * contestar de verdad: `error` puede repetir el mismo texto dos veces
+   * seguidas (dos "BID_TOO_LOW" al reintentar sin cambiar el importe), y
+   * React descarta un set-state a un primitivo identico sin volver a
+   * renderizar -- si `pending` dependiera de ese valor, el boton se
+   * quedaria bloqueado para siempre tras el segundo rechazo igual.
+   */
+  errorSeq: number;
   onBid: (amount: number) => void;
 }
 
@@ -12,7 +22,7 @@ const REASON: Record<string, string> = {
   BID_TOO_LOW: "Esa puja no llega al mínimo.",
   OVER_BUDGET: "No puedes: te dejaría sin dinero para llenar el resto del once.",
   SLOT_ALREADY_FILLED: "Ya fichaste para este puesto.",
-  NOT_ALLOWED_TO_BID: "No puedes pujar por esta carta ahora mismo.",
+  NOT_ALLOWED_TO_BID: "Votaste saltar esta carta: no puedes pujar por ella.",
   AUCTION_CLOSED: "La subasta ya se cerró.",
   WRONG_PHASE: "Ahora mismo no se puede pujar.",
   DISCONNECTED: "Te desconectaste.",
@@ -25,15 +35,20 @@ const REASON: Record<string, string> = {
   UNKNOWN_PLAYER: "No estás en esta partida.",
 };
 
-export function BidControls({ minimumBid, disabled, error, onBid }: Props) {
+export function BidControls({ minimumBid, disabled, error, errorSeq, onBid }: Props) {
   const [amount, setAmount] = useState(minimumBid);
   const [pending, setPending] = useState(false);
 
   // El minimo sube con cada puja ajena: seguirlo mientras no se haya tocado a mano.
   useEffect(() => { setAmount((current) => (current < minimumBid ? minimumBid : current)); }, [minimumBid]);
 
-  // El servidor contesto (aceptando o rechazando): se puede volver a pulsar.
-  useEffect(() => { setPending(false); }, [minimumBid, error]);
+  // El servidor contesto: exito (minimumBid avanza -- sube monotono, nunca
+  // repite valor) o rechazo (errorSeq avanza -- ver su doc en Props, cubre
+  // el caso de dos rechazos identicos seguidos que `error` por si solo no
+  // distinguiria). Ninguna de las dos señales la escribe este componente ni
+  // useRoom.send(): ambas nacen exclusivamente en un mensaje real del
+  // servidor, asi que el boton nunca se libera antes de tiempo.
+  useEffect(() => { setPending(false); }, [minimumBid, errorSeq]);
 
   const submit = (value: number) => {
     if (disabled || pending) return;

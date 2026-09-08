@@ -5,7 +5,12 @@ const CONTINENT: Record<string, string> = {
   EU: "Europa", SA: "Sudamérica", NA: "Norteamérica", AF: "África", AS: "Asia", OC: "Oceanía",
 };
 
-/** Las pistas son el juego: lo unico que se sabe antes de pujar. */
+/**
+ * Las pistas son el juego: lo unico que se sabe antes de pujar.
+ * font-body, no font-display: MASTER.md S3 lista "cuerpo, pistas, listas"
+ * explicitamente en la familia Barlow (no la condensada), con peso 400-600
+ * -- de ahi font-semibold como techo, no font-bold/extrabold.
+ */
 export function ClueRow({ card }: { card: CardView }) {
   const clues: [string, string][] = [
     ["Altura", `${card.heightCm} cm`],
@@ -19,8 +24,8 @@ export function ClueRow({ card }: { card: CardView }) {
     <dl className="grid grid-cols-2 gap-px bg-white/10 sm:grid-cols-5">
       {clues.map(([label, value]) => (
         <div key={label} className="bg-ink px-4 py-3">
-          <dt className="font-display text-xs font-bold uppercase tracking-[0.08em] text-mute">{label}</dt>
-          <dd className="tnum font-display text-xl font-extrabold text-white">{value}</dd>
+          <dt className="font-body text-xs font-semibold uppercase tracking-[0.08em] text-mute">{label}</dt>
+          <dd className="tnum font-body text-xl font-semibold text-white">{value}</dd>
         </div>
       ))}
     </dl>
