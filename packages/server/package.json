@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@colyseus/testing": "0.16.3",
+    "@types/express": "5.0.5",
     "@types/node": "26.4.1",
     "tsx": "4.23.13",
     "typescript": "6.0.3",

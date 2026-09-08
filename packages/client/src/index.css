@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #12100F;
+  --color-green: #16C64F;
+  --color-lime: #C6F833;
+  --color-deep: #0B3D2E;
+  --color-mute: #A8B3AD;
+  --color-danger: #FF4D3D;
+
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+}
+
+:root {
+  /* Bisel de la esquina inferior derecha: la forma de marca de todo panel. */
+  --clip-panel: polygon(0 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%);
+}
+
+body {
+  background: var(--color-deep);
+  color: white;
+  font-family: var(--font-body);
+}
+
+.panel {
+  clip-path: var(--clip-panel);
+}
+
+/* Cifras que no bailan al cambiar: saldos, pujas, cuenta atras. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-lime);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
