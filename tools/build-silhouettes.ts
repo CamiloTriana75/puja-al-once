@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
@@ -29,6 +29,31 @@ interface PlayerCard {
   [key: string]: unknown;
 }
 
+interface NormalizedCutout {
+  data: Buffer;
+  width: number;
+  height: number;
+}
+
+/**
+ * Redimensiona el recorte a la altura estandar de la carta (Ruling A: NO
+ * recorta el fondo, eso ya lo hizo removeBackground()+keepLargestSubject()
+ * antes de llegar aqui -- solo normaliza tamano y encuadre).
+ *
+ * Punto de union entre toSilhouette() y toColorCutout(): las dos llaman a
+ * esta misma funcion, con los mismos parametros de resize, sobre el mismo
+ * buffer de entrada (`cleaned.png` en main()). Es lo que garantiza que la
+ * silueta negra y la foto en color de un mismo jugador salgan con identico
+ * ancho, alto y encuadre -- si alguna de las dos normalizara por su cuenta,
+ * un cambio futuro en una sin la otra las desalinearia en silencio y la
+ * foto ya no encajaria exactamente donde estaba la silueta en el reveal.
+ */
+async function normalizeCutout(input: Buffer): Promise<NormalizedCutout> {
+  const resized = sharp(input).resize({ height: HEIGHT, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } });
+  const { data, info } = await resized.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height };
+}
+
 /**
  * Aplana la imagen a una silueta: todo pixel suficientemente opaco pasa a negro
  * puro, el resto a transparente. Altura normalizada para que todas las siluetas
@@ -41,8 +66,7 @@ interface PlayerCard {
  * que debe ejecutarse ANTES de esta funcion en el pipeline.
  */
 export async function toSilhouette(input: Buffer): Promise<Buffer> {
-  const resized = sharp(input).resize({ height: HEIGHT, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } });
-  const { data, info } = await resized.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, width, height } = await normalizeCutout(input);
 
   const out = Buffer.alloc(data.length);
   for (let i = 0; i < data.length; i += 4) {
@@ -53,7 +77,28 @@ export async function toSilhouette(input: Buffer): Promise<Buffer> {
     out[i + 3] = opaque ? 255 : 0;
   }
 
-  return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
+  return sharp(out, { raw: { width, height, channels: 4 } }).png().toBuffer();
+}
+
+/**
+ * El mismo recorte que toSilhouette(), pero en color: conserva el RGB
+ * original y solo binariza el canal alfa (mismo ALPHA_CUTOFF, mismo
+ * normalizeCutout() que toSilhouette). Es la foto que sustituye a la
+ * silueta en el reveal -- "sustituye" en el sentido literal de encajar en
+ * el mismo hueco, por eso el alfa tiene que ser el MISMO binario que el de
+ * la silueta y no un alfa suavizado propio: dos mascaras distintas del
+ * mismo sujeto dejarian un borde que "baila" al cruzar de una imagen a la
+ * otra en vez de una sustitucion limpia.
+ */
+export async function toColorCutout(input: Buffer): Promise<Buffer> {
+  const { data, width, height } = await normalizeCutout(input);
+
+  const out = Buffer.from(data);
+  for (let i = 0; i < out.length; i += 4) {
+    out[i + 3] = data[i + 3]! >= ALPHA_CUTOFF ? 255 : 0;
+  }
+
+  return sharp(out, { raw: { width, height, channels: 4 } }).png().toBuffer();
 }
 
 /**
@@ -291,6 +336,11 @@ async function main(): Promise<void> {
   const targetIds = requestedIds.length > 0 ? requestedIds : allIds;
 
   await mkdir("data/silhouettes", { recursive: true });
+  // Recorte en color, mismo id, mismo encuadre que data/silhouettes -- ver
+  // toColorCutout(). Solo se escribe cuando hay foto real (Ruling C: la
+  // silueta generica de reserva no tiene version en color, el reveal de un
+  // jugador sin foto sigue mostrando la silueta).
+  await mkdir("data/photos", { recursive: true });
 
   // Carga las atribuciones ya existentes para poder regenerar un subconjunto
   // sin perder el credito de las fotos que no se tocan en esta corrida.
@@ -310,6 +360,8 @@ async function main(): Promise<void> {
   for (const silhouetteId of targetIds) {
     const source = sourceById.get(silhouetteId);
     let png: Buffer | undefined;
+    /** Recorte en color de esta corrida, solo si `png` viene de foto real (no de la generica). */
+    let colorPng: Buffer | undefined;
 
     if (source) {
       try {
@@ -338,6 +390,9 @@ async function main(): Promise<void> {
           );
         }
         png = await toSilhouette(cleaned.png);
+        // Mismo `cleaned.png` de entrada que toSilhouette() -- por eso
+        // encajan pixel a pixel (ver normalizeCutout).
+        colorPng = await toColorCutout(cleaned.png);
         const { url: _url, ...credit } = source;
         attributions.push(credit);
         console.log(`ok    ${silhouetteId} (foto)`);
@@ -362,6 +417,17 @@ async function main(): Promise<void> {
     }
 
     await writeFile(`data/silhouettes/${silhouetteId}.png`, png);
+
+    if (colorPng) {
+      await writeFile(`data/photos/${silhouetteId}.png`, colorPng);
+    } else if (targetIds.includes(silhouetteId)) {
+      // Este id se reproceso en ESTA corrida y no produjo foto real (cayo a
+      // la generica): si una corrida anterior habia dejado aqui una foto en
+      // color, se borra -- una foto huerfana que ya no coincide con la
+      // silueta actual (que ahora es la generica, de tamano distinto) es
+      // peor que no tener ninguna, porque el cliente la serviria igual.
+      await rm(`data/photos/${silhouetteId}.png`, { force: true });
+    }
   }
 
   attributions.sort((a, b) => a.silhouetteId.localeCompare(b.silhouetteId));

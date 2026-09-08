@@ -8,6 +8,7 @@ import { AuctionRoom } from "./AuctionRoom.js";
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
 // AuctionRoom.ts: pnpm fija el cwd de cada paquete al ejecutar sus scripts.
 const SILHOUETTES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/silhouettes");
+const PHOTOS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/photos");
 
 const app = config({
   initializeGameServer: (gameServer) => {
@@ -49,6 +50,38 @@ const app = config({
         res.header("Content-Type", "image/png");
         res.send(buffer);
       } catch {
+        res.status(404).end();
+      }
+    });
+
+    // Ruta hermana de la de arriba, para la foto real que sustituye a la
+    // silueta en el reveal. Misma forma, mismo contrato de 404 generico --
+    // pero resuelve `publicId` con `photoIdFor`, NUNCA con
+    // `silhouetteIdFor`: esa acepta la carta en juego (adrede, para poder
+    // pintar su silueta durante la puja) y esta solo puede aceptar cartas
+    // YA REVELADAS. Si aceptara la carta vigente, abrir esta URL en otra
+    // pestaña mientras la puja sigue abierta revelaria al jugador antes de
+    // pujar -- ver el comentario de `photoIdFor` en AuctionRoom.ts.
+    app.get("/photos/:roomId/:publicId.png", async (req, res) => {
+      const { roomId, publicId } = req.params;
+      const room = matchMaker.getLocalRoomById(roomId) as AuctionRoom | undefined;
+      if (!room || typeof room.photoIdFor !== "function") {
+        res.status(404).end();
+        return;
+      }
+      const silhouetteId = room.photoIdFor(publicId);
+      if (!silhouetteId) {
+        res.status(404).end();
+        return;
+      }
+      try {
+        const buffer = await readFile(resolve(PHOTOS_DIR, `${silhouetteId}.png`));
+        res.header("Content-Type", "image/png");
+        res.send(buffer);
+      } catch {
+        // Sin foto real para este silhouetteId (silueta generica, o el
+        // fichero no se genero): 404, igual que los demas fallos de esta
+        // ruta -- el cliente ya sabe quedarse con la silueta si esto falla.
         res.status(404).end();
       }
     });

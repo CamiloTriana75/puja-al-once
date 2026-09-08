@@ -40,10 +40,11 @@ body {
 
 /*
  * La revelacion es el unico momento coreografiado (MASTER.md S1/S5): la
- * silueta cruza a la foto -- eso lo hace la transicion de `filter` inline
- * en el <img> de AuctionCard.tsx -- y el nombre entra desde la izquierda
- * (transform + opacity), con 150ms de retraso sobre la silueta. Solo estas
- * dos propiedades -- nunca width/height/top -- para que el bloque de
+ * silueta cruza a la foto -- dos <img> superpuestos en AuctionCard.tsx, la
+ * foto (opacity inline) se desvanece encima de la silueta en cuanto termina
+ * de precargar -- y el nombre entra desde la izquierda (transform +
+ * opacity), con 150ms de retraso sobre la silueta. Solo estas dos
+ * propiedades -- nunca width/height/top -- para que el bloque de
  * prefers-reduced-motion de aqui abajo pueda anularlas sin dejar nada a
  * medio animar.
  */

@@ -599,4 +599,28 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
     return this.byId.get(cardId)?.silhouetteId;
   }
+
+  /**
+   * Para la ruta `/photos`: resuelve el `publicId` al `silhouetteId` real,
+   * pero SOLO si esa carta ya esta en `revealedCards` -- a diferencia de
+   * `silhouetteIdFor`, aqui la carta EN LA MESA (todavia sin adjudicar) no
+   * cuenta. La silueta es seguro pedirla durante la puja porque no dice
+   * nada (es un recorte negro, igual para cualquier jugador de su altura);
+   * la foto en color SI identifica al futbolista con solo mirarla. Si esta
+   * ruta aceptara la carta vigente, cualquiera podria abrir
+   * `/photos/:roomId/:publicId.png` en otra pestaña mientras la puja sigue
+   * abierta y ver la respuesta antes de pujar -- el mismo agujero que ya
+   * costo tres rondas de arreglos cerrar en `silhouetteIdFor` (ver su
+   * comentario). Por eso es un metodo aparte y no `silhouetteIdFor` con un
+   * flag: un flag por defecto equivocado (o un caller que se olvida de
+   * pasarlo) reabriria el agujero en silencio; dos metodos que solo hacen
+   * una cosa cada uno no dejan ese hueco.
+   */
+  public photoIdFor(publicId: string): string | undefined {
+    const cardId = this.publicIdToCardId.get(publicId);
+    if (!cardId) return undefined;
+    if (!this.state.revealedCards.has(cardId)) return undefined;
+
+    return this.byId.get(cardId)?.silhouetteId;
+  }
 }

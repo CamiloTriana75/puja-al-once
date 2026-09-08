@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { HTTP_URL } from "../net/endpoints.js";
 import type { CardView } from "../net/types.js";
 
@@ -21,7 +22,34 @@ interface Props {
 
 export function AuctionCard({ card, price, roomId }: Props) {
   const revealed = card.revealed;
-  const src = `${HTTP_URL}/silhouettes/${roomId}/${card.publicId}.png`;
+  const silhouetteSrc = `${HTTP_URL}/silhouettes/${roomId}/${card.publicId}.png`;
+  // Foto real que rellena la silueta en el reveal (`/photos`, hermana de
+  // `/silhouettes`). El servidor SOLO la sirve para una carta ya revelada
+  // (AuctionRoom.photoIdFor) -- por eso el <img> de mas abajo ni siquiera se
+  // monta hasta que `revealed` es true: montarlo antes pediria la URL
+  // contra una carta todavia en puja, que el servidor va a rechazar con 404
+  // de todos modos. Es ruido innecesario, no un agujero (la respuesta ya
+  // esta cerrada), pero no hay motivo para generarlo.
+  const photoSrc = `${HTTP_URL}/photos/${roomId}/${card.publicId}.png`;
+
+  // La foto se PRECARGA oculta (opacity 0, pero montada y descargando) y
+  // solo se cruza a visible cuando termina de bajar -- si el cruce
+  // empezara con la imagen a medias se veria un hueco en blanco justo en el
+  // momento mas importante del juego. Si falla (jugador sin foto real, o
+  // cualquier otro fallo de red) se queda con la silueta sin romper nada:
+  // nunca se oculta la silueta hasta que la foto esta lista de verdad.
+  const [photoReady, setPhotoReady] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
+
+  // Carta nueva (cambia publicId) o vuelve a ocultarse: arranca en limpio
+  // para que la proxima revelacion no herede el "ready"/"failed" de la
+  // anterior.
+  useEffect(() => {
+    setPhotoReady(false);
+    setPhotoFailed(false);
+  }, [card.publicId, revealed]);
+
+  const showPhoto = revealed && photoReady && !photoFailed;
 
   return (
     <figure className="relative isolate aspect-[3/4] w-full overflow-hidden bg-green sm:aspect-[16/6]">
@@ -42,14 +70,36 @@ export function AuctionCard({ card, price, roomId }: Props) {
           igual que un cutout de retransmision deportiva, nunca contenida
           con margen dentro de su caja. */}
       <img
-        src={src}
+        src={silhouetteSrc}
         alt={revealed ? `${card.name}, temporada ${card.season}` : "Silueta de un futbolista sin identificar"}
         className="absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[8%] sm:h-[115%]"
         style={{
           filter: revealed ? "none" : "brightness(0) invert(1)",
-          transition: "filter 450ms cubic-bezier(.16,1,.3,1)",
+          // Se desvanece en cuanto la foto esta lista para tomar su sitio.
+          // Si la foto no existe o falla, showPhoto nunca pasa a true y la
+          // silueta se queda a opacidad 1 sin que nada mas cambie.
+          opacity: showPhoto ? 0 : 1,
+          transition: "filter 450ms cubic-bezier(.16,1,.3,1), opacity 450ms cubic-bezier(.16,1,.3,1)",
         }}
       />
+      {/* Foto real, en la misma caja exacta que la silueta de arriba (mismo
+          recorte, mismo tamano -- ver tools/build-silhouettes.ts) para que
+          encaje pixel a pixel al cruzar. Solo se monta -- y por tanto solo
+          empieza a descargar -- cuando la carta ya esta revelada. */}
+      {revealed && !photoFailed && (
+        <img
+          src={photoSrc}
+          alt=""
+          aria-hidden="true"
+          onLoad={() => setPhotoReady(true)}
+          onError={() => setPhotoFailed(true)}
+          className="absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[8%] sm:h-[115%]"
+          style={{
+            opacity: photoReady ? 1 : 0,
+            transition: "opacity 450ms cubic-bezier(.16,1,.3,1)",
+          }}
+        />
+      )}
 
       {/* Panel negro: el unico soporte de texto. Nunca texto blanco sobre verde. */}
       <figcaption

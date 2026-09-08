@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
-import { genericSilhouette, keepLargestBlob, keepLargestSubject, toSilhouette } from "../build-silhouettes.js";
+import { genericSilhouette, keepLargestBlob, keepLargestSubject, toColorCutout, toSilhouette } from "../build-silhouettes.js";
 
 /** Un cuadrado rojo de 100x50 sobre fondo transparente. */
 async function redBlob(): Promise<Buffer> {
@@ -65,6 +65,62 @@ describe("toSilhouette", () => {
     }
     // Confirma el comportamiento: sin segmentacion previa, todo queda opaco.
     expect(opaque).toBe(total);
+  });
+});
+
+describe("toColorCutout", () => {
+  it("normaliza la altura a 512 px, igual que toSilhouette", async () => {
+    const out = await toColorCutout(await redBlob());
+    const meta = await sharp(out).metadata();
+    expect(meta.height).toBe(512);
+  });
+
+  it("conserva el color original en vez de aplanar a negro", async () => {
+    const out = await toColorCutout(await redBlob());
+    const { data } = await sharp(out).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    let opaque = 0;
+    let red = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3]! > 0) {
+        opaque++;
+        if (data[i] === 255 && data[i + 1] === 0 && data[i + 2] === 0) red++;
+      }
+    }
+    expect(opaque).toBeGreaterThan(0);
+    // El blob de entrada es rojo puro sobre fondo transparente: tras
+    // redimensionar con "contain" los bordes pueden difuminar el color por
+    // antialiasing, pero el grueso del blob debe seguir siendo rojo puro.
+    expect(red).toBeGreaterThan(opaque * 0.9);
+  });
+
+  it("produce el mismo ancho, alto y mascara alfa que toSilhouette para el mismo recorte de entrada", async () => {
+    // Requisito critico de encaje (ver informe de la tarea): la silueta y la
+    // foto de un mismo jugador tienen que registrar pixel a pixel para que
+    // la foto rellene exactamente el hueco de la silueta en el reveal. Se
+    // verifica midiendo las dos salidas de la MISMA entrada, no asumiendolo.
+    const input = await redBlob();
+    const silhouette = await toSilhouette(input);
+    const photo = await toColorCutout(input);
+
+    const silhouetteMeta = await sharp(silhouette).metadata();
+    const photoMeta = await sharp(photo).metadata();
+    expect(photoMeta.width).toBe(silhouetteMeta.width);
+    expect(photoMeta.height).toBe(silhouetteMeta.height);
+
+    const { data: silhouetteData } = await sharp(silhouette).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { data: photoData } = await sharp(photo).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    expect(photoData.length).toBe(silhouetteData.length);
+
+    let mismatches = 0;
+    for (let i = 3; i < silhouetteData.length; i += 4) {
+      // Compara solo el canal alfa (la mascara): el RGB difiere a proposito
+      // (negro puro vs. color real), pero donde una es opaca la otra debe
+      // serlo tambien, pixel a pixel.
+      const silhouetteOpaque = silhouetteData[i]! > 0;
+      const photoOpaque = photoData[i]! > 0;
+      if (silhouetteOpaque !== photoOpaque) mismatches++;
+    }
+    expect(mismatches).toBe(0);
   });
 });
 
