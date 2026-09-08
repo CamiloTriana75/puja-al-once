@@ -1,0 +1,39 @@
+# Se reinstalan dentro de la imagen -- copiarlos del host solo infla el
+# contexto de build y puede arrastrar binarios nativos (sharp) compilados
+# para el SO equivocado.
+node_modules
+**/node_modules
+
+# Build artifacts locales: la imagen los genera de cero en su propia etapa.
+packages/client/dist
+**/dist
+
+# Control de versiones y editor/IDE: irrelevantes dentro de la imagen.
+.git
+.gitignore
+.vscode
+.idea
+
+# Documentacion y planificacion interna: no forma parte del artefacto que
+# se despliega.
+.superpowers
+docs
+design-system
+*.md
+
+# Secretos y config local -- nunca deben entrar en una capa de imagen.
+.env
+.env.*
+!.env.example
+
+# Ruido de SO y logs.
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Resultados de test.
+test-results
+playwright-report
+coverage

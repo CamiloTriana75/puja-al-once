@@ -1,0 +1,41 @@
+# Configuracion de Fly.io para la subasta futbolera.
+#
+# UNA SOLA MAQUINA, SIEMPRE. El estado de cada partida vive solo en memoria
+# del proceso de Node (AuctionRoom.ts guarda `game`, `bySlot`, `byId`, los
+# mapas de publicId, etc. como propiedades de instancia -- no hay Redis ni
+# base de datos detras). Colyseus reparte las salas nuevas entre procesos
+# sin ningun criterio de afinidad: con dos maquinas, dos jugadores que
+# entran a la vez podrian aterrizar en procesos distintos sin verse nunca,
+# o (peor) ver la sala de otro grupo.
+#
+# IMPORTANTE: fly.toml NO tiene una clave que imponga un tope de maquinas --
+# `min_machines_running = 0` de aqui abajo solo fija el MINIMO (para el
+# escalado a cero), no un maximo. La garantia de "una sola maquina" es
+# operativa, no de config: al desplegar por primera vez, `fly scale count 1`
+# (o simplemente no correr `fly scale count` con un numero mayor nunca).
+# Si en el futuro se lanza `fly scale count 2` o mas, dos jugadores pueden
+# dejar de verse sin ningun error visible -- fallo silencioso. Si algun dia
+# el estado se externaliza a Redis (@colyseus/redis-driver +
+# @colyseus/redis-presence, ya import()-ados de forma opcional por
+# @colyseus/tools) esta restriccion se puede revisar -- hasta entonces, una
+# sola maquina, y solo el operador humano lo sostiene.
+app = "subasta-futbolera"
+primary_region = "mia"
+
+[build]
+
+[env]
+NODE_ENV = "production"
+PORT = "2567"
+
+[http_service]
+internal_port = 2567
+force_https = true
+# Autoescala a cero cuando nadie esta jugando y despierta con la siguiente
+# conexion entrante (WebSocket incluido) -- barato para un juego que se
+# comparte por enlace y se juega a rachas. El primer jugador que abre el
+# enlace paga el arranque en frio (unos segundos); el resto de la partida
+# ya la sirve la maquina despierta.
+auto_stop_machines = "stop"
+auto_start_machines = true
+min_machines_running = 0
