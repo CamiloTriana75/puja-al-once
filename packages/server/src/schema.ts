@@ -11,6 +11,15 @@ import { ArraySchema, defineTypes, MapSchema, Schema } from "@colyseus/schema";
  * playersNeedingSlot son el mismo caso. `rejoinPending` distingue las dos
  * de cara al navegador: con el socket vivo, decirle a alguien "estas
  * desconectado" cuando no lo esta es la parte que mas duele.
+ *
+ * `ready` es la proyeccion publica de `AuctionRoom.ready` (un Set privado
+ * del servidor, nunca antes visible al navegador): sin este campo, ningun
+ * cliente puede saber quien mas ha pulsado "listo" en la sala de espera --
+ * design-system/pages/sala-espera.md pide una fila por jugador con su
+ * estado (listo/esperando/reconectando) y una frase que diga exactamente
+ * cuantos faltan, y ninguna de las dos cosas es posible sin este dato. No
+ * es informacion sensible: a diferencia de los campos privados de
+ * PublicCardSchema, "quien ha pulsado listo" no es la respuesta de nada.
  */
 export class PlayerSchema extends Schema {
   playerId!: string;
@@ -18,6 +27,7 @@ export class PlayerSchema extends Schema {
   budget!: number;
   connected!: boolean;
   rejoinPending = false;
+  ready = false;
   squad = new MapSchema<string>();
 }
 defineTypes(PlayerSchema, {
@@ -26,6 +36,7 @@ defineTypes(PlayerSchema, {
   budget: "number",
   connected: "boolean",
   rejoinPending: "boolean",
+  ready: "boolean",
   squad: { map: "string" },
 });
 

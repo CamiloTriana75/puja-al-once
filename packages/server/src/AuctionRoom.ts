@@ -250,7 +250,9 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
   /** Copia el estado puro sobre el Schema. Se llama tras cada cambio. */
   protected sync(): void {
-    projectState(this.game, this.state, this.rules, this.byId, this.cardIdToPublicId, this.pendingRejoins);
+    projectState(
+      this.game, this.state, this.rules, this.byId, this.cardIdToPublicId, this.pendingRejoins, this.ready,
+    );
   }
 
   protected setConnected(playerId: string, connected: boolean): void {

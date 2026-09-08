@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { ConnectionBanner } from "./components/ConnectionBanner.js";
 import { Auction } from "./screens/Auction.js";
 import { Landing } from "./screens/Landing.js";
 import { Lobby } from "./screens/Lobby.js";
@@ -6,7 +7,9 @@ import { Results } from "./screens/Results.js";
 import { useRoom } from "./net/useRoom.js";
 
 export default function App() {
-  const { room, state, startError, bidError, bidErrorSeq, createRoom, joinByCode, send } = useRoom();
+  const {
+    room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, createRoom, joinByCode, send,
+  } = useRoom();
   const inGame = state && state.phase !== "LOBBY";
 
   // La portada (Landing) es solo la puerta de entrada, antes de que exista
@@ -33,6 +36,9 @@ export default function App() {
 
   return (
     <main className="min-h-screen bg-deep text-white">
+      {/* Por encima de cualquier pantalla: la conexion se puede caer estando
+          en Landing, Lobby, Auction o Results por igual (ver ConnectionBanner). */}
+      <ConnectionBanner status={connectionStatus} onRetry={retryNow} />
       {showLanding && (
         <Landing
           error={startError}

@@ -1,12 +1,71 @@
 import { Client, type Room } from "colyseus.js";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isConsentedLeave } from "./connectionStatus.js";
 import { WS_URL } from "./endpoints.js";
 import { describeRoomLookupError, lookupRoomByCode } from "./roomLookup.js";
 import type { ClientState } from "./types.js";
 
+/**
+ * Estado de la conexion con el servidor, visible a TODA la aplicacion (no
+ * solo la pantalla de puja) -- ver design-system/pages/sala-espera.md, que
+ * anota esto como pendiente desde hace tiempo y en severidad alta: si el
+ * servidor cae, el navegador se queda mirando el ultimo patch recibido sin
+ * ningun aviso.
+ *
+ *   "connected"    -- todo normal. Tambien el estado antes de unirse a
+ *                      ninguna sala: no hay conexion que perder todavia.
+ *   "reconnecting" -- el socket se corto sin que nadie lo pidiera
+ *                      (Room.onLeave con un codigo distinto de CONSENTED,
+ *                      ver connectionStatus.ts) y se esta reintentando
+ *                      `client.reconnect()` contra el mismo
+ *                      `reconnectionToken`. El servidor sostiene el asiento
+ *                      con `allowReconnection` durante `rules.reconnectSeconds`
+ *                      (60s por defecto) -- ver AuctionRoom.onLeave.
+ *   "disconnected" -- se agoto la ventana de reintentos, o el servidor
+ *                      rechazo el reconnect de forma definitiva. Ya no hay
+ *                      reintento automatico: la unica salida es recargar.
+ */
+export type ConnectionStatus = "connected" | "reconnecting" | "disconnected";
+
+/**
+ * Reintentos de `client.reconnect()`: backoff corto, pensado para caber
+ * dentro de la ventana de 60s que sostiene el servidor
+ * (rules.reconnectSeconds). Nunca crece sin limite.
+ *
+ * El ciclo completo (9 intentos: el que dispara onLeave + 8 de este array)
+ * tarda unos 50s de reloj real contra un servidor MUERTO, no los ~27s que
+ * suman los delays a secas -- medido en pruebas manuales matando el
+ * proceso: cada intento fallido tarda el es propio tiempo de que el
+ * navegador reporte ERR_CONNECTION_REFUSED (~2.3s en este entorno), y eso
+ * se suma encima de cada delay programado. Cabe dentro de los 60s del
+ * servidor con margen, pero por poco -- si se acorta este array hay que
+ * volver a medir contra un servidor muerto de verdad, no solo sumar los
+ * numeros del array.
+ */
+const RECONNECT_DELAYS_MS = [500, 1000, 2000, 3000, 5000, 5000, 5000, 5000];
+
+/**
+ * Techo por INTENTO de `client.reconnect()`. Necesario porque, cuando el
+ * proceso del servidor esta muerto de verdad (no solo el socket, todo el
+ * proceso -- el caso "mata el servidor a mitad de partida" que este punto
+ * del encargo pide probar), la peticion HTTP de matchmaking que
+ * `reconnect()` hace por debajo (ver colyseus.js/lib/HTTP.js, sin timeout
+ * propio) puede quedarse pendiente sin resolverse NI rechazarse durante
+ * mucho mas que estos 5s -- confirmado en pruebas manuales: sin este
+ * techo, un intento colgado bloqueaba el ciclo entero de reintentos y el
+ * banner se quedaba en "reconectando" mucho mas alla de agotar
+ * RECONNECT_DELAYS_MS, nunca llegando a "disconnected" ni ofreciendo el
+ * boton de reintentar a mano.
+ */
+const RECONNECT_ATTEMPT_TIMEOUT_MS = 5000;
+
 export interface Connection {
   room: Room<ClientState> | null;
   state: ClientState | null;
+  /** Ver ConnectionStatus. */
+  connectionStatus: ConnectionStatus;
+  /** Reintenta ahora mismo, sin esperar al siguiente paso del backoff. Para el boton "Reintentar ahora" del banner. */
+  retryNow: () => void;
   /**
    * Rechazo del arranque de ronda (mensaje "error" del servidor: el mazo no
    * alcanza para el hueco, etc). Solo lo consume el Lobby.
@@ -52,27 +111,60 @@ export function useRoom(): Connection {
   const [startError, setStartError] = useState<string | null>(null);
   const [bidError, setBidError] = useState<string | null>(null);
   const [bidErrorSeq, setBidErrorSeq] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connected");
+
+  // Token de reconexion de la sala VIVA -- se actualiza en cada attach() (el
+  // inicial y cada uno que sigue a un reconnect() con exito), nunca se lee
+  // directamente de `room.reconnectionToken` en el momento del fallo: para
+  // cuando onLeave dispara, `room` en closure puede ser una referencia
+  // obsoleta si React todavia no re-renderizo. Una ref evita esa carrera.
+  const reconnectionTokenRef = useRef<string | null>(null);
+  // Vivo mientras dura un ciclo de reintentos: lo cancela un reconnect con
+  // exito, un retryNow, o el desmontaje. Sin cancelarlo, un timeout viejo
+  // que dispara despues de que el ciclo ya termino (con exito o por salida
+  // deliberada) reintentaria una reconexion que nadie pidio.
+  const retryTimeoutRef = useRef<number | null>(null);
+  // Cuantos intentos de ESTE ciclo de reconexion ya se hicieron -- indexa
+  // RECONNECT_DELAYS_MS. Se reinicia a 0 en cada attach() con exito (nuevo
+  // ciclo limpio si la conexion vuelve a caerse mas tarde).
+  const retryCountRef = useRef(0);
+
+  const clearRetryTimeout = useCallback(() => {
+    if (retryTimeoutRef.current !== null) {
+      window.clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     clientRef.current = new Client(WS_URL);
   }, []);
 
   // Cierra el socket de la sala anterior en cuanto `room` cambia (un
-  // re-join tras un remount) o el componente se desmonta. Sin esto el
-  // socket viejo se queda vivo y colgado, sin que nadie lo cierre nunca --
-  // hoy es tolerable porque el lobby es la unica pantalla, pero en cuanto
-  // haya navegacion entre pantallas (Tasks 13/14) esto se vuelve una fuga
-  // de conexiones real.
+  // re-join tras un remount, o un reconnect con exito que sustituye la
+  // instancia) o el componente se desmonta. Sin esto el socket viejo se
+  // queda vivo y colgado, sin que nadie lo cierre nunca -- hoy es tolerable
+  // porque el lobby es la unica pantalla, pero en cuanto haya navegacion
+  // entre pantallas (Tasks 13/14) esto se vuelve una fuga de conexiones
+  // real. Tras una caida real el socket ya esta cerrado del lado navegador,
+  // asi que este `leave()` sobre la instancia rota es un no-op seguro (ver
+  // el comentario de la funcion `leave` expuesta, mismo razonamiento).
   useEffect(() => {
     return () => {
       room?.leave();
     };
   }, [room]);
 
-  // Cablea los listeners comunes a cualquier sala recien unida (creada o
-  // encontrada por codigo, da igual): las dos rutas de entrada terminan
-  // aqui para no duplicar esta parte, que es identica en ambas.
+  // Cablea los listeners comunes a cualquier sala recien unida -- creada,
+  // encontrada por codigo, o reconectada tras una caida, da igual: las tres
+  // rutas de entrada terminan aqui para no duplicar esta parte, que es
+  // identica en las tres.
   const attach = useCallback((joined: Room<ClientState>) => {
+    reconnectionTokenRef.current = joined.reconnectionToken;
+    retryCountRef.current = 0;
+    clearRetryTimeout();
+    setConnectionStatus("connected");
+
     // onStateChange dispara en cada patch: React vuelve a pintar con el objeto vivo.
     joined.onStateChange((next) => {
       setState({ ...next } as ClientState);
@@ -88,8 +180,97 @@ export function useRoom(): Connection {
       setBidErrorSeq((n) => n + 1);
     });
     joined.onMessage("error", (msg: { message: string }) => setStartError(msg.message));
+
+    // El corazon del punto 2 del encargo: sin este listener, cuando el
+    // proceso del servidor muere el socket se cierra y la interfaz se queda
+    // exactamente donde estaba -- el ultimo patch que llego a onStateChange
+    // -- sin ninguna pista de que ya no hay nadie al otro lado.
+    joined.onLeave((code) => {
+      if (isConsentedLeave(code)) {
+        // Salida deliberada (room.leave() propio, o Colyseus en modo
+        // desarrollo reiniciando): nada que avisar, no se reintenta.
+        setConnectionStatus("connected");
+        return;
+      }
+      setConnectionStatus("reconnecting");
+      retryTimeoutRef.current = window.setTimeout(
+        () => void attemptReconnectRef.current(),
+        RECONNECT_DELAYS_MS[0],
+      );
+    });
+
     setRoom(joined);
-  }, []);
+  }, [clearRetryTimeout]);
+
+  // Intenta reconectar UNA vez contra el token guardado. Si tiene exito,
+  // attach() se encarga de resetear todo el ciclo (retryCountRef a 0,
+  // connectionStatus a "connected"). Si falla, encadena el siguiente
+  // intento segun el backoff -- salvo que ya no queden pasos, momento en el
+  // que se rinde y pasa a "disconnected": la ventana de 60s que sostiene el
+  // servidor (rules.reconnectSeconds) ya se agoto de sobra para entonces.
+  const attemptReconnect = useCallback(async () => {
+    const client = clientRef.current;
+    const token = reconnectionTokenRef.current;
+    if (!client || !token) return;
+
+    try {
+      // Promise.race con un timeout propio: ver RECONNECT_ATTEMPT_TIMEOUT_MS,
+      // el porque esta aqui es especifico y esta documentado alli. El
+      // `reject` del timeout no cancela la peticion HTTP subyacente
+      // (`client.reconnect()` no expone forma de abortarla) -- si esa
+      // peticion colgada resuelve MAS TARDE, la respuesta se descarta en
+      // silencio (nadie sigue esperando esa promesa concreta una vez que el
+      // timeout gano la carrera), tanto si hubiera sido exito como fallo.
+      // Contra el proceso muerto de verdad que este punto del encargo pide
+      // probar eso es inocuo -- no hay nada al otro lado que pueda
+      // responder tarde. Haria falta AbortController de verdad para
+      // eliminar del todo la ventana teorica de un servidor vivo pero muy
+      // lento que reconecta justo despues del timeout; queda fuera del
+      // alcance de limar esta aspereza concreta.
+      const rejoined = await Promise.race([
+        client.reconnect<ClientState>(token),
+        new Promise<never>((_, reject) => {
+          window.setTimeout(() => reject(new Error("Reconexion sin respuesta")), RECONNECT_ATTEMPT_TIMEOUT_MS);
+        }),
+      ]);
+      attach(rejoined);
+    } catch {
+      const nextIndex = retryCountRef.current;
+      if (nextIndex >= RECONNECT_DELAYS_MS.length) {
+        setConnectionStatus("disconnected");
+        return;
+      }
+      retryCountRef.current += 1;
+      const delay = RECONNECT_DELAYS_MS[nextIndex]!;
+      retryTimeoutRef.current = window.setTimeout(() => void attemptReconnectRef.current(), delay);
+    }
+  }, [attach]);
+
+  // `attach` (arriba) referencia `attemptReconnect` desde dentro de un
+  // callback de colyseus.js (onLeave) que se registra ANTES de que
+  // `attemptReconnect` -- definido despues, porque depende de `attach` --
+  // exista en ese closure de modulo. Una `useCallback` normal no sirve aqui
+  // (crearia un ciclo de dependencias attach <-> attemptReconnect); en su
+  // lugar, una ref que se reescribe EN CADA RENDER (no dentro de un efecto,
+  // que correria un paso tarde y dejaria el primer onLeave posible con el
+  // valor inicial) siempre apunta a la version mas reciente.
+  const attemptReconnectRef = useRef(attemptReconnect);
+  attemptReconnectRef.current = attemptReconnect;
+
+  // Boton "Reintentar ahora" del banner: salta el backoff pendiente y
+  // prueba en el acto. Seguro de llamar aunque no haya ningun ciclo activo
+  // (connectionStatus === "connected" o "disconnected" ya rendido) --
+  // attemptReconnect sin token simplemente no hace nada.
+  const retryNow = useCallback(() => {
+    clearRetryTimeout();
+    void attemptReconnect();
+  }, [clearRetryTimeout, attemptReconnect]);
+
+  // Cancela cualquier reintento pendiente al desmontar la app entera. Los
+  // reintentos de sala a sala ya se cancelan dentro de attach(); esto cubre
+  // el caso de que el arbol de React completo se desmonte a mitad de un
+  // ciclo (recarga manual, navegacion fuera de la SPA).
+  useEffect(() => clearRetryTimeout, [clearRetryTimeout]);
 
   const createRoom = useCallback(
     async (name: string) => {
@@ -156,5 +337,8 @@ export function useRoom(): Connection {
     room?.leave();
   }, [room]);
 
-  return { room, state, startError, bidError, bidErrorSeq, createRoom, joinByCode, send, leave };
+  return {
+    room, state, connectionStatus, retryNow,
+    startError, bidError, bidErrorSeq, createRoom, joinByCode, send, leave,
+  };
 }

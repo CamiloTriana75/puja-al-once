@@ -18,6 +18,14 @@ import { AuctionRoomState, BidRecordSchema, PlayerSchema, PublicCardSchema } fro
  * `rejoinPending` para que el navegador pueda distinguir "se cayo" de
  * "volvio y espera a la ronda siguiente", dos casos que `connected` por si
  * solo no diferencia.
+ *
+ * `readyIds` es el mismo Set privado que AuctionRoom usa para decidir
+ * cuando arranca la ronda (ver AuctionRoom.ready/tryStartRound): se
+ * proyecta como `PlayerSchema.ready` para que la sala de espera pueda
+ * pintar quien ha pulsado "listo" y de cuantos falta -- solo tiene sentido
+ * fuera de LOBBY como recuerdo de la ultima vez que se evaluo, asi que el
+ * llamador (AuctionRoom.sync) sigue pasando el mismo Set en cualquier fase;
+ * este metodo no necesita saber en que fase esta para proyectarlo bien.
  */
 export function projectState(
   game: AuctionState,
@@ -26,6 +34,7 @@ export function projectState(
   cards: Map<string, CardSource>,
   publicIds: Map<string, string>,
   pendingRejoins: Set<string>,
+  readyIds: Set<string>,
 ): void {
   schema.phase = game.phase;
   schema.slotIndex = game.slotIndex;
@@ -73,6 +82,7 @@ export function projectState(
     row.budget = player.budget;
     row.connected = player.connected;
     row.rejoinPending = pendingRejoins.has(player.playerId);
+    row.ready = readyIds.has(player.playerId);
     for (const [slot, cardId] of Object.entries(player.squad)) {
       if (cardId !== undefined) row.squad.set(slot, cardId);
     }

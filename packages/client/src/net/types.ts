@@ -21,6 +21,12 @@ export interface PlayerView {
    * `connected: false`: aqui el socket funciona.
    */
   rejoinPending: boolean;
+  /**
+   * Pulso "listo" en la sala de espera. Solo tiene sentido mientras
+   * `phase === "LOBBY"` -- el servidor deja de limpiarlo fuera del lobby
+   * porque ninguna pantalla lo lee ahi (ver AuctionRoom.onLeave).
+   */
+  ready: boolean;
   /** Hueco -> cardId. Llega como MapSchema, se recorre con .forEach o .entries(). */
   squad: Map<string, string>;
 }

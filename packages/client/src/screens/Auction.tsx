@@ -1,9 +1,16 @@
+import { useEffect, useRef, useState } from "react";
 import { AuctionCard } from "../components/AuctionCard.js";
 import { BidControls } from "../components/BidControls.js";
 import { ClueRow } from "../components/ClueRow.js";
+import { MatchHistory } from "../components/MatchHistory.js";
 import { RevealBar } from "../components/RevealBar.js";
+import { RoundSummary } from "../components/RoundSummary.js";
+import { computeLiveStandings } from "../net/liveStandings.js";
 import { useServerClock } from "../net/useServerClock.js";
 import type { ClientState } from "../net/types.js";
+
+/** Mismo orden que packages/shared/src/types.ts -- el cliente nunca importa shared (ver SquadGrid.tsx, mismo patron de constante duplicada). */
+const SLOTS = ["GK", "LB", "CB1", "CB2", "RB", "CDM", "CM", "CAM", "LW", "ST", "RW"] as const;
 
 interface Props {
   state: ClientState;
@@ -42,6 +49,32 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
   // el cliente ni siquiera puede usar como clave publica antes de esto).
   const lastReveal = state.phase === "REVEAL" ? [...state.revealedCards.values()].at(-1) : undefined;
   const revealWinner = lastReveal?.ownerId ? state.players.get(lastReveal.ownerId) : undefined;
+
+  // Resumen entre rondas (encargo B5, punto 4): se dispara cuando
+  // `slotIndex` AVANZA -- el puesto anterior se completo y `advance()`
+  // (AuctionRoom.ts) paso al siguiente. El valor inicial de la ref es el
+  // slotIndex del PRIMER render (nunca 0 "de la nada"): sin eso, unirse a
+  // una partida ya en marcha (slotIndex > 0 desde el primer patch que ve
+  // este componente) dispararia el resumen de golpe al montar, cuando en
+  // realidad no hubo ninguna transicion que anunciar -- solo se acaba de
+  // empezar a mirar.
+  const previousSlotIndexRef = useRef(state.slotIndex);
+  const [summarySlotIndex, setSummarySlotIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    // slotIndex fuera de rango (SLOTS.length, 11) es como AuctionRoom.finish()
+    // marca "partida terminada" -- App.tsx ya deja de montar Auction en
+    // cuanto la fase pasa a RESULTS en el mismo patch, asi que este caso no
+    // deberia alcanzar nunca a este efecto en la practica; el chequeo es
+    // defensa barata para no depender de ese orden de render entre
+    // componentes si App.tsx cambia algun dia.
+    if (state.slotIndex > previousSlotIndexRef.current && state.slotIndex < SLOTS.length) {
+      setSummarySlotIndex(state.slotIndex);
+    }
+    previousSlotIndexRef.current = state.slotIndex;
+  }, [state.slotIndex]);
+
+  const showSummary = summarySlotIndex !== null && summarySlotIndex === state.slotIndex;
 
   return (
     // pb-28 en movil: dead space para que la barra fija de puja (mas abajo)
@@ -225,8 +258,20 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
               </ol>
             </section>
           )}
+
+          {/* Historial de la partida completa -- que salio y a cuanto, no
+              solo la carta actual. Plegado por defecto, ver MatchHistory. */}
+          <MatchHistory revealedCards={state.revealedCards} players={state.players} />
         </aside>
       </div>
+
+      {showSummary && (
+        <RoundSummary
+          nextSlot={SLOTS[state.slotIndex] ?? state.currentSlot}
+          standings={computeLiveStandings(state)}
+          onDismiss={() => setSummarySlotIndex(null)}
+        />
+      )}
     </div>
   );
 }
