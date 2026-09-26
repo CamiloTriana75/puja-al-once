@@ -23,10 +23,16 @@ export function RevealBar({ card, state }: Props) {
   if (!revealed) return null;
 
   const owner = revealed.ownerId ? state.players.get(revealed.ownerId)?.name : null;
+  // D3: el rating llega a 0 hasta RESULTS -- esta barra solo se pinta durante
+  // la partida (Auction.tsx la monta mientras phase !== "RESULTS"), asi que
+  // aqui SIEMPRE esta oculto. "?" en --mute sobre --ink (design-system/pages/partida.md).
+  const ratingHidden = revealed.rating <= 0;
 
   return (
     <div className="panel flex flex-wrap items-center gap-x-8 gap-y-3 bg-ink px-6 py-4 pr-12">
-      <p className="tnum font-display text-6xl font-black leading-none text-lime">{revealed.rating}</p>
+      <p className={`tnum font-display text-6xl font-black leading-none ${ratingHidden ? "text-mute" : "text-lime"}`}>
+        {ratingHidden ? "?" : revealed.rating}
+      </p>
 
       <div>
         <p className="font-display text-xl font-extrabold uppercase tracking-wide text-white">

@@ -67,7 +67,9 @@ export default function App() {
           send={send}
         />
       )}
-      {inGame && state.phase === "RESULTS" && <Results state={state} />}
+      {inGame && room && state.phase === "RESULTS" && (
+        <Results state={state} myId={room.sessionId} send={send} />
+      )}
     </main>
   );
 }

@@ -45,6 +45,7 @@ function baseState(overrides: Partial<ClientState>): ClientState {
     skipAvailable: false,
     skipVotes: new Map(),
     restrictedBidders: [],
+    passes: new Map(),
     players: new Map(),
     revealedCards: new Map(),
     standings: [],

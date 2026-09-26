@@ -23,14 +23,44 @@ function wonSlotsByPlayer(state: ClientState): Map<string, Set<string>> {
   return result;
 }
 
-export function Results({ state }: { state: ClientState }) {
+interface Props {
+  state: ClientState;
+  myId: string;
+  send: (type: string, payload?: unknown) => void;
+}
+
+export function Results({ state, myId, send }: Props) {
   const won = wonSlotsByPlayer(state);
+  const isHost = myId === state.hostId;
+  const hostName = state.players.get(state.hostId)?.name ?? "el anfitrión";
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
-      <h1 className="mb-6 font-display text-[clamp(2.5rem,7vw,5rem)] font-black uppercase leading-none tracking-tighter text-lime">
-        Resultados
-      </h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-display text-[clamp(2.5rem,7vw,5rem)] font-black uppercase leading-none tracking-tighter text-lime">
+          Resultados
+        </h1>
+        {/*
+          D5: el anfitrion reinicia la sala con los mismos jugadores, sin
+          crear otra ni repartir otro codigo (AuctionRoom.onRematch acepta
+          "rematch" solo del anfitrion y solo en RESULTS). El resto ve el
+          mismo momento en modo lectura -- nunca un boton muerto para ellos,
+          la frase dice exactamente que esta pasando.
+        */}
+        {isHost ? (
+          <button
+            type="button"
+            onClick={() => send("rematch", {})}
+            className="h-12 min-w-[44px] cursor-pointer bg-lime px-6 font-display text-xl font-black uppercase tracking-wide text-ink transition-colors duration-200 hover:bg-white"
+          >
+            Revancha
+          </button>
+        ) : (
+          <p className="bg-ink px-3 py-2 font-body text-sm font-semibold text-mute">
+            Esperando a que {hostName} pida la revancha…
+          </p>
+        )}
+      </div>
 
       <ol className="mb-10 flex flex-col gap-px bg-white/10">
         {state.standings.map((row) => {

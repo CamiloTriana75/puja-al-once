@@ -1,11 +1,12 @@
 import { useEffect } from "react";
-import type { LiveStanding } from "../net/liveStandings.js";
 
 const SLOT_LABEL: Record<string, string> = {
   GK: "Portero", LB: "Lateral izquierdo", CB1: "Central", CB2: "Central",
   RB: "Lateral derecho", CDM: "Mediocentro defensivo", CM: "Mediocentro",
   CAM: "Mediapunta", LW: "Extremo izquierdo", ST: "Delantero", RW: "Extremo derecho",
 };
+
+const TOTAL_SLOTS = 11;
 
 /** Icono de flecha adelante, trazo 2 sobre 24x24 -- MASTER.md S7: SVG, nunca emoji. */
 function ArrowRightIcon() {
@@ -19,11 +20,26 @@ function ArrowRightIcon() {
 
 const AUTO_DISMISS_MS = 4000;
 
+export interface RoundSummaryPlayer {
+  playerId: string;
+  name: string;
+  budget: number;
+  /** Cuantos de los 11 puestos ya tiene fichados. */
+  squadSize: number;
+}
+
 /**
- * Resumen entre rondas -- punto 4 del encargo B5: "al cambiar de puesto, un
- * momento que diga que puesto viene y como va la clasificacion". Auction.tsx
- * lo monta solo durante la transicion (detecta el cambio de `slotIndex`) y
- * lo desmonta el mismo componente padre cuando toca.
+ * Resumen entre rondas -- punto 4 del encargo B5, reescrito para F5/D3: con
+ * el rating oculto hasta RESULTS (ver RevealBar.tsx, SquadGrid.tsx) ya no
+ * hay forma honesta de calcular una clasificacion aqui -- todo cruce
+ * cardId -> rating devolveria 0 para todo el mundo. En su lugar se muestra
+ * lo unico que SI es publico durante la partida: dinero restante y puestos
+ * ya cubiertos de cada jugador. Ver design-system/pages/partida.md: "El
+ * resumen entre rondas deja de mostrar clasificacion... y muestra dinero
+ * restante y puestos cubiertos de cada jugador."
+ *
+ * Auction.tsx lo monta solo durante la transicion (detecta el cambio de
+ * `slotIndex`) y lo desmonta el mismo componente padre cuando toca.
  *
  * Deliberadamente NO bloqueante: quien quiera seguir jugando ya (la nueva
  * carta ya esta en BIDDING para cuando esto aparece) puede cerrarlo a mano o
@@ -36,11 +52,11 @@ const AUTO_DISMISS_MS = 4000;
  */
 export function RoundSummary({
   nextSlot,
-  standings,
+  players,
   onDismiss,
 }: {
   nextSlot: string;
-  standings: LiveStanding[];
+  players: RoundSummaryPlayer[];
   onDismiss: () => void;
 }) {
   useEffect(() => {
@@ -65,15 +81,17 @@ export function RoundSummary({
         </h2>
 
         <p className="mt-6 font-display text-xs font-bold uppercase tracking-[0.12em] text-mute">
-          Clasificación provisional
+          Cómo va cada uno
         </p>
         <ol className="mt-2 flex flex-col gap-px bg-white/10">
-          {standings.map((row) => (
+          {players.map((row) => (
             <li key={row.playerId} className="flex items-baseline gap-3 bg-ink px-3 py-2">
-              <span className="tnum w-6 font-display text-lg font-black text-white">{row.rank}</span>
               <span className="font-display text-base font-bold uppercase text-white">{row.name}</span>
               <span className="tnum ml-auto font-display text-lg font-extrabold text-green">
-                {row.points} pts
+                {row.budget} M
+              </span>
+              <span className="tnum font-body text-sm text-mute">
+                {row.squadSize}/{TOTAL_SLOTS} puestos
               </span>
             </li>
           ))}

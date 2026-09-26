@@ -5,7 +5,6 @@ import { ClueRow } from "../components/ClueRow.js";
 import { MatchHistory } from "../components/MatchHistory.js";
 import { RevealBar } from "../components/RevealBar.js";
 import { RoundSummary } from "../components/RoundSummary.js";
-import { computeLiveStandings } from "../net/liveStandings.js";
 import { useServerClock } from "../net/useServerClock.js";
 import type { ClientState } from "../net/types.js";
 
@@ -38,8 +37,26 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
   const parked = me?.rejoinPending ?? false;
   const canBid = state.phase === "BIDDING" && !alreadySigned && !restricted && !parked;
   const hasActiveBid = state.currentBid > 0;
-  const canCloseWithoutBid = canBid && !hasActiveBid;
+  // D2: "pass" solo tiene efecto mientras currentBid === 0 -- ver
+  // AuctionRoom.onPass y playersEligibleToPass en @fut/shared/pass.ts. La
+  // misma gente que puede pujar ahora mismo es la misma que puede pasar
+  // (necesita el hueco, no esta restringida fuera de la lista, no esta
+  // aparcada) -- solo cambia que pasar exige que nadie haya pujado todavia.
+  const canPass = canBid && !hasActiveBid;
+  const iPassed = state.passes.get(myId) === true;
   const urgent = hasActiveBid && remaining < 5000 && state.phase === "BIDDING";
+  const openingWindow = state.phase === "BIDDING" && !hasActiveBid;
+
+  // Quien necesita el hueco actual y por tanto puede votar el salto (D2/D3
+  // feedback: "arreglar el apartado de saltar jugador") -- espejo de
+  // playersNeedingSlot en @fut/shared/skip.ts: conectado (rejoinPending
+  // cuenta como no-conectado, ver PlayerView) y sin ese puesto ya fichado.
+  // Se usa tanto para saber si YO puedo votar como para pintar quien falta.
+  const playersNeedingSlot = [...state.players.values()].filter(
+    (p) => p.connected && !p.squad.has(state.currentSlot),
+  );
+  const canVoteSkip = state.phase === "SKIP_VOTE" && !alreadySigned && !parked;
+  const myVote = state.skipVotes.get(myId);
 
   // Durante REVEAL, applyOutcome ya limpio currentBid/currentBidderId al
   // entrar en la fase (ver packages/shared/src/auction.ts): el desenlace de
@@ -90,8 +107,18 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
             : <ClueRow card={card} />)}
 
           <div className="panel flex flex-wrap items-baseline gap-x-6 gap-y-2 bg-ink px-6 py-4 pr-12">
-            {state.phase === "BIDDING" && !hasActiveBid ? (
-              <p className="font-display text-xl font-black uppercase tracking-wide text-lime">Sin reloj</p>
+            {/*
+              D1: ventana de apertura, distinta del anti-snipe a proposito
+              (design-system/pages/partida.md): texto blanco sobre --ink, sin
+              pulso, se distingue por currentBid === 0. El anti-snipe (rama de
+              abajo) sigue siendo la cifra grande lima con pulso rojo en los
+              ultimos 5s -- las dos comparten el mismo reloj de servidor
+              (state.endsAt via useServerClock), solo cambia la pinta.
+            */}
+            {openingWindow ? (
+              <p className="tnum font-display text-2xl font-black uppercase tracking-wide text-white">
+                Abre la puja · {Math.ceil(remaining / 1000)} s
+              </p>
             ) : (
               <p className={`tnum font-display text-5xl font-black leading-none ${urgent ? "animate-pulse text-danger" : "text-lime"}`}>
                 {(remaining / 1000).toFixed(1)}s
@@ -158,27 +185,80 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
           */}
           <div className="sticky bottom-0 z-30 -mx-4 border-t border-white/10 bg-deep px-4 py-3 sm:static sm:z-auto sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
             {state.phase === "SKIP_VOTE" ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <p className="font-display text-lg font-bold uppercase tracking-wide text-white">
                   Nadie pujó. ¿Se descarta esta carta?
                 </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => send("voteSkip", { skip: true })}
-                    className="h-12 min-w-[44px] cursor-pointer bg-lime px-6 font-display text-xl font-black uppercase text-ink transition-colors duration-200 hover:bg-white"
-                  >
-                    Saltarla
-                  </button>
-                  <button
-                    onClick={() => send("voteSkip", { skip: false })}
-                    className="h-12 min-w-[44px] cursor-pointer border-2 border-white/30 px-6 font-display text-xl font-bold uppercase text-white transition-colors duration-200 hover:border-white"
-                  >
-                    La quiero
-                  </button>
-                </div>
-                <p className="hidden bg-ink px-3 py-2 font-body text-sm text-mute sm:block">
-                  Hace falta unanimidad. Si dices que la quieres, serás el único que pueda pujar por ella.
+
+                {canVoteSkip ? (
+                  <div className="flex gap-3">
+                    {/*
+                      Feedback de la partida con amigos: "los botones no
+                      funcionan bien" -- tras votar, el boton que se pulso se
+                      queda marcado y los dos se deshabilitan (nunca doble
+                      clic, nunca duda de si se registro). El texto cambia,
+                      no solo el color (MASTER.md S6).
+                    */}
+                    <button
+                      type="button"
+                      disabled={myVote !== undefined}
+                      aria-pressed={myVote === true}
+                      onClick={() => send("voteSkip", { skip: true })}
+                      className={`h-12 min-w-[44px] px-6 font-display text-xl font-black uppercase transition-colors duration-200 ${
+                        myVote === true
+                          ? "cursor-not-allowed bg-lime text-ink"
+                          : myVote === false
+                            ? "cursor-not-allowed border-2 border-white/10 text-mute"
+                            : "cursor-pointer bg-lime text-ink hover:bg-white"
+                      }`}
+                    >
+                      {myVote === true ? "Votaste: saltarla" : "Saltarla"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={myVote !== undefined}
+                      aria-pressed={myVote === false}
+                      onClick={() => send("voteSkip", { skip: false })}
+                      className={`h-12 min-w-[44px] px-6 font-display text-xl font-bold uppercase transition-colors duration-200 ${
+                        myVote === false
+                          ? "cursor-not-allowed border-2 border-lime text-lime"
+                          : myVote === true
+                            ? "cursor-not-allowed border-2 border-white/10 text-mute"
+                            : "cursor-pointer border-2 border-white/30 text-white hover:border-white"
+                      }`}
+                    >
+                      {myVote === false ? "Votaste: la quiero" : "La quiero"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="bg-ink px-3 py-2 font-body text-sm text-mute">
+                    {alreadySigned
+                      ? "Ya fichaste este puesto: no te toca votar. Sigue la votación aquí abajo."
+                      : "Te reconectaste: vuelves a contar en la próxima ronda. Sigue la votación aquí abajo."}
+                  </p>
+                )}
+
+                <p className="bg-ink px-3 py-2 font-body text-sm text-mute">
+                  Hace falta unanimidad para saltarla. Si alguien vota que la quiere, después de la votación solo esa persona podrá pujar por ella.
                 </p>
+
+                {/* Quien ha votado y quien falta (design-system/pages/partida.md). */}
+                <ul className="flex flex-wrap gap-2" aria-label="Estado de la votación de salto">
+                  {playersNeedingSlot.map((p) => {
+                    const vote = state.skipVotes.get(p.playerId);
+                    return (
+                      <li
+                        key={p.playerId}
+                        className="flex items-center gap-1.5 bg-ink px-3 py-1.5 font-body text-xs font-semibold uppercase tracking-wide"
+                      >
+                        <span className="text-white">{p.name}</span>
+                        <span className={vote === undefined ? "text-mute" : vote ? "text-lime" : "text-white"}>
+                          {vote === undefined ? "· esperando" : vote ? "· saltar" : "· la quiere"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             ) : state.phase === "BIDDING" ? (
               <div className="flex flex-col gap-3">
@@ -189,17 +269,28 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
                   errorSeq={errorSeq}
                   onBid={(amount) => send("bid", { amount })}
                 />
-                {canCloseWithoutBid && (
+                {canPass && (
                   <div className="flex flex-wrap items-center gap-3">
+                    {/*
+                      D2: "Paso" sustituye a "Cerrar sin pujas" -- el
+                      servidor ya no escucha closeWithoutBid (D2, ver
+                      AuctionRoom.onPass). Pasar no es vinculante: tras
+                      pasar el boton queda deshabilitado como recordatorio
+                      ("Pasaste"), pero sigue pudiendose pujar -- si llega
+                      una puja el bloque entero desaparece (hasActiveBid).
+                    */}
                     <button
                       type="button"
-                      onClick={() => send("closeWithoutBid", {})}
-                      className="h-10 cursor-pointer border-2 border-white/30 px-4 font-display text-sm font-bold uppercase tracking-wide text-white transition-colors duration-200 hover:border-white"
+                      disabled={iPassed}
+                      onClick={() => send("pass", {})}
+                      className="h-11 min-w-[44px] cursor-pointer border-2 border-white/30 px-4 font-display text-sm font-bold uppercase tracking-wide text-white transition-colors duration-200 hover:border-white disabled:cursor-not-allowed disabled:border-white/10 disabled:text-mute"
                     >
-                      Cerrar sin pujas
+                      {iPassed ? "Pasaste" : "Paso"}
                     </button>
                     <p className="font-body text-sm text-mute">
-                      Si sobran cartas se vota saltarla; si no, se asigna por sorteo.
+                      {iPassed
+                        ? "Puedes seguir pujando si cambias de idea."
+                        : "Si pasáis todos, se resuelve al instante. Si no, se abre voto de salto o se sortea."}
                     </p>
                   </div>
                 )}
@@ -214,6 +305,11 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
           <ul className="flex flex-col gap-px bg-white/10">
           {[...state.players.values()].map((player) => {
             const leading = state.phase === "BIDDING" && player.playerId === state.currentBidderId;
+            // D2: etiqueta "PASA" -- solo tiene sentido mientras la carta
+            // sigue en currentBid === 0 (una puja vacia el mapa de pases
+            // entero, ver applyBid en @fut/shared/bidding.ts), y solo es
+            // texto -- nunca solo color (MASTER.md S6) -- igual que GANANDO.
+            const passed = state.currentBid === 0 && state.passes.get(player.playerId) === true;
             return (
               <li
                 key={player.playerId}
@@ -223,6 +319,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
                   {player.name}
                   {/* El color no es el unico indicador: la etiqueta de texto va siempre con el. */}
                   {leading && <span className="ml-2 text-xs font-black tracking-widest">GANANDO</span>}
+                  {passed && <span className="ml-2 text-xs font-black tracking-widest text-mute">PASA</span>}
                   {player.rejoinPending ? (
                     // --mute solo va sobre --ink (MASTER.md S2): esta fila
                     // puede tener fondo bg-lime cuando el jugador reconectado
@@ -268,7 +365,12 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
       {showSummary && (
         <RoundSummary
           nextSlot={SLOTS[state.slotIndex] ?? state.currentSlot}
-          standings={computeLiveStandings(state)}
+          players={[...state.players.values()].map((p) => ({
+            playerId: p.playerId,
+            name: p.name,
+            budget: p.budget,
+            squadSize: p.squad.size,
+          }))}
           onDismiss={() => setSummarySlotIndex(null)}
         />
       )}

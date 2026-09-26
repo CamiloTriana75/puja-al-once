@@ -106,6 +106,8 @@ export interface ClientState {
   skipAvailable: boolean;
   skipVotes: Map<string, boolean>;
   restrictedBidders: string[];
+  /** playerId -> true de quien ha pasado la carta actual (D2). Se vacia al abrir cada carta o al llegar una puja. */
+  passes: Map<string, boolean>;
   players: Map<string, PlayerView>;
   revealedCards: Map<string, RevealedCardView>;
   standings: StandingView[];
