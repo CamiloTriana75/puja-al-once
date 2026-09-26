@@ -36,8 +36,10 @@ export function canBid(
   now: number,
 ): Result<void, BidError> {
   if (state.phase !== "BIDDING") return err("WRONG_PHASE");
-  // endsAt = 0 hasta que llegue la primera oferta: la carta se mantiene
-  // abierta sin reloj, pero una vez existe puja el servidor aplica la ventana.
+  // D1: `endsAt` esta siempre armado durante BIDDING (ventana de apertura
+  // antes de la primera puja, anti-snipe despues), pero el guard contra 0
+  // se mantiene por si alguna vez llega un estado sin ventana asignada --
+  // mejor aceptar la puja que rechazarla contra un reloj que no corre.
   if (state.endsAt !== 0 && now > state.endsAt) return err("AUCTION_CLOSED");
 
   const player = state.players.find((p) => p.playerId === playerId);

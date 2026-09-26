@@ -311,7 +311,14 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.openBidding();
   }
 
-  /** Pone una carta a subasta, sin reloj hasta que alguien haga una oferta. */
+  /**
+   * Pone una carta a subasta y arma la ventana de apertura (D1): si nadie
+   * puja antes de que venza, `onBidTimeout` resuelve exactamente igual que
+   * si hubiera vencido el anti-snipe -- voto de salto si hay margen, sorteo
+   * si no. Antes de este arreglo `endsAt` se dejaba en 0 y ninguna carta sin
+   * pujas avanzaba sola; ver el informe de esta tarea (D1) para el bug que
+   * esto cierra y el test con reloj real que lo demuestra.
+   */
   protected openBidding(): void {
     const cardId = currentCardId(this.game);
     if (!cardId) throw new Error("openBidding sin carta sobre la mesa");
@@ -325,8 +332,8 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.game.bidHistory = [];
     this.game.skipVotes = {};
     this.game.restrictedBidders = null;
-    this.game.endsAt = 0;
-    this.timer?.clear();
+    this.game.endsAt = Date.now() + this.rules.openWindowMs;
+    this.armTimer(this.rules.openWindowMs);
     this.sync();
   }
 
@@ -436,16 +443,18 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     }
 
     // Reanudar restringido: solo pueden pujar los que votaron en contra.
+    // D1: esto vuelve a armar la ventana de apertura -- antes se dejaba
+    // `endsAt` en 0 igual que en openBidding(), y una carta en fase
+    // restringida que nadie pujaba tampoco avanzaba sola. Mismo arreglo,
+    // misma razon.
     this.game = {
       ...this.game,
       phase: "BIDDING",
       restrictedBidders: outcome.restrictedBidders,
       skipVotes: {},
-      // Tras un voto fallido, el postor que dijo quererla decide cuando
-      // empezar con su oferta; no hay cierre automatico sin primera puja.
-      endsAt: 0,
+      endsAt: Date.now() + this.rules.openWindowMs,
     };
-    this.timer?.clear();
+    this.armTimer(this.rules.openWindowMs);
     this.sync();
   }
 

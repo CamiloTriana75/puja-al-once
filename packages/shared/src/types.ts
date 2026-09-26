@@ -29,6 +29,14 @@ export interface Rules {
   openingBidTiers: readonly OpeningBidTier[];
   /** Subida minima sobre la puja vigente, en millones. */
   minIncrement: number;
+  /**
+   * Tiempo maximo con la carta abierta sin ninguna puja (D1): arranca en
+   * cuanto se abre la carta y, si nadie puja antes de que venza, dispara el
+   * mismo camino que cualquier otro cierre (`onBidTimeout`). Sin esto una
+   * carta que nadie quiere -- y que tampoco pasan todos, ver `pass` en
+   * `pass.ts` -- se queda abierta para siempre en vez de resolverse sola.
+   */
+  openWindowMs: number;
   /** Ventana que empieza con la primera puja y se reinicia con cada nueva puja. */
   antiSnipeMs: number;
   /** Duracion de la votacion de salto. */
@@ -48,6 +56,7 @@ export const DEFAULT_RULES: Rules = {
     { minimumRating: 87, price: 40 },
   ],
   minIncrement: 10,
+  openWindowMs: 25_000,
   antiSnipeMs: 10_000,
   skipVoteMs: 10_000,
   revealMs: 6_000,
@@ -86,7 +95,12 @@ export interface AuctionState {
   openingBid: number;
   /** Ultimas ofertas aceptadas de la carta actual, de antigua a reciente. */
   bidHistory: BidRecord[];
-  /** Cierre de la subasta como marca de tiempo absoluta en ms; 0 si aun no hubo oferta. */
+  /**
+   * Cierre de la ventana vigente, como marca de tiempo absoluta en ms (D1):
+   * de apertura mientras `currentBid === 0`, de anti-snipe en cuanto entra
+   * la primera puja. Nunca 0 durante BIDDING -- siempre hay una ventana
+   * armada, para que una carta sin pujas ni pases se resuelva sola.
+   */
   endsAt: number;
   /** playerId -> voto emitido en la votacion de salto. */
   skipVotes: Record<string, boolean>;

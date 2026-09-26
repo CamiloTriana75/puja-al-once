@@ -20,9 +20,12 @@ async function startedRoom() {
 }
 
 describe("puja", () => {
-  it("espera la primera puja sin reloj y publica la oferta para toda la sala", async () => {
+  it("abre con la ventana de apertura armada (D1) y publica la oferta para toda la sala", async () => {
     const { room, clients } = await startedRoom();
-    expect(room.state.endsAt).toBe(0);
+    // D1: ya no es 0 -- la ventana de apertura arranca en cuanto se abre la
+    // carta, no cuando llega la primera puja.
+    expect(room.state.endsAt).toBeGreaterThan(Date.now());
+    const openingDeadline = room.state.endsAt;
 
     const firstBid = room.state.minimumBid;
     clients[0]!.send("bid", { amount: firstBid });
@@ -31,7 +34,10 @@ describe("puja", () => {
     expect(room.state.currentBid).toBe(firstBid);
     expect(room.state.currentBidderId).toBe(clients[0]!.sessionId);
     expect(room.state.minimumBid).toBe(firstBid + 10);
+    // La primera puja sustituye la ventana de apertura por el anti-snipe:
+    // no tienen por que ser el mismo plazo (25s vs 10s por defecto).
     expect(room.state.endsAt).toBeGreaterThan(Date.now());
+    expect(room.state.endsAt).not.toBe(openingDeadline);
     expect([...room.state.bidHistory]).toEqual([{ playerId: clients[0]!.sessionId, amount: firstBid }]);
   });
 
