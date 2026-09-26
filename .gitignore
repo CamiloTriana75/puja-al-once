@@ -8,3 +8,6 @@ playwright-report/
 
 # Restos de compilar tests por error (ver tsconfig.build.json)
 packages/*/test/*.js
+
+# Indice local de graphify (rutas absolutas, cache de extraccion)
+graphify-out/
