@@ -20,6 +20,7 @@ function state(overrides: Partial<AuctionState> = {}): AuctionState {
     endsAt: 0,
     skipVotes: {},
     restrictedBidders: null,
+    passes: {},
     players: [player("p1"), player("p2"), player("p3"), player("p4")],
     ...overrides,
   };

@@ -23,6 +23,7 @@ function state(overrides: Partial<AuctionState> = {}): AuctionState {
     bidHistory: [],
     skipVotes: {},
     restrictedBidders: null,
+    passes: {},
     players: [player("p1"), player("p2")],
     ...overrides,
   };
@@ -142,5 +143,10 @@ describe("applyBid", () => {
     expect(original.currentBid).toBe(0);
     expect(original.currentBidderId).toBeNull();
     expect(original.bidHistory).toEqual([]);
+  });
+
+  it("vacia los pases (D2): en cuanto hay puja, pasar deja de tener sentido", () => {
+    const s = applyBid(state({ passes: { p1: true } }), DEFAULT_RULES, "p2", 20, NOW);
+    expect(s.passes).toEqual({});
   });
 });

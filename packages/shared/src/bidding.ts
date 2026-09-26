@@ -74,5 +74,9 @@ export function applyBid(
     currentBidderId: playerId,
     endsAt: now + rules.antiSnipeMs,
     bidHistory: [...state.bidHistory, { playerId, amount }].slice(-5),
+    // D2: "pass" solo tiene sentido mientras currentBid === 0 -- en cuanto
+    // hay puja, cualquier pase anterior queda obsoleto (el hueco ya no se
+    // resuelve por unanimidad de pases, se resuelve pujando).
+    passes: {},
   };
 }

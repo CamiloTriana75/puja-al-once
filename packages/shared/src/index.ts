@@ -3,6 +3,7 @@ export * from "./budget.js";
 export * from "./bidding.js";
 export * from "./skip.js";
 export * from "./auction.js";
+export * from "./pass.js";
 export * from "./scoring.js";
 export * from "./dataset.js";
 export * from "./roomCode.js";

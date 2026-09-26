@@ -55,14 +55,6 @@ describe("puja", () => {
     expect(secondDeadline).toBeGreaterThanOrEqual(firstDeadline);
   });
 
-  it("abre la votacion de salto cuando un jugador cierra una carta sin pujas", async () => {
-    const { room, clients } = await startedRoom();
-    clients[0]!.send("closeWithoutBid", {});
-    await room.waitForNextPatch();
-
-    expect(room.state.phase).toBe("SKIP_VOTE");
-  });
-
   it("rechaza una puja por debajo del minimo y avisa al que pujo", async () => {
     const { room, clients } = await startedRoom();
     const firstBid = room.state.minimumBid;

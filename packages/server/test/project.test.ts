@@ -15,6 +15,7 @@ function baseGame(overrides: Partial<AuctionState> = {}): AuctionState {
     endsAt: 0,
     skipVotes: {},
     restrictedBidders: null,
+    passes: {},
     players: [],
     ...overrides,
   };
@@ -94,5 +95,22 @@ describe("projectState", () => {
     projectState(game, schema, DEFAULT_RULES, cards, publicIds, new Set(), new Set(["a", "b"]));
     expect(schema.players.get("a")?.ready).toBe(true);
     expect(schema.players.get("b")?.ready).toBe(true);
+  });
+
+  it("proyecta passes (D2) y lo vacia al abrir la carta siguiente", () => {
+    const schema = new AuctionRoomState();
+    const cards = new Map<string, CardSource>();
+    const publicIds = new Map<string, string>();
+
+    const withOnePass = baseGame({ passes: { a: true } });
+    projectState(withOnePass, schema, DEFAULT_RULES, cards, publicIds, new Set(), new Set());
+    expect(schema.passes.get("a")).toBe(true);
+    expect(schema.passes.size).toBe(1);
+
+    // La carta siguiente abre con `passes: {}`: el Schema tiene que
+    // vaciarse tambien, no arrastrar la fila de la carta anterior.
+    const cleared = baseGame({ passes: {} });
+    projectState(cleared, schema, DEFAULT_RULES, cards, publicIds, new Set(), new Set());
+    expect(schema.passes.size).toBe(0);
   });
 });

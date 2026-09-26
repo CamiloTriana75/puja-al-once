@@ -171,6 +171,8 @@ export class AuctionRoomState extends Schema {
   skipAvailable = false;
   skipVotes = new MapSchema<boolean>();
   restrictedBidders = new ArraySchema<string>();
+  /** playerId -> true de quien ha pasado la carta actual (D2). Ver `AuctionState.passes`. */
+  passes = new MapSchema<boolean>();
   players = new MapSchema<PlayerSchema>();
   revealedCards = new MapSchema<RevealedCardSchema>();
   standings = new ArraySchema<StandingSchema>();
@@ -192,6 +194,7 @@ defineTypes(AuctionRoomState, {
   skipAvailable: "boolean",
   skipVotes: { map: "boolean" },
   restrictedBidders: ["string"],
+  passes: { map: "boolean" },
   players: { map: PlayerSchema },
   revealedCards: { map: RevealedCardSchema },
   standings: [StandingSchema],

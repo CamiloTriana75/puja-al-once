@@ -63,6 +63,9 @@ export function projectState(
 
   schema.restrictedBidders = new ArraySchema<string>(...(game.restrictedBidders ?? []));
 
+  schema.passes.clear();
+  for (const playerId of Object.keys(game.passes)) schema.passes.set(playerId, true);
+
   // Barre del Schema a quien ya no esta en el estado puro (se fue durante el
   // lobby). Sin esto quedan filas fantasma: el Schema solo sabe anadir.
   const currentPlayerIds = new Set(game.players.map((p) => p.playerId));

@@ -109,6 +109,15 @@ export interface AuctionState {
    * `null` significa que la subasta esta abierta a todos.
    */
   restrictedBidders: string[] | null;
+  /**
+   * playerId -> `true` de quien ha pasado la carta actual (D2). Se vacia al
+   * abrir cada carta -- ver `openBidding()` en AuctionRoom -- y tambien al
+   * llegar una puja (`applyBid`) o al reanudar en fase restringida, porque
+   * en los dos casos el conjunto de quien puede pasar cambia y un pase
+   * antiguo no debe colar como si fuera nuevo. Ver `resolvePass` en
+   * `pass.ts` para como se usa.
+   */
+  passes: Record<string, true>;
   players: PlayerState[];
 }
 

@@ -3,7 +3,8 @@ import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
   applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
-  parseDataset, playersNeedingSlot, resolveAuction, resolveSkipVote, scoreMatch, SLOTS, toPrivate, toPublic,
+  parseDataset, playersEligibleToPass, playersNeedingSlot, resolveAuction, resolvePass, resolveSkipVote, scoreMatch,
+  SLOTS, toPrivate, toPublic,
   type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
 import { randomUUID } from "node:crypto";
@@ -43,6 +44,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     endsAt: 0,
     skipVotes: {},
     restrictedBidders: null,
+    passes: {},
     players: [],
   };
 
@@ -126,7 +128,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.onMessage("bid", (client, message: { amount?: unknown }) => {
       this.onBid(client, message?.amount);
     });
-    this.onMessage("closeWithoutBid", (client) => this.onCloseWithoutBid(client));
+    this.onMessage("pass", (client) => this.onPass(client));
     this.onMessage("voteSkip", (client, message: { skip?: unknown }) => {
       this.onVoteSkip(client, message?.skip === true);
     });
@@ -332,6 +334,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.game.bidHistory = [];
     this.game.skipVotes = {};
     this.game.restrictedBidders = null;
+    this.game.passes = {}; // D2: quien paso la carta anterior no cuenta para esta.
     this.game.endsAt = Date.now() + this.rules.openWindowMs;
     this.armTimer(this.rules.openWindowMs);
     this.sync();
@@ -369,14 +372,36 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   }
 
   /**
-   * Cierra explicitamente una carta sin ofertas. Si aun sobra una carta abre
-   * la votacion de salto; en el ultimo margen resuelve el sorteo obligatorio.
+   * D2: "pass" sustituye a "cerrar sin pujar". A diferencia de aquel (que
+   * cualquier UNO de los que necesitaban el hueco podia disparar de golpe),
+   * pasar es colectivo -- solo resuelve cuando TODOS los elegibles
+   * (`playersEligibleToPass`, el mismo filtro que autoriza a enviar este
+   * mensaje) han pasado la carta actual. Si no son todos, se limita a
+   * anotar el pase y esperar: al resto, o pujan, o pasan, o se agota la
+   * ventana y sigue el camino de siempre (onBidTimeout).
    */
-  private onCloseWithoutBid(client: Client): void {
+  private onPass(client: Client): void {
     if (this.game.phase !== "BIDDING" || this.game.currentBid !== 0) return;
-    if (!playersNeedingSlot(this.game).some((player) => player.playerId === client.sessionId)) return;
-    if (this.game.restrictedBidders !== null && !this.game.restrictedBidders.includes(client.sessionId)) return;
-    this.onBidTimeout();
+    const eligible = playersEligibleToPass(this.game);
+    if (!eligible.includes(client.sessionId)) return;
+
+    this.game.passes = { ...this.game.passes, [client.sessionId]: true };
+    this.sync();
+
+    const allPassed = eligible.every((id) => this.game.passes[id] === true);
+    if (allPassed) this.resolvePassedCard();
+  }
+
+  /**
+   * Todos los elegibles pasaron: se resuelve al instante, sin esperar a que
+   * venza ningun reloj. Nunca abre voto de salto -- un pase unanime YA es
+   * esa decision, tomada sin esperar los `skipVoteMs` -- ver `resolvePass`
+   * en `@fut/shared` para el porque de cada desenlace posible.
+   */
+  private resolvePassedCard(): void {
+    const outcome = resolvePass(this.game, this.rules, this.rng);
+    this.game = applyOutcome(this.game, outcome);
+    this.enterReveal(outcome);
   }
 
   /** Reprograma el cierre. Cancela el anterior: nunca hay dos relojes vivos. */
@@ -446,12 +471,16 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     // D1: esto vuelve a armar la ventana de apertura -- antes se dejaba
     // `endsAt` en 0 igual que en openBidding(), y una carta en fase
     // restringida que nadie pujaba tampoco avanzaba sola. Mismo arreglo,
-    // misma razon.
+    // misma razon. D2: tambien se vacia `passes` -- el conjunto de quien
+    // puede pasar acaba de encogerse a `restrictedBidders`, asi que un pase
+    // de antes de la votacion (de alguien que ahora sigue siendo elegible)
+    // no puede colar como si fuera un pase nuevo en esta fase.
     this.game = {
       ...this.game,
       phase: "BIDDING",
       restrictedBidders: outcome.restrictedBidders,
       skipVotes: {},
+      passes: {},
       endsAt: Date.now() + this.rules.openWindowMs,
     };
     this.armTimer(this.rules.openWindowMs);
