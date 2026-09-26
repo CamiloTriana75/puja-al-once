@@ -180,3 +180,101 @@ describe("lobby", () => {
     }
   });
 });
+
+/**
+ * D3: el rating se oculta hasta RESULTS. Es la misma clase de barrera que
+ * `PUBLIC_CARD_FIELDS` de arriba (que ya prueba que el VALOR de `rating`
+ * es 0 antes de cualquier puja), pero esa lista blanca solo mira la
+ * primera carta de la partida, quieta en BIDDING, antes de que nadie haga
+ * nada. Estos tests avanzan la carta hasta REVEAL -- por las dos rutas que
+ * la resuelven, adjudicada y descartada -- porque ese es el momento en el
+ * que `enterReveal()` publica los demas campos privados y por tanto el
+ * unico momento en el que "tambien publica el rating" podria colarse.
+ */
+describe("rating oculto hasta RESULTS (D3)", () => {
+  interface Hooks { onBidTimeout(): void; onSkipTimeout(): void }
+
+  async function startedRoom() {
+    const room = await colyseus.createRoom("auction", {});
+    const clients = [];
+    for (const name of ["Ana", "Bea", "Cid", "Dan"]) {
+      clients.push(await colyseus.connectTo(room, { name }));
+    }
+    for (const client of clients) client.send("ready", {});
+    await room.waitForNextPatch();
+    return { room, clients, hooks: room as unknown as Hooks };
+  }
+
+  it("no viaja en la carta adjudicada por puja", async () => {
+    const { room, clients, hooks } = await startedRoom();
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
+    await room.waitForNextPatch();
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+
+    expect(room.state.phase).toBe("REVEAL");
+    expect(room.state.currentCard?.rating).toBe(0);
+    const revealed = [...room.state.revealedCards.values()][0];
+    expect(revealed?.rating).toBe(0);
+    // El resto de campos privados si viajan: la barrera es solo del rating.
+    expect(revealed?.name).toBeTruthy();
+    expect(revealed?.club).toBeTruthy();
+  });
+
+  it("no viaja en la carta descartada por voto de salto unanime", async () => {
+    const { room, clients, hooks } = await startedRoom();
+    hooks.onBidTimeout(); // nadie pujo, hay margen -> abre voto de salto
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("SKIP_VOTE");
+    expect(room.state.currentCard?.rating).toBe(0);
+
+    for (const client of clients) client.send("voteSkip", { skip: true });
+    await room.waitForNextPatch();
+    // El voto unanime ya dispara el auto-resuelto de onVoteSkip en cuanto
+    // se procesa el ultimo voto, pero se fuerza el timeout igual por si no
+    // lo fue: onSkipTimeout() es un no-op si la fase ya cambio (mismo
+    // patron defensivo que invariant.test.ts).
+    hooks.onSkipTimeout();
+    await room.waitForNextPatch();
+
+    expect(room.state.phase).toBe("REVEAL");
+    expect(room.state.currentCard?.rating).toBe(0);
+    const revealed = [...room.state.revealedCards.values()][0];
+    expect(revealed?.rating).toBe(0);
+    expect(revealed?.ownerId).toBe("");
+  });
+
+  it("no viaja en la carta descartada por pase unanime (D2)", async () => {
+    const { room, clients } = await startedRoom();
+    for (const client of clients) {
+      client.send("pass", {});
+      await room.waitForNextPatch();
+    }
+
+    expect(room.state.phase).toBe("REVEAL");
+    expect(room.state.currentCard?.rating).toBe(0);
+    const revealed = [...room.state.revealedCards.values()][0];
+    expect(revealed?.rating).toBe(0);
+  });
+
+  it("se publica para todas las cartas reveladas en cuanto la partida llega a RESULTS", async () => {
+    const { room, clients, hooks } = await startedRoom();
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
+    await room.waitForNextPatch();
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+
+    const revealedBefore = [...room.state.revealedCards.values()][0];
+    expect(revealedBefore?.rating).toBe(0);
+
+    // No hace falta llegar a RESULTS de verdad para probar la publicacion:
+    // finish() es el unico sitio que la hace, y es publico via la
+    // superficie de test de este paquete (mismo patron que onBidTimeout).
+    (room as unknown as { finish(): void }).finish();
+    await room.waitForNextPatch();
+
+    expect(room.state.phase).toBe("RESULTS");
+    const revealedAfter = [...room.state.revealedCards.values()][0];
+    expect(revealedAfter?.rating).toBeGreaterThan(0);
+  });
+});

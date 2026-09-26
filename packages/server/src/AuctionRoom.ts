@@ -503,7 +503,12 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
   /**
    * Publica los campos privados de la carta. Es el unico sitio del servidor
-   * autorizado a hacerlo.
+   * autorizado a hacerlo -- salvo `rating` (D3): igual que el nombre esta
+   * prohibido antes de este momento, el rating esta prohibido DESPUES de
+   * este momento y hasta RESULTS. Se revela foto, nombre, temporada, club,
+   * liga y nacion aqui; el rating se guarda en la ceremonia final (ver
+   * `finish()`), premiando saber de futbol durante toda la partida en vez
+   * de poder leer quien va ganando carta a carta.
    */
   private enterReveal(outcome: AuctionOutcome): void {
     if (outcome.kind === "OPEN_SKIP_VOTE") throw new Error("enterReveal con OPEN_SKIP_VOTE");
@@ -522,7 +527,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     row.club = priv.club;
     row.league = priv.league;
     row.nation = priv.nation;
-    row.rating = priv.rating;
+    row.rating = 0; // D3: se publica en finish(), no aqui.
     row.ownerId = outcome.kind === "DISCARDED" ? "" : outcome.playerId;
     row.price = outcome.kind === "DISCARDED" ? 0 : outcome.price;
     this.state.revealedCards.set(row.cardId, row);
@@ -554,7 +559,8 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     tableCard.club = row.club;
     tableCard.league = row.league;
     tableCard.nation = row.nation;
-    tableCard.rating = row.rating;
+    // D3: tableCard.rating NO se toca -- se queda en su valor por defecto
+    // (0) hasta RESULTS, igual que row.rating arriba.
 
     this.timer?.clear();
     this.timer = this.clock.setTimeout(() => this.onRevealTimeout(), this.rules.revealMs);
@@ -605,9 +611,14 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   /**
    * Puntua la partida completa y proyecta la clasificacion final. El rating
    * es dato privado del servidor (scoreMatch lo pide por inyeccion, nunca
-   * lo lee directamente): aqui, y solo aqui, se le da acceso via byId -- la
-   * partida ya termino, asi que publicarlo en `standings` no revela nada
-   * que REVEAL no haya revelado ya carta a carta.
+   * lo lee directamente): aqui, y solo aqui, se le da acceso via byId.
+   *
+   * D3: hasta este momento el rating nunca viajo -- ni en `currentCard` ni
+   * en `revealedCards`, ver `enterReveal()` -- asi que, ademas de puntuar,
+   * este es tambien el unico sitio que rellena `revealedCards[...].rating`
+   * con el valor real. Es la misma barrera de secreto que sostiene el
+   * nombre antes del reveal, solo que esta se levanta al final de la
+   * partida en vez de al momento de cada carta.
    */
   protected finish(): void {
     this.timer?.clear();
@@ -625,6 +636,15 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.game.remainingCards = [];
     this.game.endsAt = 0;
     this.state.currentCard = undefined;
+
+    // D3: se levanta la barrera de secreto del rating para todas las
+    // cartas ya reveladas -- cada `row.cardId` identifica una carta que YA
+    // se subasto entera, asi que publicar esto ahora no adelanta nada.
+    for (const row of this.state.revealedCards.values()) {
+      const card = this.byId.get(row.cardId);
+      if (!card) throw new Error(`cardId desconocido al publicar el rating final: ${row.cardId}`);
+      row.rating = card.rating;
+    }
 
     const table = scoreMatch(this.game.players, (cardId) => {
       const card = this.byId.get(cardId);

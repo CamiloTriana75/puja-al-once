@@ -169,7 +169,11 @@ describe("reveal y avance", () => {
     expect(revealed?.cardId).toBe(expectedCardId);
     expect(revealed?.silhouetteId).toBe(expectedSil);
     expect(revealed?.name).toBeTruthy();
-    expect(revealed?.rating).toBeGreaterThan(0);
+    // D3: el rating se oculta hasta RESULTS -- ni siquiera en la carta ya
+    // adjudicada. El resto de campos privados (nombre, club, liga, nacion,
+    // temporada, precio) si se publican en el reveal; solo el rating espera.
+    expect(revealed?.rating).toBe(0);
+    expect(room.state.currentCard?.rating).toBe(0);
     expect(revealed?.ownerId).toBe(clients[0]!.sessionId);
     expect(revealed?.price).toBe(winningBid);
     expect(room.state.currentCard?.revealed).toBe(true);
