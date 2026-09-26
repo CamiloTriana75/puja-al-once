@@ -56,6 +56,29 @@ describe("projectState", () => {
     expect(schema.players.has("a")).toBe(true);
   });
 
+  it("barre del squad de un jugador los huecos que ya no esten en el estado puro (D5: revancha)", () => {
+    // Con playerId estables (el mismo jugador, misma fila de Schema) squad
+    // solo crecia hasta ahora -- ninguna partida normal necesita vaciarlo.
+    // La revancha si: mismo playerId, squad vuelve a "{}". Sin barrido, el
+    // Schema arrastraria los cardId de la partida anterior para siempre.
+    const schema = new AuctionRoomState();
+    const cards = new Map<string, CardSource>();
+    const publicIds = new Map<string, string>();
+
+    const withSquad = baseGame({
+      players: [{ playerId: "a", name: "Ana", budget: 100, squad: { GK: "c1", LB: "c2" }, connected: true }],
+    });
+    projectState(withSquad, schema, DEFAULT_RULES, cards, publicIds, new Set(), new Set());
+    expect(schema.players.get("a")?.squad.size).toBe(2);
+
+    const rematched = baseGame({
+      players: [{ playerId: "a", name: "Ana", budget: 1_000, squad: {}, connected: true }],
+    });
+    projectState(rematched, schema, DEFAULT_RULES, cards, publicIds, new Set(), new Set());
+
+    expect(schema.players.get("a")?.squad.size).toBe(0);
+  });
+
   it("proyecta rejoinPending por separado de connected", () => {
     const schema = new AuctionRoomState();
     const cards = new Map<string, CardSource>();

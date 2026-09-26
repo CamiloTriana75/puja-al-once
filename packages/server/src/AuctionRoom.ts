@@ -76,6 +76,26 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   /** Reloj de cierre de la subasta vigente. Nunca hay dos vivos a la vez. */
   private timer: Delayed | undefined;
 
+  /**
+   * Reasigna publicId aleatorios a todo `this.byId` (el dataset de ESTA
+   * sala no cambia entre partidas, solo sus identificadores opacos). Se
+   * llama al crear la sala y, tal cual, en cada revancha (D5): reutilizar
+   * los publicId de la partida anterior permitiria correlacionar cartas
+   * entre las dos y reconstruir informacion que la primera partida ya
+   * revelo -- ver el comentario de `cardIdToPublicId` arriba.
+   */
+  private assignFreshPublicIds(): void {
+    this.cardIdToPublicId.clear();
+    this.publicIdToCardId.clear();
+    // Se asignan todos de golpe: son 110 cartas como mucho, y asi
+    // projectState solo necesita leer el mapa, nunca escribirlo.
+    for (const card of this.byId.values()) {
+      const publicId = randomUUID();
+      this.cardIdToPublicId.set(card.cardId, publicId);
+      this.publicIdToCardId.set(publicId, card.cardId);
+    }
+  }
+
   onCreate(options?: AuctionRoomOptions): void {
     // `options` es exactamente lo que el cliente manda en `client.create(...)`
     // -- Colyseus no filtra nada. Fuera de test, cualquiera podria crear una
@@ -91,14 +111,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
     this.bySlot = cardsBySlot(dataset);
     this.byId = new Map(dataset.map((card) => [card.cardId, card]));
-
-    // Se asignan todos de golpe al arrancar la sala: son 55 cartas como
-    // mucho, y asi projectState solo necesita leer el mapa, nunca escribirlo.
-    for (const card of dataset) {
-      const publicId = randomUUID();
-      this.cardIdToPublicId.set(card.cardId, publicId);
-      this.publicIdToCardId.set(publicId, card.cardId);
-    }
+    this.assignFreshPublicIds();
 
     this.setState(new AuctionRoomState());
 
@@ -132,6 +145,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.onMessage("voteSkip", (client, message: { skip?: unknown }) => {
       this.onVoteSkip(client, message?.skip === true);
     });
+    this.onMessage("rematch", (client) => this.onRematch(client));
     this.sync();
   }
 
@@ -663,6 +677,58 @@ export class AuctionRoom extends Room<AuctionRoomState> {
         return node;
       }),
     );
+
+    this.sync();
+  }
+
+  /**
+   * D5: el anfitrion reinicia la sala con los mismos jugadores, sin crear
+   * otra ni repartir otro codigo. Silencioso si no procede (mismo criterio
+   * que el resto de mensajes con gatekeeping de esta clase, p.ej. onVoteSkip
+   * con quien no necesita el hueco): solo el anfitrion, y solo en RESULTS --
+   * a mitad de partida no hay nada que reiniciar, y en cualquier otra fase
+   * "reiniciar" dejaria a la ronda en curso en un estado indefinido.
+   */
+  private onRematch(client: Client): void {
+    if (this.game.phase !== "RESULTS") return;
+    if (client.sessionId !== this.state.hostId) return;
+    this.rematch();
+  }
+
+  /**
+   * Reinicio completo (D5). Se queda con los jugadores CONECTADOS -- un
+   * fantasma que ya se fue no vuelve a aparecer solo porque haya revancha,
+   * igual que en el lobby original (onLeave los saca de `game.players` sin
+   * esperar). `hostId` no se toca: sigue siendo quien lo era, y solo el
+   * anfitrion pudo disparar este metodo de todos modos.
+   */
+  private rematch(): void {
+    this.usedCards = new Set(); // mazo nuevo: las mismas cartas, otra vez disponibles
+    this.assignFreshPublicIds(); // publicId nuevos: ver su comentario para el porque
+    this.pendingRejoins.clear();
+    this.ready.clear();
+
+    this.game = {
+      phase: "LOBBY",
+      slotIndex: 0,
+      remainingCards: [],
+      currentBid: 0,
+      currentBidderId: null,
+      openingBid: 0,
+      bidHistory: [],
+      endsAt: 0,
+      skipVotes: {},
+      restrictedBidders: null,
+      passes: {},
+      players: this.game.players
+        .filter((p) => p.connected)
+        .map((p) => ({ ...p, budget: this.rules.startingBudget, squad: {} })),
+    };
+
+    this.state.currentCard = undefined;
+    this.state.revealedCards.clear();
+    this.state.standings = new ArraySchema<StandingSchema>();
+    void this.unlock(); // sala desbloqueada: startRound() la volvio a bloquear con lock()
 
     this.sync();
   }

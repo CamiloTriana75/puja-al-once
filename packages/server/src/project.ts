@@ -86,6 +86,17 @@ export function projectState(
     row.connected = player.connected;
     row.rejoinPending = pendingRejoins.has(player.playerId);
     row.ready = readyIds.has(player.playerId);
+    // Barre del Schema los huecos que ya no esten en el estado puro antes
+    // de re-anadir los vigentes -- mismo motivo que el barrido de
+    // schema.players de arriba, un nivel mas adentro. Durante una partida
+    // normal squad solo crece, asi que esto nunca tuvo ocasion de importar;
+    // la revancha (D5) es la primera vez que un jugador vuelve a NECESITAR
+    // un squad vacio con el mismo playerId de antes, y sin este barrido se
+    // quedaba con los cardId de la partida anterior colgando en el Schema.
+    const currentSlots = new Set(Object.keys(player.squad));
+    for (const slot of [...row.squad.keys()]) {
+      if (!currentSlots.has(slot)) row.squad.delete(slot);
+    }
     for (const [slot, cardId] of Object.entries(player.squad)) {
       if (cardId !== undefined) row.squad.set(slot, cardId);
     }
