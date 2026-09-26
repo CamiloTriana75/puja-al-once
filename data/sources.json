@@ -21,6 +21,13 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Gareth_Bale_RM.jpg"
   },
   {
+    "silhouetteId": "beckenbauer-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/56/Franz_Beckenbauer_%281975%29.jpg",
+    "author": "Panini Group",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Franz_Beckenbauer_(1975).jpg"
+  },
+  {
     "silhouetteId": "beckham-01",
     "url": "https://upload.wikimedia.org/wikipedia/commons/7/7b/David_Beckham_Nov_11_2007.jpg",
     "author": "Calebrw (talk) at en.wikipedia",
@@ -84,6 +91,13 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Cristiano_Ronaldo,_2012_2.JPG"
   },
   {
+    "silhouetteId": "cruyff-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/fd/Johan_Cruyff_1971c.jpg",
+    "author": "Bert Verhoeff / Anefo",
+    "license": "CC BY-SA 3.0 NL",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Johan_Cruyff_1971c.jpg"
+  },
+  {
     "silhouetteId": "dani-alves-01",
     "url": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Dani_Alves_-_2011_-_Scotland_v_Brazil.jpg",
     "author": "Ronnie Macdonald from Chelmsford and Largs, United Kingdom",
@@ -96,6 +110,13 @@
     "author": "Ultraslansi",
     "license": "CC BY-SA 3.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Didier_Drogba_(GS).JPG"
+  },
+  {
+    "silhouetteId": "essien-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Essiencropped.jpg",
+    "author": "Mark Freeman",
+    "license": "CC BY 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Essiencropped.jpg"
   },
   {
     "silhouetteId": "evra-01",
@@ -217,6 +238,13 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Robert_Lewandowski_Training_2017-03_FC_Bayern_Muenchen-3.jpg"
   },
   {
+    "silhouetteId": "mahrez-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Riyad_Mahrez.jpg",
+    "author": "Ben Sutherland",
+    "license": "CC BY 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Riyad_Mahrez.jpg"
+  },
+  {
     "silhouetteId": "makelele-01",
     "url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Claude_Makelele%2C_staff_PSG.JPG",
     "author": "Liondartois",
@@ -231,11 +259,25 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Paolo_Maldini_2009.jpg"
   },
   {
+    "silhouetteId": "marquez-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/RafaelMarquezAlvarez.jpg",
+    "author": "F. Vera",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:RafaelMarquezAlvarez.jpg"
+  },
+  {
     "silhouetteId": "messi-01",
     "url": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Lionel_Messi_in_2018.jpg",
     "author": "Кирилл Венедиктов",
     "license": "CC BY-SA 3.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Lionel_Messi_in_2018.jpg"
+  },
+  {
+    "silhouetteId": "modric-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/db/Luka_Modric_2018.png",
+    "author": "Антон Зайцев",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Luka_Modric_2018.png"
   },
   {
     "silhouetteId": "nesta-01",
@@ -257,6 +299,13 @@
     "author": "Ailura",
     "license": "CC BY-SA 3.0 AT",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:20141118_AUTBRA_5089.jpg"
+  },
+  {
+    "silhouetteId": "oblak-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Jan_Oblak_2019.jpg",
+    "author": "Анна Нэсси",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Jan_Oblak_2019.jpg"
   },
   {
     "silhouetteId": "ozil-01",
@@ -308,6 +357,13 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Juan_Rom%C3%A1n_Riquelme_-_2019.jpg"
   },
   {
+    "silhouetteId": "rivaldo-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Rivaldo_%28full_version%29.jpg",
+    "author": "Laura Cortizo/Portal da Copa",
+    "license": "CC BY 3.0 BR",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Rivaldo_(full_version).jpg"
+  },
+  {
     "silhouetteId": "robben-01",
     "url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Arjen_Robben_v_Shakhtar_2015_%28cropped%29.jpg",
     "author": "Богдан Заяц",
@@ -320,6 +376,13 @@
     "author": "Florian K",
     "license": "CC BY-SA 3.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Roberto_Carlos.JPG"
+  },
+  {
+    "silhouetteId": "robertson-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Andrew_Robertson_2019.jpg",
+    "author": "Анна Джалалян",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Andrew_Robertson_2019.jpg"
   },
   {
     "silhouetteId": "ronaldinho-01",
@@ -343,11 +406,32 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Mohamed_Salah_2017.jpg"
   },
   {
+    "silhouetteId": "schmeichel-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/99/Peter_Schmeichel_2012-01-03_001.jpg",
+    "author": "Carlsberg Group",
+    "license": "CC BY 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Peter_Schmeichel_2012-01-03_001.jpg"
+  },
+  {
     "silhouetteId": "sergio-ramos-01",
     "url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Sergio_Ramos_entrenando_%28cropped%29.jpg",
     "author": "Ruben Ortega",
     "license": "CC BY-SA 4.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Sergio_Ramos_entrenando_(cropped).jpg"
+  },
+  {
+    "silhouetteId": "stoichkov-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Hristo_Stoichkov_50_Years_%E2%84%96_8.jpg",
+    "author": "Biser Todorov",
+    "license": "CC BY-SA 4.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Hristo_Stoichkov_50_Years_%E2%84%96_8.jpg"
+  },
+  {
+    "silhouetteId": "theo-hernandez-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Theo_Hern%C3%A1ndez.jpg",
+    "author": "Антон Зайцев",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Theo_Hern%C3%A1ndez.jpg"
   },
   {
     "silhouetteId": "thiago-silva-01",
@@ -392,6 +476,13 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Kyle-Walker-2023.jpg"
   },
   {
+    "silhouetteId": "walter-samuel-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Walter_Samuel_-_Inter_Mailand_%282%29.jpg",
+    "author": "Steindy",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Walter_Samuel_-_Inter_Mailand_(2).jpg"
+  },
+  {
     "silhouetteId": "xavi-01",
     "url": "https://upload.wikimedia.org/wikipedia/commons/2/22/Xavi_Hernandez_%2831521652051%29.jpg",
     "author": "Doha Stadium Plus Qatar from Doha, Qatar",
@@ -404,6 +495,13 @@
     "author": "Ailura",
     "license": "CC BY-SA 3.0 AT",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Yaya_Toure_9229.JPG"
+  },
+  {
+    "silhouetteId": "zanetti-01",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Javier_Zanetti_-_Inter_Mailand_%281%29.jpg",
+    "author": "Steindy",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Javier_Zanetti_-_Inter_Mailand_(1).jpg"
   },
   {
     "silhouetteId": "zidane-01",
