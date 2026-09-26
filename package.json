@@ -17,6 +17,7 @@
   "devDependencies": {
     "@fut/shared": "workspace:*",
     "@imgly/background-removal-node": "1.4.5",
+    "@playwright/test": "1.62.1",
     "@types/node": "26.4.1",
     "sharp": "0.32.6",
     "tsx": "4.23.13",
