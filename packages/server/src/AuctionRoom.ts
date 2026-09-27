@@ -294,6 +294,15 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   private onReady(client: Client): void {
     if (this.game.phase !== "LOBBY") return;
     this.ready.add(client.sessionId);
+    // Sincroniza SIEMPRE, no solo cuando tryStartRound() decide arrancar la
+    // ronda -- startRound()/openBidding() ya hacen su propio sync() para el
+    // caso en que el ultimo "ready" complete el quorum, pero si TODAVIA
+    // falta gente, esta linea es la unica que empuja el "listo" nuevo a los
+    // demas clientes. Sin ella, tres jugadores que ya pulsaron listo se
+    // quedan viendo la lista sin cambios hasta que un cuarto evento
+    // cualquiera fuerce otro sync -- indistinguible, para ellos, de un
+    // boton que no hace nada.
+    this.sync();
     this.tryStartRound();
   }
 
