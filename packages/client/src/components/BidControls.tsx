@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -38,6 +39,10 @@ const REASON: Record<string, string> = {
 export function BidControls({ minimumBid, disabled, error, errorSeq, onBid }: Props) {
   const [amount, setAmount] = useState(minimumBid);
   const [pending, setPending] = useState(false);
+  // whileTap no se desactiva solo con prefers-reduced-motion (esa API de
+  // Framer cubre animate/exit, no los gestos) -- se apaga a mano, igual que
+  // ya hace Reactions.tsx con useReducedMotion() para su propia animacion.
+  const reducedMotion = useReducedMotion() ?? false;
 
   // El minimo sube con cada puja ajena: seguirlo mientras no se haya tocado a mano.
   useEffect(() => { setAmount((current) => (current < minimumBid ? minimumBid : current)); }, [minimumBid]);
@@ -82,21 +87,32 @@ export function BidControls({ minimumBid, disabled, error, errorSeq, onBid }: Pr
           aria-describedby={error ? "bid-error" : undefined}
           onChange={(event) => setAmount(Number(event.target.value))}
         />
-        <button
+        {/*
+          El boton mas importante de la pantalla (MASTER.md S6): pulsacion
+          rica via Framer Motion (whileTap, solo transform -- nunca cambia el
+          hit-box de 44px real, que sigue siendo el h-12/min-w del boton).
+          whileTap se ignora automaticamente con prefers-reduced-motion
+          (Framer no dispara la transicion si el sistema la desactiva).
+        */}
+        <motion.button
           type="submit"
           disabled={disabled || pending}
+          whileTap={reducedMotion || disabled || pending ? undefined : { scale: 0.96 }}
+          transition={{ duration: 0.1 }}
           className="h-12 min-w-[44px] cursor-pointer bg-lime px-6 font-display text-xl font-black uppercase tracking-wide text-ink transition-colors duration-200 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? "Enviando…" : "Pujar"}
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="button"
           disabled={disabled || pending}
+          whileTap={reducedMotion || disabled || pending ? undefined : { scale: 0.96 }}
+          transition={{ duration: 0.1 }}
           onClick={() => { setAmount(minimumBid); submit(minimumBid); }}
           className="tnum h-12 cursor-pointer border-2 border-lime px-4 font-display text-lg font-bold uppercase text-lime transition-colors duration-200 hover:bg-lime hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
         >
           Mínimo {minimumBid} M
-        </button>
+        </motion.button>
       </form>
 
       {error && (
