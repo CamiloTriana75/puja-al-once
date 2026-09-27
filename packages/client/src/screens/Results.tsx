@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { Ceremony } from "../components/Ceremony.js";
 import { SquadGrid } from "../components/SquadGrid.js";
@@ -34,6 +35,7 @@ interface Props {
 export function Results({ state, myId, send }: Props) {
   const won = wonSlotsByPlayer(state);
   const isHost = myId === state.hostId;
+  const reducedMotion = useReducedMotion() ?? false;
   const hostName = state.players.get(state.hostId)?.name ?? "el anfitrión";
 
   // design-system/pages/ceremonia.md: la ceremonia corre una vez por
@@ -62,13 +64,15 @@ export function Results({ state, myId, send }: Props) {
           la frase dice exactamente que esta pasando.
         */}
         {isHost ? (
-          <button
+          <motion.button
             type="button"
             onClick={() => send("rematch", {})}
+            whileTap={reducedMotion ? undefined : { scale: 0.97 }}
+            transition={{ duration: 0.1 }}
             className="h-12 min-w-[44px] cursor-pointer bg-lime px-6 font-display text-xl font-black uppercase tracking-wide text-ink transition-colors duration-200 hover:bg-white"
           >
             Revancha
-          </button>
+          </motion.button>
         ) : (
           <p className="bg-ink px-3 py-2 font-body text-sm font-semibold text-mute">
             Esperando a que {hostName} pida la revancha…

@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import heroPhoto from "../assets/hero-photo.png";
 import heroSilhouette from "../assets/hero-silhouette.png";
@@ -163,6 +164,10 @@ function Hero({ onCreateClick }: { onCreateClick: () => void }) {
   const reducedMotion = useRef(
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   ).current;
+  // Mismo valor que el ref de arriba (decidido una vez al montar), pero via
+  // el hook de Framer -- whileTap no lee la media query de CSS por su
+  // cuenta, hay que apagarlo a mano (mismo patron que BidControls.tsx).
+  const reducedMotionGesture = useReducedMotion() ?? false;
 
   useEffect(() => {
     if (reducedMotion) return;
@@ -181,14 +186,16 @@ function Hero({ onCreateClick }: { onCreateClick: () => void }) {
         <p className="mt-5 max-w-md font-body text-lg text-white">
           Pujáis a ciegas por una silueta. Se revela quién es. Gana quien arme el mejor once.
         </p>
-        <button
+        <motion.button
           type="button"
           onClick={onCreateClick}
+          whileTap={reducedMotionGesture ? undefined : { scale: 0.97 }}
+          transition={{ duration: 0.1 }}
           className="mt-8 flex h-14 min-w-[220px] cursor-pointer items-center justify-center gap-3 bg-lime px-8 font-display text-2xl font-black uppercase tracking-wide text-ink transition-colors duration-200 hover:bg-white"
         >
           <UsersIcon />
           Crear sala
-        </button>
+        </motion.button>
       </div>
 
       <div className="order-1 mx-auto w-full max-w-sm md:order-2 md:mx-0 md:w-1/2 md:max-w-none">

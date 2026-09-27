@@ -248,7 +248,7 @@ function ReadyCounter({ readyCount, connectedCount }: { readyCount: number; conn
         <p aria-live="polite" className={`font-body text-sm font-semibold ${allReady ? "text-ink/70" : "text-mute"}`}>
           {connectedCount === 0
             ? "Esperando jugadores…"
-            : `${readyCount} de ${connectedCount} jugador${connectedCount === 1 ? "" : "es"} conectado${connectedCount === 1 ? "" : "s"} ha${readyCount === 1 ? "" : "n"} pulsado listo.`}
+            : `${readyCount} de ${connectedCount} jugador${connectedCount === 1 ? "" : "es"} conectado${connectedCount === 1 ? "" : "s"} ${readyCount === 1 ? "ha" : "han"} pulsado listo.`}
         </p>
       </div>
     </div>
@@ -328,6 +328,7 @@ function PlayerRow({ player, isHost }: { player: PlayerView; isHost: boolean }) 
 
 export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) {
   const [ready, setReady] = useState(false);
+  const reducedMotion = useReducedMotion() ?? false;
 
   // "ready" es optimista: se marca al pulsar, antes de que el servidor
   // conteste. Si el servidor rechaza el arranque (p.ej. el mazo no alcanza
@@ -396,7 +397,9 @@ export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) 
       </p>
 
       {error && <p className="font-body text-sm font-semibold text-danger">{error}</p>}
-      <button
+      <motion.button
+        whileTap={reducedMotion || ready ? undefined : { scale: 0.97 }}
+        transition={{ duration: 0.1 }}
         className="h-12 cursor-pointer bg-lime font-display text-xl font-black uppercase tracking-wide text-ink transition-colors duration-200 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
         disabled={ready}
         onClick={() => {
@@ -405,7 +408,7 @@ export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) 
         }}
       >
         {ready ? "Esperando al resto…" : "Listo"}
-      </button>
+      </motion.button>
     </div>
   );
 }
