@@ -1,4 +1,4 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import heroPhoto from "../assets/hero-photo.png";
 import heroSilhouette from "../assets/hero-silhouette.png";
@@ -74,10 +74,12 @@ function HeroCard({
   revealed,
   priceLabel,
   compact = false,
+  animateCaption = true,
 }: {
   revealed: boolean;
   priceLabel: string;
   compact?: boolean;
+  animateCaption?: boolean;
 }) {
   return (
     <figure className="panel relative aspect-[3/4] w-full overflow-hidden bg-green sm:aspect-[4/3]">
@@ -88,28 +90,39 @@ function HeroCard({
       />
       <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/4 bg-deep" />
 
-      <img
-        src={heroSilhouette}
-        alt="Silueta de un futbolista sin identificar, previo a la revelación"
-        className="absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[10%] sm:h-[115%]"
-        style={{
-          filter: "brightness(0) invert(1)",
-          opacity: revealed ? 0 : 1,
-          transition: "opacity 450ms cubic-bezier(.16,1,.3,1)",
-        }}
-      />
-      <img
-        src={heroPhoto}
-        alt={revealed ? "Ronaldinho, futbolista revelado tras la puja" : ""}
-        aria-hidden={!revealed}
-        className="absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[10%] sm:h-[115%]"
-        style={{
-          opacity: revealed ? 1 : 0,
-          transition: "opacity 450ms cubic-bezier(.16,1,.3,1)",
-        }}
-      />
+      <AnimatePresence>
+        {!revealed && (
+          <motion.img
+            key="silhouette"
+            src={heroSilhouette}
+            alt="Silueta de un futbolista sin identificar, previo a la revelación"
+            className="absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[10%] sm:h-[115%]"
+            style={{ filter: "brightness(0) invert(1)" }}
+            initial={{ opacity: 0, scale: 1.03 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          />
+        )}
+        {revealed && (
+          <motion.img
+            key="photo"
+            src={heroPhoto}
+            alt="Ronaldinho, futbolista revelado tras la puja"
+            className="absolute -top-6 right-[6%] z-10 h-[112%] w-auto object-contain object-bottom sm:right-[10%] sm:h-[115%]"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.03 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          />
+        )}
+      </AnimatePresence>
 
-      <figcaption
+      <motion.figcaption
+        key={animateCaption ? (revealed ? "caption-revealed" : "caption-price") : "caption-static"}
+        initial={animateCaption ? { opacity: 0, x: -24 } : false}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: animateCaption ? 0.15 : 0 }}
         className={`panel absolute left-0 top-[8%] z-20 bg-ink px-5 py-4 pr-10 sm:px-6 sm:py-5 ${
           compact ? "max-w-[85%]" : "max-w-[70%] sm:max-w-[56%]"
         }`}
@@ -148,7 +161,7 @@ function HeroCard({
             </p>
           </>
         )}
-      </figcaption>
+      </motion.figcaption>
     </figure>
   );
 }
@@ -201,8 +214,8 @@ function Hero({ onCreateClick }: { onCreateClick: () => void }) {
       <div className="order-1 mx-auto w-full max-w-sm md:order-2 md:mx-0 md:w-1/2 md:max-w-none">
         {reducedMotion ? (
           <div className="grid grid-cols-2 gap-3">
-            <HeroCard revealed={false} priceLabel="$45M" compact />
-            <HeroCard revealed priceLabel="$45M" compact />
+            <HeroCard revealed={false} priceLabel="$45M" compact animateCaption={false} />
+            <HeroCard revealed priceLabel="$45M" compact animateCaption={false} />
           </div>
         ) : (
           <HeroCard revealed={revealed} priceLabel="$45M" />
@@ -230,7 +243,15 @@ const STEPS = [
   },
 ];
 
-/** Bloque 2: tres pasos, MASTER.md S4 -- panel --ink con el mismo bisel que toda la marca, numerados, sin iconos decorativos. */
+/**
+ * Bloque 2: tres pasos, MASTER.md S4 -- panel --ink con el mismo bisel que
+ * toda la marca, numerados, sin iconos decorativos. Entran en cascada al
+ * llegar al scroll (`whileInView`, `once` para no repetir la animacion si
+ * el usuario sube y baja) -- `viewport.margin` negativo evita que dispare
+ * antes de que la tarjeta sea realmente visible.  Con movimiento reducido
+ * la regla global de index.css colapsa la duracion a 0.01ms: el contenido
+ * sigue apareciendo, solo que sin cascada perceptible.
+ */
 function HowToPlay() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:py-20 md:px-6">
@@ -238,14 +259,21 @@ function HowToPlay() {
         Cómo se juega
       </h2>
       <ol className="grid gap-4 sm:grid-cols-3">
-        {STEPS.map((step) => (
-          <li key={step.n} className="panel bg-ink p-6 pb-10">
+        {STEPS.map((step, index) => (
+          <motion.li
+            key={step.n}
+            className="panel bg-ink p-6 pb-10"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: index * 0.1 }}
+          >
             <span className="font-display text-5xl font-black leading-none text-lime">{step.n}</span>
             <h3 className="mt-4 font-display text-xl font-extrabold uppercase tracking-wide text-white">
               {step.title}
             </h3>
             <p className="mt-2 font-body text-base text-mute">{step.body}</p>
-          </li>
+          </motion.li>
         ))}
       </ol>
     </section>
@@ -282,21 +310,46 @@ function HookCard({ season, club, rating }: { season: number; club: string; rati
   );
 }
 
-/** Bloque 3: el gancho, con el par real que decide `landing.md`. */
+/**
+ * Bloque 3: el gancho, con el par real que decide `landing.md`. Las dos
+ * tarjetas entran desde lados opuestos -- pico desde la izquierda, declive
+ * desde la derecha -- para dramatizar el contraste que es el punto del
+ * bloque, no solo decorar la entrada.
+ */
 function Hook() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:py-20 md:px-6">
-      <h2 className="max-w-2xl font-display text-[clamp(2rem,5vw,3rem)] font-black uppercase leading-[0.9] tracking-tight text-white">
+      <motion.h2
+        className="max-w-2xl font-display text-[clamp(2rem,5vw,3rem)] font-black uppercase leading-[0.9] tracking-tight text-white"
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      >
         Ganaste la subasta.
         <br />
         <span className="text-lime">Ahora descubre cuál te tocó.</span>
-      </h2>
+      </motion.h2>
       <p className="mt-4 max-w-xl font-body text-lg text-white">
         Mismo jugador, dos temporadas, dos ratings muy distintos. Este es {HOOK_PLAYER.name}.
       </p>
       <div className="mt-8 grid max-w-2xl grid-cols-2 gap-4 sm:gap-6">
-        <HookCard {...HOOK_PLAYER.peak} />
-        <HookCard {...HOOK_PLAYER.decline} />
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <HookCard {...HOOK_PLAYER.peak} />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        >
+          <HookCard {...HOOK_PLAYER.decline} />
+        </motion.div>
       </div>
     </section>
   );
