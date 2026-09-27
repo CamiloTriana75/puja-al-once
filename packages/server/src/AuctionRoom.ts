@@ -78,6 +78,17 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   private timer: Delayed | undefined;
 
   /**
+   * Ultimo timestamp (Date.now()) en que cada `sessionId` mando una reaccion
+   * valida -- limite de frecuencia (D8, contrato en
+   * docs/superpowers/plans/2026-09-25-alpha.md): 1 cada 600 ms por cliente.
+   * Vive fuera de `this.game`/`this.state` a proposito: no es informacion de
+   * partida, es puramente anti-spam de la conexion, igual que
+   * `pendingRejoins` o `usedCards` -- nada de esto pertenece al Schema
+   * sincronizado ni a la fuente de verdad de la partida.
+   */
+  private lastReactionAt = new Map<string, number>();
+
+  /**
    * Reasigna publicId aleatorios a todo `this.byId` (el dataset de ESTA
    * sala no cambia entre partidas, solo sus identificadores opacos). Se
    * llama al crear la sala y, tal cual, en cada revancha (D5): reutilizar
@@ -147,6 +158,9 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       this.onVoteSkip(client, message?.skip === true);
     });
     this.onMessage("rematch", (client) => this.onRematch(client));
+    this.onMessage("react", (client, message: { emoji?: unknown }) => {
+      this.onReact(client, message?.emoji);
+    });
     this.sync();
   }
 
@@ -735,6 +749,29 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     void this.unlock(); // sala desbloqueada: startRound() la volvio a bloquear con lock()
 
     this.sync();
+  }
+
+  /**
+   * D8: reaccion efimera, cualquier fase salvo LOBBY -- en el lobby no hay
+   * partida a la que reaccionar, y las pantallas previas (Landing, Lobby) no
+   * montan `<Reactions>`. Valida en silencio (sin `client.send(...:rejected)`
+   * como hace `onBid`): un emoji fuera de rango o un spam por encima del
+   * limite no es informacion que el emisor necesite de vuelta -- distinto de
+   * un rechazo de puja, que si cambia lo que el jugador deberia hacer a
+   * continuacion. `this.state` no se toca: es un evento de paso, no un dato
+   * de partida que deba sobrevivir a un patch futuro ni reconstruirse tras
+   * una reconexion.
+   */
+  private onReact(client: Client, emoji: unknown): void {
+    if (this.game.phase === "LOBBY") return;
+    if (typeof emoji !== "number" || !Number.isInteger(emoji) || emoji < 0 || emoji > 5) return;
+
+    const now = Date.now();
+    const last = this.lastReactionAt.get(client.sessionId) ?? 0;
+    if (now - last < 600) return;
+
+    this.lastReactionAt.set(client.sessionId, now);
+    this.broadcast("reaction", { playerId: client.sessionId, emoji });
   }
 
   /**
