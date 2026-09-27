@@ -1,3 +1,4 @@
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ClientState, PlayerView } from "../net/types.js";
 
@@ -65,6 +66,16 @@ function EmptySeatIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 3" className="h-5 w-5 shrink-0" aria-hidden="true">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+/** Icono de reloj (esperando/reconectando), trazo 2 sobre 24x24 -- MASTER.md S7: SVG, nunca emoji. Distingue "esperando" de "listo" tambien por forma, no solo por color/texto. */
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 3" />
     </svg>
   );
 }
@@ -199,6 +210,122 @@ function EntryForm({ error, onCreate, onJoinByCode }: Omit<Props, "state" | "onR
   );
 }
 
+/**
+ * Contador enorme "N de M listos" -- el requisito explicito del encargo:
+ * "quien ya pulso Listo tiene que ser imposible de no ver". Vive encima de
+ * la lista, a la misma escala tipografica que la cifra heroica de
+ * MASTER.md S3 (la del precio en la subasta), porque es el dato mas
+ * importante de esta pantalla mientras se espera.
+ *
+ * Cuenta sobre CONECTADOS (mismo universo que startBlockReason /
+ * AuctionRoom.allConnectedPlayersReady): un jugador desconectado no cuenta
+ * como "falta por estar listo", ya esta descontado del denominador.
+ *
+ * Uno de los DOS elementos animados de esta vista (MASTER.md S5): al subir
+ * el numero de listos, un destello lima breve + una subida de 6px marca el
+ * cambio -- igual de discreto que "puja aceptada" en la tabla de movimiento
+ * de partida. Sin movimiento reducido, el numero simplemente cambia.
+ */
+function ReadyCounter({ readyCount, connectedCount }: { readyCount: number; connectedCount: number }) {
+  const allReady = connectedCount > 0 && readyCount === connectedCount;
+  return (
+    <div className={`panel flex items-center gap-4 px-6 py-5 ${allReady ? "bg-lime" : "bg-ink"}`}>
+      <motion.p
+        key={readyCount}
+        initial={{ opacity: 0.4, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        className={`tnum font-display text-[clamp(3rem,11vw,4.5rem)] font-black leading-none ${allReady ? "text-ink" : "text-lime"}`}
+        aria-hidden="true"
+      >
+        {readyCount}/{connectedCount}
+      </motion.p>
+      <div>
+        <p className={`font-display text-2xl font-black uppercase leading-none tracking-tight ${allReady ? "text-ink" : "text-white"}`}>
+          {allReady ? "Todos listos" : "Listos para empezar"}
+        </p>
+        {/* aria-live: el numero de arriba es aria-hidden porque este texto ya lo dice completo para lectores de pantalla. */}
+        <p aria-live="polite" className={`font-body text-sm font-semibold ${allReady ? "text-ink/70" : "text-mute"}`}>
+          {connectedCount === 0
+            ? "Esperando jugadores…"
+            : `${readyCount} de ${connectedCount} jugador${connectedCount === 1 ? "" : "es"} conectado${connectedCount === 1 ? "" : "s"} ha${readyCount === 1 ? "" : "n"} pulsado listo.`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Una fila del roster -- reescrita para que el estado "listo" sea imposible
+ * de no ver (el encargo explicito de esta tarea): antes era una etiqueta
+ * pequena a la derecha del nombre, ahora el bloque ENTERO de la fila cambia
+ * a lima solido con icono + texto grande cuando el jugador esta listo, del
+ * mismo peso visual que la etiqueta "GANANDO" de la subasta pero a escala
+ * de fila completa, no de chip.
+ *
+ * `layout` (Framer) anima la reordenacion si el array de jugadores cambia
+ * de orden entre renders (no ocurre hoy -- el servidor no reordena -- pero
+ * cubre el caso sin coste); la transicion real que se ve es el color/icono
+ * de fondo cruzando de --ink a --lime cuando `ready` pasa a true: el
+ * jugador "confirmandose", segundo de los dos elementos animados de esta
+ * vista.
+ */
+function PlayerRow({ player, isHost }: { player: PlayerView; isHost: boolean }) {
+  const reducedMotion = useReducedMotion();
+
+  let stateBlock: React.ReactNode;
+  if (player.rejoinPending) {
+    stateBlock = (
+      <span className="flex h-11 shrink-0 items-center gap-2 border-2 border-white/20 px-4 font-display text-sm font-black uppercase tracking-wide text-mute">
+        <ClockIcon />
+        Reconectando
+      </span>
+    );
+  } else if (!player.connected) {
+    stateBlock = (
+      <span className="flex h-11 shrink-0 items-center gap-2 border-2 border-danger/60 px-4 font-display text-sm font-black uppercase tracking-wide text-danger">
+        Desconectado
+      </span>
+    );
+  } else if (player.ready) {
+    stateBlock = (
+      <motion.span
+        layout="position"
+        initial={reducedMotion ? false : { scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="flex h-11 shrink-0 items-center gap-2 bg-lime px-4 font-display text-sm font-black uppercase tracking-wide text-ink"
+      >
+        <CheckIcon />
+        Listo
+      </motion.span>
+    );
+  } else {
+    stateBlock = (
+      <span className="flex h-11 shrink-0 items-center gap-2 border-2 border-white/20 px-4 font-display text-sm font-black uppercase tracking-wide text-mute">
+        <ClockIcon />
+        Esperando
+      </span>
+    );
+  }
+
+  return (
+    <motion.li
+      layout
+      initial={reducedMotion ? false : { opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${player.ready ? "bg-lime/10" : "bg-ink"}`}
+    >
+      <span className="font-display text-xl font-bold uppercase text-white">
+        {player.name}
+        {isHost && <span className="ml-2 text-sm font-semibold normal-case text-lime">(anfitrión)</span>}
+      </span>
+      {stateBlock}
+    </motion.li>
+  );
+}
+
 export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) {
   const [ready, setReady] = useState(false);
 
@@ -220,48 +347,27 @@ export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) 
   const players = [...state.players.values()];
   const emptySeats = Math.max(0, MAX_PLAYERS - players.length);
   const blockReason = startBlockReason(players);
+  const connectedPlayers = players.filter((p) => p.connected);
+  const readyPlayers = connectedPlayers.filter((p) => p.ready);
 
   return (
     <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 p-6">
       <RoomCodePanel code={state.roomCode} />
+
+      {/* El requisito explicito de este encargo: "quien ya pulso Listo
+          tiene que ser imposible de no ver". El contador va ANTES de la
+          lista, a la misma escala que la cifra heroica de MASTER.md S3. */}
+      <ReadyCounter readyCount={readyPlayers.length} connectedCount={connectedPlayers.length} />
+
       <h2 className="font-display text-3xl font-black uppercase tracking-wide text-white">
         Sala ({players.length}/{MAX_PLAYERS})
       </h2>
       <ul className="flex flex-col gap-px bg-white/10">
-        {players.map((player) => (
-          <li key={player.playerId} className="flex items-center justify-between gap-3 bg-ink px-4 py-3">
-            <span className="font-display text-lg font-bold uppercase text-white">
-              {player.name}
-              {player.playerId === state.hostId && (
-                <span className="ml-2 text-sm font-semibold normal-case text-lime">(anfitrión)</span>
-              )}
-            </span>
-            {/* Estado del jugador: SIEMPRE icono + texto, nunca solo color
-                (MASTER.md S6) -- "listo" sigue el mismo patron que la
-                etiqueta "GANANDO" de la pantalla de subasta. Los tres
-                estados son mutuamente excluyentes de cara al navegador:
-                rejoinPending gana sobre connected=false (ver PlayerView),
-                y ready solo se pinta para quien esta conectado del todo. */}
-            {player.rejoinPending ? (
-              <span className="flex shrink-0 items-center gap-1.5 font-display text-xs font-black uppercase tracking-wide text-mute">
-                Reconectando
-              </span>
-            ) : !player.connected ? (
-              <span className="flex shrink-0 items-center gap-1.5 font-display text-xs font-black uppercase tracking-wide text-danger">
-                Desconectado
-              </span>
-            ) : player.ready ? (
-              <span className="flex shrink-0 items-center gap-1.5 bg-lime px-2 py-1 font-display text-xs font-black uppercase tracking-wide text-ink">
-                <CheckIcon />
-                Listo
-              </span>
-            ) : (
-              <span className="shrink-0 font-display text-xs font-bold uppercase tracking-wide text-mute">
-                Esperando
-              </span>
-            )}
-          </li>
-        ))}
+        <AnimatePresence initial={false}>
+          {players.map((player) => (
+            <PlayerRow key={player.playerId} player={player} isHost={player.playerId === state.hostId} />
+          ))}
+        </AnimatePresence>
         {/* Los huecos libres se dibujan como huecos, nunca se omiten
             (design-system/pages/sala-espera.md): ver "2 de 4" en abstracto
             informa menos que ver dos sitios vacios de verdad. */}
