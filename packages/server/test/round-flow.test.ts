@@ -102,10 +102,13 @@ describe("voto de salto", () => {
     }
     expect(room.state.remainingCount).toBe(3);
 
-    // Un descarte unanime quita una carta sin quitar un jugador -> margen agotado
+    // Un descarte unanime quita una carta sin quitar un jugador -> margen agotado.
+    // El voto de saltar es de sala entera (todos los conectados, no solo
+    // quien todavia necesita el hueco): clients[0] y clients[1] ya ficharon
+    // GK pero su voto sigue contando para la unanimidad.
     hooks.onBidTimeout();
     await room.waitForNextPatch();
-    for (const client of clients.slice(2)) client.send("voteSkip", { skip: true });
+    for (const client of clients) client.send("voteSkip", { skip: true });
     await room.waitForNextPatch();
     hooks.onRevealTimeout();
     await room.waitForNextPatch();
@@ -114,6 +117,74 @@ describe("voto de salto", () => {
     hooks.onBidTimeout();
     await room.waitForNextPatch();
     expect(room.state.phase).not.toBe("SKIP_VOTE");
+  });
+
+  it("el voto de quien ya ficho el hueco cuenta para la unanimidad", async () => {
+    // Ana ficha GK adjudicandose la primera carta; a partir de aqui ya no
+    // "necesita" el hueco en juego (GK), pero sigue conectada y su voto en
+    // la votacion de salto de la SEGUNDA carta de GK tiene que contar igual
+    // que el de Bea, Cid y Dan -- el usuario pidio explicitamente que el
+    // voto de saltar sea de sala entera, no solo de quien aun ficha.
+    const { room, clients, hooks } = await startedRoom();
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
+    await room.waitForNextPatch();
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    hooks.onRevealTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.players.get(clients[0]!.sessionId)?.squad.get("GK")).toBeTruthy();
+    // 4 cartas restantes, 3 jugadores por fichar (Bea/Cid/Dan): margen 4>3.
+    expect(room.state.remainingCount).toBe(4);
+
+    // Sin el voto de Ana (que ya ficho GK) la votacion no es unanime: se
+    // reanuda restringida en vez de saltar.
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("SKIP_VOTE");
+    clients[1]!.send("voteSkip", { skip: true });
+    clients[2]!.send("voteSkip", { skip: true });
+    clients[3]!.send("voteSkip", { skip: true });
+    await room.waitForNextPatch();
+    // Los tres que todavia necesitan GK ya votaron saltar, pero Ana (que ya
+    // lo ficho) no ha votado todavia: no hay auto-resuelto ni descarte aun.
+    expect(room.state.phase).toBe("SKIP_VOTE");
+    expect(room.state.remainingCount).toBe(4);
+
+    // El voto de Ana completa la unanimidad de TODOS los conectados y
+    // dispara el auto-resuelto sin esperar a que venza el reloj de 10 s.
+    clients[0]!.send("voteSkip", { skip: true });
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("REVEAL");
+    expect(room.state.remainingCount).toBe(3);
+  });
+
+  it("quien ya ficho el hueco puede romper la unanimidad votando en contra, sin acabar entre los restringidos", async () => {
+    // Mismo reparto que el test anterior (Ana ficha GK, quedan 4 cartas y 3
+    // necesitando: margen de sobra para un voto de salto). Si Ana vota EN
+    // CONTRA del salto, su voto rompe la unanimidad igual que el de
+    // cualquier otro conectado -- pero como ya tiene GK fichado nunca puede
+    // acabar entre quienes pueden pujar la reanudacion restringida: eso
+    // sigue siendo terreno exclusivo de quien de verdad necesita el hueco.
+    const { room, clients, hooks } = await startedRoom();
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
+    await room.waitForNextPatch();
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    hooks.onRevealTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.remainingCount).toBe(4);
+
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("SKIP_VOTE");
+    clients[0]!.send("voteSkip", { skip: false }); // Ana: ya tiene GK, vota en contra
+    clients[1]!.send("voteSkip", { skip: true });
+    clients[2]!.send("voteSkip", { skip: true });
+    clients[3]!.send("voteSkip", { skip: false }); // Dan: aun necesita GK, vota en contra
+    await room.waitForNextPatch();
+
+    expect(room.state.phase).toBe("BIDDING");
+    expect([...room.state.restrictedBidders]).toEqual([clients[3]!.sessionId]);
   });
 
   it("descarta directamente si el voto falla sin nadie en contra (solo abstenciones)", async () => {

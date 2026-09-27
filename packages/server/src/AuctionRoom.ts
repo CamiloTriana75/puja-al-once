@@ -3,7 +3,8 @@ import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
   applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
-  parseDataset, playersEligibleToPass, playersNeedingSlot, resolveAuction, resolvePass, resolveSkipVote, scoreMatch,
+  parseDataset, playersEligible, playersEligibleToPass, playersNeedingSlot, resolveAuction, resolvePass,
+  resolveSkipVote, scoreMatch,
   SLOTS, toPrivate, toPublic,
   type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
 } from "@fut/shared";
@@ -443,19 +444,22 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
   private onVoteSkip(client: Client, skip: boolean): void {
     if (this.game.phase !== "SKIP_VOTE") return;
-    // Solo cuenta el voto de quien de verdad necesita el hueco en juego:
-    // resolveSkipVote ya ignora a cualquier otro al construir `eligible`,
-    // pero sin este filtro su voto igual queda escrito en skipVotes y
-    // viaja al Schema -- visible para todos, sin afectar el desenlace pero
-    // sembrando un voto fantasma de alguien desconectado (o de un
-    // reingreso aparcado: mismo caso, ver onReconnected) que no debería
-    // poder votar nada.
-    if (!playersNeedingSlot(this.game).some((p) => p.playerId === client.sessionId)) return;
+    // Cuenta el voto de CUALQUIER jugador conectado, no solo de quien
+    // todavia necesita el hueco en juego: el usuario pidio explicitamente
+    // que la votacion de saltar sea de sala entera. resolveSkipVote exige
+    // unanimidad de este mismo conjunto (`playersEligible`) y ya filtra por
+    // separado a quien puede acabar en `restrictedBidders` (solo quien
+    // necesita el hueco), asi que el voto de alguien que ya ficho este
+    // puesto cuenta para la unanimidad pero nunca lo mete a pujar. Sigue
+    // excluido quien esta desconectado o con un reingreso aparcado (mismo
+    // caso, ver onReconnected): su voto no debe quedar escrito en
+    // skipVotes ni viajar al Schema.
+    if (!playersEligible(this.game).some((p) => p.playerId === client.sessionId)) return;
     this.game.skipVotes = { ...this.game.skipVotes, [client.sessionId]: skip };
     this.sync();
 
     // Si ya votaron todos los que podian, no hace falta agotar los 10 s.
-    const pending = playersNeedingSlot(this.game).filter(
+    const pending = playersEligible(this.game).filter(
       (p) => this.game.skipVotes[p.playerId] === undefined,
     );
     if (pending.length === 0) this.onSkipTimeout();

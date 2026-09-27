@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  playersNeedingSlot, resolveSkipVote, skipAllowed,
+  playersEligible, playersNeedingSlot, resolveSkipVote, skipAllowed,
   type AuctionState, type PlayerState,
 } from "../src/index.js";
 
@@ -40,6 +40,20 @@ describe("playersNeedingSlot", () => {
   });
 });
 
+describe("playersEligible", () => {
+  it("incluye a todos los conectados, ya tengan o no el hueco", () => {
+    const s = state({
+      players: [
+        player("p1"),
+        player("p2", { squad: { GK: "cx" } }),
+        player("p3", { connected: false }),
+        player("p4"),
+      ],
+    });
+    expect(playersEligible(s).map((p) => p.playerId)).toEqual(["p1", "p2", "p4"]);
+  });
+});
+
 describe("skipAllowed", () => {
   it("permite saltar mientras sobran cartas", () => {
     // 5 cartas, 4 jugadores necesitan el hueco
@@ -68,14 +82,30 @@ describe("skipAllowed", () => {
 });
 
 describe("resolveSkipVote", () => {
-  it("salta si todos los que necesitan el hueco votan saltar", () => {
+  it("salta si todos los conectados votan saltar", () => {
     const s = state({ skipVotes: { p1: true, p2: true, p3: true, p4: true } });
     expect(resolveSkipVote(s)).toEqual({ kind: "SKIPPED" });
   });
 
-  it("ignora el voto de quien ya ficho el hueco", () => {
+  it("el voto de quien ya ficho el hueco cuenta igual para la unanimidad", () => {
     const s = state({
       players: [player("p1", { squad: { GK: "cx" } }), player("p2"), player("p3"), player("p4")],
+      skipVotes: { p1: true, p2: true, p3: true, p4: true },
+    });
+    expect(resolveSkipVote(s)).toEqual({ kind: "SKIPPED" });
+  });
+
+  it("sin el voto de quien ya ficho el hueco no hay unanimidad -- todos votan, no solo quien lo necesita", () => {
+    const s = state({
+      players: [player("p1", { squad: { GK: "cx" } }), player("p2"), player("p3"), player("p4")],
+      skipVotes: { p2: true, p3: true, p4: true },
+    });
+    expect(resolveSkipVote(s)).toEqual({ kind: "RESUMED", restrictedBidders: [] });
+  });
+
+  it("ignora a los desconectados para la unanimidad", () => {
+    const s = state({
+      players: [player("p1", { connected: false }), player("p2"), player("p3"), player("p4")],
       skipVotes: { p2: true, p3: true, p4: true },
     });
     expect(resolveSkipVote(s)).toEqual({ kind: "SKIPPED" });
@@ -89,5 +119,13 @@ describe("resolveSkipVote", () => {
   it("trata la abstencion como que no bloquea el salto pero tampoco habilita a pujar", () => {
     const s = state({ skipVotes: { p1: true, p2: true } });
     expect(resolveSkipVote(s)).toEqual({ kind: "RESUMED", restrictedBidders: [] });
+  });
+
+  it("quien ya ficho el hueco puede votar en contra pero nunca acaba en restrictedBidders", () => {
+    const s = state({
+      players: [player("p1", { squad: { GK: "cx" } }), player("p2"), player("p3"), player("p4")],
+      skipVotes: { p1: false, p2: true, p3: true, p4: false },
+    });
+    expect(resolveSkipVote(s)).toEqual({ kind: "RESUMED", restrictedBidders: ["p4"] });
   });
 });

@@ -30,11 +30,11 @@ function state(overrides: Partial<AuctionState> = {}): AuctionState {
 }
 
 describe("playersEligibleToPass", () => {
-  it("son quienes necesitan el hueco cuando no hay fase restringida", () => {
+  it("son todos los conectados cuando no hay fase restringida, tengan o no ya el hueco", () => {
     const s = state({
       players: [player("p1", { squad: { GK: "cx" } }), player("p2", { connected: false }), player("p3"), player("p4")],
     });
-    expect(playersEligibleToPass(s)).toEqual(["p3", "p4"]);
+    expect(playersEligibleToPass(s)).toEqual(["p1", "p3", "p4"]);
   });
 
   it("en fase restringida, solo quien ademas esta en la lista", () => {
@@ -45,7 +45,7 @@ describe("playersEligibleToPass", () => {
   it("la fase restringida no anade a nadie que no necesite ya el hueco", () => {
     const s = state({
       players: [player("p1", { squad: { GK: "cx" } }), player("p2"), player("p3"), player("p4")],
-      restrictedBidders: ["p1", "p2"], // p1 ya ficho -- no deberia colar
+      restrictedBidders: ["p1", "p2"], // p1 ya ficho -- no deberia colar aunque este conectado
     });
     expect(playersEligibleToPass(s)).toEqual(["p2"]);
   });
@@ -81,5 +81,17 @@ describe("resolvePass", () => {
   it("en fase restringida con margen de sobra tambien descarta", () => {
     const s = state({ restrictedBidders: ["p2"], passes: { p2: true } });
     expect(resolvePass(s, DEFAULT_RULES, rngFirst)).toEqual({ kind: "DISCARDED", cardId: "c1" });
+  });
+
+  it("el pase de quien ya ficho el hueco cuenta para la unanimidad -- sin margen, el sorteo lo sigue excluyendo", () => {
+    const s = state({
+      remainingCards: ["c1", "c2", "c3"],
+      players: [player("p1", { squad: { GK: "cx" } }), player("p2"), player("p3"), player("p4")],
+      passes: { p1: true, p2: true, p3: true, p4: true },
+    });
+    // playersEligibleToPass(s) === ["p1","p2","p3","p4"], las 4 pasan: unanime.
+    // remainingCards.length (3) === playersNeedingSlot(s).length (3): sin margen.
+    // p1 ya tiene el hueco -- no puede ganar el sorteo aunque haya pasado.
+    expect(resolvePass(s, DEFAULT_RULES, rngFirst)).toMatchObject({ kind: "FORCED", playerId: "p2" });
   });
 });
