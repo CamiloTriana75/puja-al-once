@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { AuctionCard } from "../components/AuctionCard.js";
 import { BidControls } from "../components/BidControls.js";
@@ -32,6 +33,7 @@ interface Props {
 
 export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDismissReaction, send }: Props) {
   const remaining = useServerClock(state.endsAt);
+  const reducedMotion = useReducedMotion() ?? false;
   const me = state.players.get(myId);
   const card = state.currentCard;
 
@@ -362,8 +364,19 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
             // texto -- nunca solo color (MASTER.md S6) -- igual que GANANDO.
             const passed = state.currentBid === 0 && state.passes.get(player.playerId) === true;
             return (
-              <li
+              // `layout`: reposiciona con animacion si el orden de la lista
+              // cambiara alguna vez (hoy es orden de insercion estable, pero
+              // el coste es gratis -- solo transform, no cuenta contra el
+              // presupuesto de MASTER.md S5 porque no hay ningun cambio de
+              // layout real que animar en el caso comun). El color+texto de
+              // "GANANDO"/"PASA" sigue siendo un cambio instantaneo de CSS,
+              // no Framer: esta vista ya tiene su propio presupuesto de dos
+              // elementos ocupado por el reveal (AuctionCard/RevealBar)
+              // durante REVEAL.
+              <motion.li
                 key={player.playerId}
+                layout={!reducedMotion}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className={`flex items-center justify-between px-4 py-3 ${leading ? "bg-lime text-ink" : "bg-ink text-white"}`}
               >
                 <span className="font-display text-lg font-bold uppercase">
@@ -388,7 +401,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
                 <span className={`tnum font-display text-lg font-extrabold ${leading ? "text-ink" : "text-green"}`}>
                   {player.budget}M · {player.squad.size}/11
                 </span>
-              </li>
+              </motion.li>
             );
           })}
           </ul>
