@@ -115,16 +115,14 @@ export async function toColorCutout(input: Buffer): Promise<Buffer> {
  */
 export async function removeBackground(input: Buffer): Promise<Buffer> {
   const { removeBackground: removeBackgroundImg } = await import("@imgly/background-removal-node");
-  // La libreria envuelve un Buffer/ArrayBuffer crudo en un Blob sin mime type
-  // (`new Blob([image])`), y su decodificador interno revienta con
-  // "Unsupported format: " si no sabe que es. Hay que decirle explicitamente
-  // que tipo de imagen es la que le estamos dando.
-  const format = (await sharp(input).metadata()).format;
-  const mime = format === "png" ? "image/png" : format === "webp" ? "image/webp" : "image/jpeg";
+  // Commons incluye JPEG en escala de grises de un canal. La libreria añade
+  // alfa a RGB de tres canales, pero deja intacta una imagen de un canal y
+  // falla al codificarla. Normalizar aquí garantiza RGBA para todos los casos.
+  const rgbaPng = await sharp(input).toColourspace("srgb").ensureAlpha().png().toBuffer();
   // Uint8Array plano (no Buffer) para que el tipo del ArrayBuffer subyacente
   // sea siempre ArrayBuffer y no ArrayBufferLike | SharedArrayBuffer, que es
   // lo que exige el tipo BlobPart.
-  const blob = new Blob([new Uint8Array(input)], { type: mime });
+  const blob = new Blob([new Uint8Array(rgbaPng)], { type: "image/png" });
   const outBlob = await removeBackgroundImg(blob, { model: "small", output: { format: "image/png" } });
   return Buffer.from(await outBlob.arrayBuffer());
 }

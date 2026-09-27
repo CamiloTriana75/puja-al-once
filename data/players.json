@@ -11,7 +11,7 @@
     "rating": 90,
     "heightCm": 185,
     "foot": "R",
-    "silhouetteId": "casillas-01"
+    "silhouetteId": "casillas-2010"
   },
   {
     "cardId": "casillas-2016",
@@ -25,7 +25,7 @@
     "rating": 79,
     "heightCm": 185,
     "foot": "R",
-    "silhouetteId": "casillas-01"
+    "silhouetteId": "casillas-2016"
   },
   {
     "cardId": "neuer-2014",
@@ -39,7 +39,7 @@
     "rating": 90,
     "heightCm": 193,
     "foot": "R",
-    "silhouetteId": "neuer-01"
+    "silhouetteId": "neuer-2014"
   },
   {
     "cardId": "kahn-2001",
@@ -53,13 +53,13 @@
     "rating": 91,
     "heightCm": 188,
     "foot": "R",
-    "silhouetteId": "kahn-01"
+    "silhouetteId": "kahn-2001"
   },
   {
     "cardId": "cech-2005",
     "name": "Petr Cech",
     "season": 2005,
-    "birthYear": 1978,
+    "birthYear": 1982,
     "club": "Chelsea",
     "league": "Premier League",
     "nation": "CZE",
@@ -67,7 +67,7 @@
     "rating": 90,
     "heightCm": 196,
     "foot": "R",
-    "silhouetteId": "cech-01"
+    "silhouetteId": "cech-2005"
   },
   {
     "cardId": "buffon-2003",
@@ -81,7 +81,7 @@
     "rating": 91,
     "heightCm": 192,
     "foot": "R",
-    "silhouetteId": "buffon-01"
+    "silhouetteId": "buffon-2003"
   },
   {
     "cardId": "buffon-2018",
@@ -95,7 +95,7 @@
     "rating": 82,
     "heightCm": 192,
     "foot": "R",
-    "silhouetteId": "buffon-01"
+    "silhouetteId": "buffon-2018"
   },
   {
     "cardId": "oblak-2020",
@@ -109,7 +109,7 @@
     "rating": 91,
     "heightCm": 188,
     "foot": "R",
-    "silhouetteId": "oblak-01"
+    "silhouetteId": "oblak-2020"
   },
   {
     "cardId": "schmeichel-1998",
@@ -123,13 +123,13 @@
     "rating": 90,
     "heightCm": 193,
     "foot": "R",
-    "silhouetteId": "schmeichel-01"
+    "silhouetteId": "schmeichel-1998"
   },
   {
     "cardId": "cech-2018",
     "name": "Petr Cech",
     "season": 2018,
-    "birthYear": 1978,
+    "birthYear": 1982,
     "club": "Arsenal",
     "league": "Premier League",
     "nation": "CZE",
@@ -137,7 +137,7 @@
     "rating": 76,
     "heightCm": 196,
     "foot": "R",
-    "silhouetteId": "cech-01"
+    "silhouetteId": "cech-2018"
   },
   {
     "cardId": "roberto-carlos-2002",
@@ -151,7 +151,7 @@
     "rating": 92,
     "heightCm": 168,
     "foot": "L",
-    "silhouetteId": "roberto-carlos-01"
+    "silhouetteId": "roberto-carlos-2002"
   },
   {
     "cardId": "roberto-carlos-2007",
@@ -165,7 +165,7 @@
     "rating": 78,
     "heightCm": 168,
     "foot": "L",
-    "silhouetteId": "roberto-carlos-01"
+    "silhouetteId": "roberto-carlos-2007"
   },
   {
     "cardId": "marcelo-2017",
@@ -179,7 +179,7 @@
     "rating": 88,
     "heightCm": 174,
     "foot": "L",
-    "silhouetteId": "marcelo-01"
+    "silhouetteId": "marcelo-2017"
   },
   {
     "cardId": "ashley-cole-2005",
@@ -193,7 +193,7 @@
     "rating": 89,
     "heightCm": 176,
     "foot": "L",
-    "silhouetteId": "ashley-cole-01"
+    "silhouetteId": "ashley-cole-2005"
   },
   {
     "cardId": "jordi-alba-2015",
@@ -207,7 +207,7 @@
     "rating": 86,
     "heightCm": 170,
     "foot": "L",
-    "silhouetteId": "jordi-alba-01"
+    "silhouetteId": "jordi-alba-2015"
   },
   {
     "cardId": "alaba-2014",
@@ -221,7 +221,7 @@
     "rating": 86,
     "heightCm": 180,
     "foot": "L",
-    "silhouetteId": "alaba-01"
+    "silhouetteId": "alaba-2014"
   },
   {
     "cardId": "evra-2010",
@@ -235,7 +235,7 @@
     "rating": 85,
     "heightCm": 174,
     "foot": "L",
-    "silhouetteId": "evra-01"
+    "silhouetteId": "evra-2010"
   },
   {
     "cardId": "robertson-2019",
@@ -249,7 +249,7 @@
     "rating": 87,
     "heightCm": 178,
     "foot": "L",
-    "silhouetteId": "robertson-01"
+    "silhouetteId": "robertson-2019"
   },
   {
     "cardId": "theo-hernandez-2021",
@@ -263,7 +263,7 @@
     "rating": 86,
     "heightCm": 184,
     "foot": "L",
-    "silhouetteId": "theo-hernandez-01"
+    "silhouetteId": "theo-hernandez-2021"
   },
   {
     "cardId": "jordi-alba-2023",
@@ -277,7 +277,7 @@
     "rating": 77,
     "heightCm": 170,
     "foot": "L",
-    "silhouetteId": "jordi-alba-01"
+    "silhouetteId": "jordi-alba-2023"
   },
   {
     "cardId": "sergio-ramos-2018",
@@ -291,7 +291,7 @@
     "rating": 91,
     "heightCm": 184,
     "foot": "R",
-    "silhouetteId": "sergio-ramos-01"
+    "silhouetteId": "sergio-ramos-2018"
   },
   {
     "cardId": "maldini-2003",
@@ -305,7 +305,7 @@
     "rating": 90,
     "heightCm": 186,
     "foot": "L",
-    "silhouetteId": "maldini-01"
+    "silhouetteId": "maldini-2003"
   },
   {
     "cardId": "maldini-2007",
@@ -319,7 +319,7 @@
     "rating": 85,
     "heightCm": 186,
     "foot": "L",
-    "silhouetteId": "maldini-01"
+    "silhouetteId": "maldini-2007"
   },
   {
     "cardId": "rio-ferdinand-2008",
@@ -333,13 +333,13 @@
     "rating": 88,
     "heightCm": 189,
     "foot": "R",
-    "silhouetteId": "rio-ferdinand-01"
+    "silhouetteId": "rio-ferdinand-2008"
   },
   {
     "cardId": "cannavaro-2006",
     "name": "Fabio Cannavaro",
     "season": 2006,
-    "birthYear": 1978,
+    "birthYear": 1973,
     "club": "Real Madrid",
     "league": "LaLiga",
     "nation": "ITA",
@@ -347,7 +347,7 @@
     "rating": 90,
     "heightCm": 176,
     "foot": "R",
-    "silhouetteId": "cannavaro-01"
+    "silhouetteId": "cannavaro-2006"
   },
   {
     "cardId": "pique-2012",
@@ -361,7 +361,7 @@
     "rating": 88,
     "heightCm": 194,
     "foot": "R",
-    "silhouetteId": "pique-01"
+    "silhouetteId": "pique-2012"
   },
   {
     "cardId": "ramos-2022",
@@ -375,7 +375,7 @@
     "rating": 81,
     "heightCm": 184,
     "foot": "R",
-    "silhouetteId": "sergio-ramos-01"
+    "silhouetteId": "ramos-2022"
   },
   {
     "cardId": "beckenbauer-1974",
@@ -389,7 +389,7 @@
     "rating": 95,
     "heightCm": 181,
     "foot": "R",
-    "silhouetteId": "beckenbauer-01"
+    "silhouetteId": "beckenbauer-1974"
   },
   {
     "cardId": "beckenbauer-1977",
@@ -403,13 +403,13 @@
     "rating": 78,
     "heightCm": 181,
     "foot": "R",
-    "silhouetteId": "beckenbauer-01"
+    "silhouetteId": "beckenbauer-1977"
   },
   {
     "cardId": "cannavaro-2010",
     "name": "Fabio Cannavaro",
     "season": 2010,
-    "birthYear": 1978,
+    "birthYear": 1973,
     "club": "Al Ahli",
     "league": "UAE Pro League",
     "nation": "ITA",
@@ -417,7 +417,7 @@
     "rating": 74,
     "heightCm": 176,
     "foot": "R",
-    "silhouetteId": "cannavaro-01"
+    "silhouetteId": "cannavaro-2010"
   },
   {
     "cardId": "vandijk-2019",
@@ -431,7 +431,7 @@
     "rating": 91,
     "heightCm": 193,
     "foot": "R",
-    "silhouetteId": "vandijk-01"
+    "silhouetteId": "vandijk-2019"
   },
   {
     "cardId": "thiago-silva-2013",
@@ -445,7 +445,7 @@
     "rating": 90,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "thiago-silva-01"
+    "silhouetteId": "thiago-silva-2013"
   },
   {
     "cardId": "thiago-silva-2023",
@@ -459,7 +459,7 @@
     "rating": 82,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "thiago-silva-01"
+    "silhouetteId": "thiago-silva-2023"
   },
   {
     "cardId": "nesta-2003",
@@ -473,7 +473,7 @@
     "rating": 90,
     "heightCm": 187,
     "foot": "R",
-    "silhouetteId": "nesta-01"
+    "silhouetteId": "nesta-2003"
   },
   {
     "cardId": "puyol-2009",
@@ -487,7 +487,7 @@
     "rating": 89,
     "heightCm": 178,
     "foot": "R",
-    "silhouetteId": "puyol-01"
+    "silhouetteId": "puyol-2009"
   },
   {
     "cardId": "varane-2018",
@@ -501,7 +501,7 @@
     "rating": 87,
     "heightCm": 191,
     "foot": "R",
-    "silhouetteId": "varane-01"
+    "silhouetteId": "varane-2018"
   },
   {
     "cardId": "varane-2023",
@@ -515,7 +515,7 @@
     "rating": 80,
     "heightCm": 191,
     "foot": "R",
-    "silhouetteId": "varane-01"
+    "silhouetteId": "varane-2023"
   },
   {
     "cardId": "walter-samuel-2010",
@@ -529,7 +529,7 @@
     "rating": 90,
     "heightCm": 183,
     "foot": "L",
-    "silhouetteId": "walter-samuel-01"
+    "silhouetteId": "walter-samuel-2010"
   },
   {
     "cardId": "walter-samuel-2015",
@@ -543,7 +543,7 @@
     "rating": 77,
     "heightCm": 183,
     "foot": "L",
-    "silhouetteId": "walter-samuel-01"
+    "silhouetteId": "walter-samuel-2015"
   },
   {
     "cardId": "marquez-2006",
@@ -557,7 +557,7 @@
     "rating": 85,
     "heightCm": 184,
     "foot": "R",
-    "silhouetteId": "marquez-01"
+    "silhouetteId": "marquez-2006"
   },
   {
     "cardId": "cafu-2002",
@@ -571,7 +571,7 @@
     "rating": 90,
     "heightCm": 175,
     "foot": "R",
-    "silhouetteId": "cafu-01"
+    "silhouetteId": "cafu-2002"
   },
   {
     "cardId": "dani-alves-2015",
@@ -585,7 +585,7 @@
     "rating": 88,
     "heightCm": 172,
     "foot": "R",
-    "silhouetteId": "dani-alves-01"
+    "silhouetteId": "dani-alves-2015"
   },
   {
     "cardId": "dani-alves-2021",
@@ -599,7 +599,7 @@
     "rating": 76,
     "heightCm": 172,
     "foot": "R",
-    "silhouetteId": "dani-alves-01"
+    "silhouetteId": "dani-alves-2021"
   },
   {
     "cardId": "lahm-2014",
@@ -613,7 +613,7 @@
     "rating": 90,
     "heightCm": 170,
     "foot": "R",
-    "silhouetteId": "lahm-01"
+    "silhouetteId": "lahm-2014"
   },
   {
     "cardId": "trent-2019",
@@ -627,7 +627,7 @@
     "rating": 86,
     "heightCm": 175,
     "foot": "R",
-    "silhouetteId": "trent-01"
+    "silhouetteId": "trent-2019"
   },
   {
     "cardId": "cafu-2006",
@@ -641,7 +641,7 @@
     "rating": 79,
     "heightCm": 175,
     "foot": "R",
-    "silhouetteId": "cafu-01"
+    "silhouetteId": "cafu-2006"
   },
   {
     "cardId": "walker-2019",
@@ -655,7 +655,7 @@
     "rating": 84,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "walker-01"
+    "silhouetteId": "walker-2019"
   },
   {
     "cardId": "trent-2025",
@@ -669,7 +669,7 @@
     "rating": 78,
     "heightCm": 175,
     "foot": "R",
-    "silhouetteId": "trent-01"
+    "silhouetteId": "trent-2025"
   },
   {
     "cardId": "walker-2025",
@@ -683,7 +683,7 @@
     "rating": 74,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "walker-01"
+    "silhouetteId": "walker-2025"
   },
   {
     "cardId": "zanetti-2010",
@@ -697,7 +697,7 @@
     "rating": 85,
     "heightCm": 178,
     "foot": "R",
-    "silhouetteId": "zanetti-01"
+    "silhouetteId": "zanetti-2010"
   },
   {
     "cardId": "makelele-2004",
@@ -711,7 +711,7 @@
     "rating": 88,
     "heightCm": 168,
     "foot": "R",
-    "silhouetteId": "makelele-01"
+    "silhouetteId": "makelele-2004"
   },
   {
     "cardId": "busquets-2015",
@@ -725,7 +725,7 @@
     "rating": 89,
     "heightCm": 189,
     "foot": "R",
-    "silhouetteId": "busquets-01"
+    "silhouetteId": "busquets-2015"
   },
   {
     "cardId": "vieira-2001",
@@ -739,7 +739,7 @@
     "rating": 90,
     "heightCm": 193,
     "foot": "R",
-    "silhouetteId": "vieira-01"
+    "silhouetteId": "vieira-2001"
   },
   {
     "cardId": "kante-2018",
@@ -753,7 +753,7 @@
     "rating": 90,
     "heightCm": 168,
     "foot": "R",
-    "silhouetteId": "kante-01"
+    "silhouetteId": "kante-2018"
   },
   {
     "cardId": "fernandinho-2017",
@@ -767,7 +767,7 @@
     "rating": 86,
     "heightCm": 179,
     "foot": "R",
-    "silhouetteId": "fernandinho-01"
+    "silhouetteId": "fernandinho-2017"
   },
   {
     "cardId": "casemiro-2018",
@@ -781,7 +781,7 @@
     "rating": 87,
     "heightCm": 185,
     "foot": "R",
-    "silhouetteId": "casemiro-01"
+    "silhouetteId": "casemiro-2018"
   },
   {
     "cardId": "yaya-toure-2014",
@@ -795,7 +795,7 @@
     "rating": 88,
     "heightCm": 191,
     "foot": "R",
-    "silhouetteId": "yaya-toure-01"
+    "silhouetteId": "yaya-toure-2014"
   },
   {
     "cardId": "busquets-2023",
@@ -809,7 +809,7 @@
     "rating": 78,
     "heightCm": 189,
     "foot": "R",
-    "silhouetteId": "busquets-01"
+    "silhouetteId": "busquets-2023"
   },
   {
     "cardId": "yaya-toure-2018",
@@ -823,7 +823,7 @@
     "rating": 70,
     "heightCm": 191,
     "foot": "R",
-    "silhouetteId": "yaya-toure-01"
+    "silhouetteId": "yaya-toure-2018"
   },
   {
     "cardId": "essien-2007",
@@ -837,7 +837,7 @@
     "rating": 88,
     "heightCm": 179,
     "foot": "R",
-    "silhouetteId": "essien-01"
+    "silhouetteId": "essien-2007"
   },
   {
     "cardId": "xavi-2010",
@@ -851,7 +851,7 @@
     "rating": 92,
     "heightCm": 170,
     "foot": "R",
-    "silhouetteId": "xavi-01"
+    "silhouetteId": "xavi-2010"
   },
   {
     "cardId": "xavi-2014",
@@ -865,7 +865,7 @@
     "rating": 84,
     "heightCm": 170,
     "foot": "R",
-    "silhouetteId": "xavi-01"
+    "silhouetteId": "xavi-2014"
   },
   {
     "cardId": "gerrard-2006",
@@ -879,7 +879,7 @@
     "rating": 90,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "gerrard-01"
+    "silhouetteId": "gerrard-2006"
   },
   {
     "cardId": "lampard-2005",
@@ -893,7 +893,7 @@
     "rating": 90,
     "heightCm": 184,
     "foot": "R",
-    "silhouetteId": "lampard-01"
+    "silhouetteId": "lampard-2005"
   },
   {
     "cardId": "kroos-2018",
@@ -907,7 +907,7 @@
     "rating": 88,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "kroos-01"
+    "silhouetteId": "kroos-2018"
   },
   {
     "cardId": "pirlo-2006",
@@ -921,7 +921,7 @@
     "rating": 89,
     "heightCm": 177,
     "foot": "R",
-    "silhouetteId": "pirlo-01"
+    "silhouetteId": "pirlo-2006"
   },
   {
     "cardId": "pirlo-2015",
@@ -935,7 +935,7 @@
     "rating": 81,
     "heightCm": 177,
     "foot": "R",
-    "silhouetteId": "pirlo-01"
+    "silhouetteId": "pirlo-2015"
   },
   {
     "cardId": "gerrard-2015",
@@ -949,7 +949,7 @@
     "rating": 78,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "gerrard-01"
+    "silhouetteId": "gerrard-2015"
   },
   {
     "cardId": "modric-2018",
@@ -963,7 +963,7 @@
     "rating": 90,
     "heightCm": 172,
     "foot": "R",
-    "silhouetteId": "modric-01"
+    "silhouetteId": "modric-2018"
   },
   {
     "cardId": "modric-2025",
@@ -977,7 +977,7 @@
     "rating": 82,
     "heightCm": 172,
     "foot": "R",
-    "silhouetteId": "modric-01"
+    "silhouetteId": "modric-2025"
   },
   {
     "cardId": "ronaldinho-2006",
@@ -991,7 +991,7 @@
     "rating": 94,
     "heightCm": 182,
     "foot": "R",
-    "silhouetteId": "ronaldinho-01"
+    "silhouetteId": "ronaldinho-2006"
   },
   {
     "cardId": "ronaldinho-2015",
@@ -1005,7 +1005,7 @@
     "rating": 74,
     "heightCm": 182,
     "foot": "R",
-    "silhouetteId": "ronaldinho-01"
+    "silhouetteId": "ronaldinho-2015"
   },
   {
     "cardId": "zidane-2000",
@@ -1019,7 +1019,7 @@
     "rating": 93,
     "heightCm": 185,
     "foot": "R",
-    "silhouetteId": "zidane-01"
+    "silhouetteId": "zidane-2000"
   },
   {
     "cardId": "iniesta-2012",
@@ -1033,7 +1033,7 @@
     "rating": 91,
     "heightCm": 171,
     "foot": "R",
-    "silhouetteId": "iniesta-01"
+    "silhouetteId": "iniesta-2012"
   },
   {
     "cardId": "kaka-2007",
@@ -1047,7 +1047,7 @@
     "rating": 92,
     "heightCm": 186,
     "foot": "R",
-    "silhouetteId": "kaka-01"
+    "silhouetteId": "kaka-2007"
   },
   {
     "cardId": "ozil-2014",
@@ -1061,7 +1061,7 @@
     "rating": 87,
     "heightCm": 183,
     "foot": "L",
-    "silhouetteId": "ozil-01"
+    "silhouetteId": "ozil-2014"
   },
   {
     "cardId": "riquelme-2006",
@@ -1075,7 +1075,7 @@
     "rating": 88,
     "heightCm": 178,
     "foot": "L",
-    "silhouetteId": "riquelme-01"
+    "silhouetteId": "riquelme-2006"
   },
   {
     "cardId": "iniesta-2018",
@@ -1089,7 +1089,7 @@
     "rating": 78,
     "heightCm": 171,
     "foot": "R",
-    "silhouetteId": "iniesta-01"
+    "silhouetteId": "iniesta-2018"
   },
   {
     "cardId": "rivaldo-1999",
@@ -1103,7 +1103,7 @@
     "rating": 95,
     "heightCm": 187,
     "foot": "L",
-    "silhouetteId": "rivaldo-01"
+    "silhouetteId": "rivaldo-1999"
   },
   {
     "cardId": "rivaldo-2008",
@@ -1117,7 +1117,7 @@
     "rating": 76,
     "heightCm": 187,
     "foot": "L",
-    "silhouetteId": "rivaldo-01"
+    "silhouetteId": "rivaldo-2008"
   },
   {
     "cardId": "robben-2013",
@@ -1131,7 +1131,7 @@
     "rating": 89,
     "heightCm": 180,
     "foot": "L",
-    "silhouetteId": "robben-01"
+    "silhouetteId": "robben-2013"
   },
   {
     "cardId": "robben-2018",
@@ -1145,7 +1145,7 @@
     "rating": 82,
     "heightCm": 180,
     "foot": "L",
-    "silhouetteId": "robben-01"
+    "silhouetteId": "robben-2018"
   },
   {
     "cardId": "giggs-1999",
@@ -1159,7 +1159,7 @@
     "rating": 90,
     "heightCm": 180,
     "foot": "L",
-    "silhouetteId": "giggs-01"
+    "silhouetteId": "giggs-1999"
   },
   {
     "cardId": "ribery-2013",
@@ -1173,7 +1173,7 @@
     "rating": 90,
     "heightCm": 170,
     "foot": "L",
-    "silhouetteId": "ribery-01"
+    "silhouetteId": "ribery-2013"
   },
   {
     "cardId": "neymar-2015",
@@ -1187,7 +1187,7 @@
     "rating": 91,
     "heightCm": 175,
     "foot": "R",
-    "silhouetteId": "neymar-01"
+    "silhouetteId": "neymar-2015"
   },
   {
     "cardId": "hazard-2015",
@@ -1201,7 +1201,7 @@
     "rating": 90,
     "heightCm": 173,
     "foot": "R",
-    "silhouetteId": "hazard-01"
+    "silhouetteId": "hazard-2015"
   },
   {
     "cardId": "hazard-2021",
@@ -1215,7 +1215,7 @@
     "rating": 76,
     "heightCm": 173,
     "foot": "R",
-    "silhouetteId": "hazard-01"
+    "silhouetteId": "hazard-2021"
   },
   {
     "cardId": "neymar-2023",
@@ -1229,7 +1229,7 @@
     "rating": 73,
     "heightCm": 175,
     "foot": "R",
-    "silhouetteId": "neymar-01"
+    "silhouetteId": "neymar-2023"
   },
   {
     "cardId": "ribery-2021",
@@ -1243,7 +1243,7 @@
     "rating": 75,
     "heightCm": 170,
     "foot": "L",
-    "silhouetteId": "ribery-01"
+    "silhouetteId": "ribery-2021"
   },
   {
     "cardId": "stoichkov-1994",
@@ -1257,7 +1257,7 @@
     "rating": 91,
     "heightCm": 178,
     "foot": "L",
-    "silhouetteId": "stoichkov-01"
+    "silhouetteId": "stoichkov-1994"
   },
   {
     "cardId": "cristiano-2008",
@@ -1271,7 +1271,7 @@
     "rating": 93,
     "heightCm": 187,
     "foot": "R",
-    "silhouetteId": "cristiano-01"
+    "silhouetteId": "cristiano-2008"
   },
   {
     "cardId": "cristiano-2023",
@@ -1285,7 +1285,7 @@
     "rating": 84,
     "heightCm": 187,
     "foot": "R",
-    "silhouetteId": "cristiano-01"
+    "silhouetteId": "cristiano-2023"
   },
   {
     "cardId": "messi-2015",
@@ -1299,7 +1299,7 @@
     "rating": 97,
     "heightCm": 170,
     "foot": "L",
-    "silhouetteId": "messi-01"
+    "silhouetteId": "messi-2015"
   },
   {
     "cardId": "figo-2000",
@@ -1313,7 +1313,7 @@
     "rating": 91,
     "heightCm": 179,
     "foot": "R",
-    "silhouetteId": "figo-01"
+    "silhouetteId": "figo-2000"
   },
   {
     "cardId": "beckham-2002",
@@ -1327,7 +1327,7 @@
     "rating": 89,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "beckham-01"
+    "silhouetteId": "beckham-2002"
   },
   {
     "cardId": "bale-2014",
@@ -1341,7 +1341,7 @@
     "rating": 88,
     "heightCm": 185,
     "foot": "L",
-    "silhouetteId": "bale-01"
+    "silhouetteId": "bale-2014"
   },
   {
     "cardId": "salah-2017",
@@ -1355,7 +1355,7 @@
     "rating": 89,
     "heightCm": 175,
     "foot": "L",
-    "silhouetteId": "salah-01"
+    "silhouetteId": "salah-2017"
   },
   {
     "cardId": "messi-2023",
@@ -1366,10 +1366,10 @@
     "league": "MLS",
     "nation": "ARG",
     "slot": "RW",
-    "rating": 84,
+    "rating": 88,
     "heightCm": 170,
     "foot": "L",
-    "silhouetteId": "messi-01"
+    "silhouetteId": "messi-2023"
   },
   {
     "cardId": "figo-2008",
@@ -1383,12 +1383,12 @@
     "rating": 79,
     "heightCm": 179,
     "foot": "R",
-    "silhouetteId": "figo-01"
+    "silhouetteId": "figo-2008"
   },
   {
-    "cardId": "mahrez-2016",
+    "cardId": "mahrez-2015",
     "name": "Riyad Mahrez",
-    "season": 2016,
+    "season": 2015,
     "birthYear": 1991,
     "club": "Leicester City",
     "league": "Premier League",
@@ -1397,7 +1397,7 @@
     "rating": 87,
     "heightCm": 179,
     "foot": "L",
-    "silhouetteId": "mahrez-01"
+    "silhouetteId": "mahrez-2015"
   },
   {
     "cardId": "ronaldo-nazario-1997",
@@ -1411,7 +1411,7 @@
     "rating": 95,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "ronaldo-nazario-01"
+    "silhouetteId": "ronaldo-nazario-1997"
   },
   {
     "cardId": "ronaldo-nazario-2009",
@@ -1425,7 +1425,7 @@
     "rating": 78,
     "heightCm": 183,
     "foot": "R",
-    "silhouetteId": "ronaldo-nazario-01"
+    "silhouetteId": "ronaldo-nazario-2009"
   },
   {
     "cardId": "henry-2004",
@@ -1439,7 +1439,7 @@
     "rating": 93,
     "heightCm": 188,
     "foot": "R",
-    "silhouetteId": "henry-01"
+    "silhouetteId": "henry-2004"
   },
   {
     "cardId": "ibrahimovic-2013",
@@ -1453,7 +1453,7 @@
     "rating": 90,
     "heightCm": 195,
     "foot": "L",
-    "silhouetteId": "ibrahimovic-01"
+    "silhouetteId": "ibrahimovic-2013"
   },
   {
     "cardId": "lewandowski-2020",
@@ -1467,7 +1467,7 @@
     "rating": 93,
     "heightCm": 185,
     "foot": "R",
-    "silhouetteId": "lewandowski-01"
+    "silhouetteId": "lewandowski-2020"
   },
   {
     "cardId": "drogba-2010",
@@ -1481,7 +1481,7 @@
     "rating": 90,
     "heightCm": 190,
     "foot": "R",
-    "silhouetteId": "drogba-01"
+    "silhouetteId": "drogba-2010"
   },
   {
     "cardId": "drogba-2015",
@@ -1495,7 +1495,7 @@
     "rating": 75,
     "heightCm": 190,
     "foot": "R",
-    "silhouetteId": "drogba-01"
+    "silhouetteId": "drogba-2015"
   },
   {
     "cardId": "henry-2011",
@@ -1509,7 +1509,7 @@
     "rating": 80,
     "heightCm": 188,
     "foot": "R",
-    "silhouetteId": "henry-01"
+    "silhouetteId": "henry-2011"
   },
   {
     "cardId": "cruyff-1974",
@@ -1523,7 +1523,7 @@
     "rating": 96,
     "heightCm": 178,
     "foot": "R",
-    "silhouetteId": "cruyff-01"
+    "silhouetteId": "cruyff-1974"
   },
   {
     "cardId": "cruyff-1979",
@@ -1537,6 +1537,6 @@
     "rating": 78,
     "heightCm": 178,
     "foot": "R",
-    "silhouetteId": "cruyff-01"
+    "silhouetteId": "cruyff-1979"
   }
 ]
