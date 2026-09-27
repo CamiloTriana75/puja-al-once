@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Los seis emojis fijos del contrato -- design-system/pages/partida.md:
@@ -7,19 +7,18 @@ import { useCallback, useRef, useState } from "react";
  * aqui son CONTENIDO del jugador, no iconos de interfaz: la regla de 'sin
  * emojis como iconos' (MASTER.md S7) no aplica aqui a proposito."
  *
- * HOY ESTE CONTRATO NO EXISTE EN EL SERVIDOR: `packages/server/src/AuctionRoom.ts`
- * no registra ningun `onMessage("reaction", ...)` ni reenvia nada parecido
- * a los demas clientes (confirmado leyendo ese fichero -- los unicos
- * mensajes son ready/bid/pass/voteSkip/rematch), y `AuctionRoomState` no
- * tiene ningun campo Schema para reacciones. Este componente construye
- * intencionadamente SOLO la mitad visual -- el emoji que sube y se
- * desvanece con el nombre de quien lo mando -- y expone `onSend` para que
- * quien lo monte decida como propagarlo. Sin cambios de servidor no hay
- * forma honesta de que la reaccion de un jugador llegue al resto: por eso
- * `Auction.tsx` (fuera de los limites de esta tarea, ver el encargo) no
- * inserta esto todavia. Ver el informe de esta tarea para el detalle.
+ * Montado en `Auction.tsx` (encargo F-reacciones): `onSend` manda
+ * `send("react", { emoji: REACTIONS.indexOf(emoji) })` y `incoming` recibe
+ * lo que `useRoom.ts` acumula desde `onMessage("reaction", ...)` -- ver
+ * `AuctionRoom.onReact` en el servidor para el contrato completo (rango,
+ * limite de frecuencia).
+ *
+ * Exportado (no solo el tipo `ReactionEmoji`): quien lo monta necesita el
+ * MISMO orden para traducir entre el emoji visual y el indice `0..5` que
+ * viaja por red -- una sola fuente de verdad para el orden evita que
+ * servidor y cliente diverjan si algun dia cambian los emojis.
  */
-const REACTIONS = ["😂", "😮", "🔥", "😭", "👏", "😡"] as const;
+export const REACTIONS = ["😂", "😮", "🔥", "😭", "👏", "😡"] as const;
 export type ReactionEmoji = (typeof REACTIONS)[number];
 
 /** Enfriamiento visual tras cada pulsacion -- el servidor (cuando exista) limita igual, esto es solo el reflejo en el boton. */
@@ -38,18 +37,53 @@ interface BubbleProps {
   onExpire: (id: string) => void;
   /** Desplazamiento horizontal aleatorio para que varias burbujas seguidas no se apilen exactas -- puramente cosmetico, decidido una vez por burbuja. */
   offsetX: number;
+  /**
+   * Sin subida -- ni por `prefers-reduced-motion` (`reducedMotion`, ya
+   * existia) ni porque quien monta el componente lo pide explicitamente
+   * (`noRise`, D8/partida.md: "durante el reveal, que ya gasta el
+   * presupuesto de animacion de la vista, las reacciones se muestran sin
+   * subida"). Dos causas, un mismo efecto visual -- de ahi combinarlas en
+   * un solo booleano en vez de bifurcar el JSX de abajo por cada una.
+   */
+  noRise: boolean;
 }
 
-function ReactionBubble({ reaction, onExpire, offsetX }: BubbleProps) {
-  const reducedMotion = useReducedMotion();
+function ReactionBubble({ reaction, onExpire, offsetX, noRise }: BubbleProps) {
+  // useReducedMotion() tipa boolean | null ("todavia no se sabe", solo en el
+  // primer render SSR/pre-hidratacion -- aqui no aplica, pero el tipo se
+  // mantiene): se normaliza a boolean antes de combinar con `noRise`.
+  const reducedMotion = useReducedMotion() ?? false;
+  const skipRise = noRise || reducedMotion;
+
+  // Sin subida, `initial` y `animate` son el mismo objeto: Framer no tiene
+  // nada que animar y resuelve `onAnimationComplete` de inmediato (probado
+  // con navegadores reales bajo `prefers-reduced-motion: reduce` -- NO
+  // "nunca", como se penso en un primer intento de este arreglo: dispara
+  // enseguida, al primer render). Sin este freno, una burbuja `skipRise`
+  // desaparecia en el acto -- nunca llegaba a pintarse los 1.5s fijos que
+  // pide partida.md ("aparecen 1.5s fijos... y desaparecen") -- porque
+  // `onExpire` (para `incoming`) borra la entrada de la lista en
+  // useRoom.ts antes de que React pinte el siguiente frame. Se ignora la
+  // llamada de Framer en este caso y se usa solo el temporizador de abajo,
+  // que si respeta los 1.5s.
+  const handleAnimationComplete = useCallback(() => {
+    if (skipRise) return;
+    onExpire(reaction.id);
+  }, [skipRise, onExpire, reaction.id]);
+
+  useEffect(() => {
+    if (!skipRise) return;
+    const timer = window.setTimeout(() => onExpire(reaction.id), BUBBLE_LIFETIME_MS);
+    return () => window.clearTimeout(timer);
+  }, [skipRise, reaction.id, onExpire]);
 
   return (
     <motion.div
       role="status"
-      initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 0, scale: 0.8 }}
-      animate={reducedMotion ? { opacity: 1 } : { opacity: [0, 1, 1, 0], y: -120, scale: 1 }}
+      initial={skipRise ? { opacity: 1 } : { opacity: 0, y: 0, scale: 0.8 }}
+      animate={skipRise ? { opacity: 1 } : { opacity: [0, 1, 1, 0], y: -120, scale: 1 }}
       transition={{ duration: BUBBLE_LIFETIME_MS / 1000, ease: "easeOut" }}
-      onAnimationComplete={() => onExpire(reaction.id)}
+      onAnimationComplete={handleAnimationComplete}
       className="pointer-events-none absolute bottom-0 flex flex-col items-center"
       style={{ left: `calc(50% + ${offsetX}px)` }}
     >
@@ -75,6 +109,24 @@ interface Props {
   incoming?: FloatingReaction[];
   /** Se llama al pulsar un emoji, ANTES de ningun efecto visual local -- quien lo monte decide si tambien lo manda a la sala. */
   onSend?: (emoji: ReactionEmoji) => void;
+  /**
+   * Sin animacion de subida, aunque el sistema no pida
+   * `prefers-reduced-motion` -- partida.md, seccion "Reacciones": durante el
+   * reveal (que ya gasta dos elementos del presupuesto de movimiento de la
+   * vista) las burbujas aparecen fijas 1.5s y se desvanecen, igual que con
+   * movimiento reducido. Por defecto `false`: fuera del reveal, sube igual
+   * que siempre.
+   */
+  noRise?: boolean;
+  /**
+   * Se llama cuando CUALQUIER burbuja termina de animarse -- tanto una
+   * propia (que este componente ya retira de `ownBubbles` por su cuenta)
+   * como una de `incoming` (que este componente no posee: solo pintarla). Es
+   * la unica forma que tiene quien monta esto de saber cuando retirar una
+   * entrada de `incoming` sin que la lista crezca sin limite -- ver
+   * `dismissReaction` en useRoom.ts.
+   */
+  onExpire?: (id: string) => void;
 }
 
 /**
@@ -83,8 +135,9 @@ interface Props {
  * dispara); `incoming` permite fusionar burbujas de otros jugadores el dia
  * que el servidor las reenvie, sin cambiar la forma de este componente.
  */
-export function Reactions({ myName, incoming = [], onSend }: Props) {
-  const reducedMotion = useReducedMotion();
+export function Reactions({ myName, incoming = [], onSend, noRise = false, onExpire }: Props) {
+  const reducedMotion = useReducedMotion() ?? false;
+  const skipRise = noRise || reducedMotion;
   const [ownBubbles, setOwnBubbles] = useState<FloatingReaction[]>([]);
   const [cooling, setCooling] = useState(false);
   const offsetsRef = useRef(new Map<string, number>());
@@ -101,16 +154,17 @@ export function Reactions({ myName, incoming = [], onSend }: Props) {
   const expire = useCallback((id: string) => {
     setOwnBubbles((prev) => prev.filter((b) => b.id !== id));
     offsetsRef.current.delete(id);
-  }, []);
+    onExpire?.(id);
+  }, [onExpire]);
 
   const send = (emoji: ReactionEmoji) => {
     if (cooling) return;
     onSend?.(emoji);
     const reaction: FloatingReaction = { id: `${Date.now()}-${Math.random()}`, emoji, senderName: myName };
     setOwnBubbles((prev) => [...prev, reaction]);
-    if (reducedMotion) {
-      window.setTimeout(() => expire(reaction.id), BUBBLE_LIFETIME_MS);
-    }
+    // El respaldo de expiracion sin subida (skipRise) vive en ReactionBubble
+    // -- cubre esta burbuja propia igual que cualquiera de `incoming`, ver
+    // su comentario para el bug que cerro.
     setCooling(true);
     window.setTimeout(() => setCooling(false), COOLDOWN_MS);
   };
@@ -121,7 +175,7 @@ export function Reactions({ myName, incoming = [], onSend }: Props) {
       <div className="pointer-events-none absolute inset-x-0 bottom-full z-20 flex justify-center overflow-visible">
         <AnimatePresence>
           {bubbles.map((b) => (
-            <ReactionBubble key={b.id} reaction={b} onExpire={expire} offsetX={offsetFor(b.id)} />
+            <ReactionBubble key={b.id} reaction={b} onExpire={expire} offsetX={offsetFor(b.id)} noRise={skipRise} />
           ))}
         </AnimatePresence>
       </div>

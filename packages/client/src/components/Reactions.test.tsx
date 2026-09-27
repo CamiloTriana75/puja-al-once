@@ -68,4 +68,41 @@ describe("Reactions", () => {
     });
     expect(onSend).toHaveBeenCalledTimes(1);
   });
+
+  it("pinta las burbujas de incoming ademas de las propias", () => {
+    render(
+      <Reactions
+        myName="Ana"
+        incoming={[{ id: "servidor-1", emoji: "🔥", senderName: "Bea" }]}
+      />,
+    );
+    const bubble = screen.getByRole("status");
+    expect(bubble).toHaveTextContent("Bea");
+    expect(bubble).toHaveTextContent("🔥");
+  });
+
+  it("con noRise, una burbuja propia se retira sola tras BUBBLE_LIFETIME_MS sin esperar a onAnimationComplete", () => {
+    render(<Reactions myName="Ana" noRise />);
+    act(() => {
+      screen.getByRole("button", { name: "Reaccionar con 😂" }).click();
+    });
+    expect(screen.getByRole("status")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("onExpire se llama con el id de una burbuja propia que termina de animarse", () => {
+    const onExpire = vi.fn();
+    render(<Reactions myName="Ana" noRise onExpire={onExpire} />);
+    act(() => {
+      screen.getByRole("button", { name: "Reaccionar con 😂" }).click();
+    });
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(onExpire).toHaveBeenCalledTimes(1);
+  });
 });
