@@ -28,6 +28,20 @@ import type { ClientState } from "./types.js";
 export type ConnectionStatus = "connected" | "reconnecting" | "disconnected";
 
 /**
+ * Una reaccion "reaction" ya recibida del servidor (D8, contrato en
+ * docs/superpowers/plans/2026-09-25-alpha.md). Crudo tal cual llega --
+ * `playerId` sin resolver a nombre a proposito: ese cruce (`state.players`)
+ * lo tiene quien monta `<Reactions>` (Auction.tsx), no este hook. `id` es
+ * de aqui, no del servidor -- el mensaje no trae ninguno, y `Reactions` lo
+ * necesita como key de React / identidad de burbuja para poder expirarla.
+ */
+export interface IncomingReaction {
+  id: string;
+  playerId: string;
+  emoji: number;
+}
+
+/**
  * Reintentos de `client.reconnect()`: backoff corto, pensado para caber
  * dentro de la ventana de 60s que sostiene el servidor
  * (rules.reconnectSeconds). Nunca crece sin limite.
@@ -91,6 +105,19 @@ export interface Connection {
    * de un valor que el cliente escribe el mismo de forma optimista.
    */
   bidErrorSeq: number;
+  /**
+   * Reacciones "reaction" recibidas del servidor durante ESTA sala, mas
+   * recientes al final -- D8, ver docs/superpowers/plans/2026-09-25-alpha.md.
+   * Efimero por diseno, igual que el resto de mensajes sin contraparte en
+   * `state` (bidError arriba): quien consuma esto (Auction.tsx, via
+   * `<Reactions incoming={...} />`) es responsable de expirar cada entrada
+   * cuando su burbuja termine de animarse -- ver `dismissReaction`. Nunca
+   * crece sin limite: cada reaccion mostrada se descarta de esta lista al
+   * expirar.
+   */
+  reactions: IncomingReaction[];
+  /** Retira una reaccion de `reactions` por `id` -- lo llama `Reactions.onExpire` cuando su burbuja ya termino de animarse. */
+  dismissReaction: (id: string) => void;
   /** Crea una sala nueva. Nunca coincide con una existente -- a diferencia de `joinOrCreate`, `create` no busca hueco en otra sala antes. */
   createRoom: (name: string) => Promise<void>;
   /**
@@ -111,6 +138,7 @@ export function useRoom(): Connection {
   const [startError, setStartError] = useState<string | null>(null);
   const [bidError, setBidError] = useState<string | null>(null);
   const [bidErrorSeq, setBidErrorSeq] = useState(0);
+  const [reactions, setReactions] = useState<IncomingReaction[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connected");
 
   // Token de reconexion de la sala VIVA -- se actualiza en cada attach() (el
@@ -180,6 +208,16 @@ export function useRoom(): Connection {
       setBidErrorSeq((n) => n + 1);
     });
     joined.onMessage("error", (msg: { message: string }) => setStartError(msg.message));
+    // D8: cada reaccion se acumula con un id propio del cliente (el mensaje
+    // del servidor no trae ninguno -- ver AuctionRoom.onReact, es
+    // deliberadamente `{ playerId, emoji }` a secas). Auction.tsx la pasa
+    // a <Reactions incoming={...}>, que ya sabe pintar y expirar burbujas
+    // por id; `dismissReaction` (mas abajo) es la mitad que le falta para
+    // que esta lista tampoco crezca sin limite.
+    joined.onMessage("reaction", (msg: { playerId: string; emoji: number }) => {
+      const reaction: IncomingReaction = { id: `${Date.now()}-${Math.random()}`, ...msg };
+      setReactions((prev) => [...prev, reaction]);
+    });
 
     // El corazon del punto 2 del encargo: sin este listener, cuando el
     // proceso del servidor muere el socket se cierra y la interfaz se queda
@@ -337,8 +375,12 @@ export function useRoom(): Connection {
     room?.leave();
   }, [room]);
 
+  const dismissReaction = useCallback((id: string) => {
+    setReactions((prev) => prev.filter((r) => r.id !== id));
+  }, []);
+
   return {
     room, state, connectionStatus, retryNow,
-    startError, bidError, bidErrorSeq, createRoom, joinByCode, send, leave,
+    startError, bidError, bidErrorSeq, reactions, dismissReaction, createRoom, joinByCode, send, leave,
   };
 }
