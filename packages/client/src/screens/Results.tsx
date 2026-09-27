@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { Ceremony } from "../components/Ceremony.js";
 import { SquadGrid } from "../components/SquadGrid.js";
 import type { ClientState } from "../net/types.js";
 
@@ -33,6 +35,18 @@ export function Results({ state, myId, send }: Props) {
   const won = wonSlotsByPlayer(state);
   const isHost = myId === state.hostId;
   const hostName = state.players.get(state.hostId)?.name ?? "el anfitrión";
+
+  // design-system/pages/ceremonia.md: la ceremonia corre una vez por
+  // cliente al entrar en RESULTS, antes de esta misma tabla -- nunca
+  // mostrar la clasificacion final antes de terminar los once pasos
+  // ("mata la tension"). `ceremonyDone` empieza en false en cada montaje;
+  // Results.tsx solo se monta al entrar en RESULTS (ver App.tsx), asi que
+  // no hace falta distinguir "ya la vi antes" de "acabo de llegar".
+  const [ceremonyDone, setCeremonyDone] = useState(false);
+
+  if (!ceremonyDone) {
+    return <Ceremony state={state} onFinished={() => setCeremonyDone(true)} />;
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
