@@ -3,9 +3,12 @@ import { AuctionCard } from "../components/AuctionCard.js";
 import { BidControls } from "../components/BidControls.js";
 import { ClueRow } from "../components/ClueRow.js";
 import { MatchHistory } from "../components/MatchHistory.js";
+import { REACTIONS, Reactions } from "../components/Reactions.js";
+import type { FloatingReaction } from "../components/Reactions.js";
 import { RevealBar } from "../components/RevealBar.js";
 import { RoundSummary } from "../components/RoundSummary.js";
 import { useServerClock } from "../net/useServerClock.js";
+import type { IncomingReaction } from "../net/useRoom.js";
 import type { ClientState } from "../net/types.js";
 
 /** Mismo orden que packages/shared/src/types.ts -- el cliente nunca importa shared (ver SquadGrid.tsx, mismo patron de constante duplicada). */
@@ -20,10 +23,14 @@ interface Props {
   error: string | null;
   /** Cuenta de rechazos recibidos -- ver bidErrorSeq en useRoom. Se reenvia a BidControls tal cual. */
   errorSeq: number;
+  /** Reacciones "reaction" acumuladas por useRoom (D8) -- crudas, sin resolver a nombre todavia. */
+  reactions: IncomingReaction[];
+  /** Retira una reaccion ya expirada de la lista de useRoom -- se le pasa a <Reactions onExpire> via el mapeo de abajo. */
+  onDismissReaction: (id: string) => void;
   send: (type: string, payload?: unknown) => void;
 }
 
-export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
+export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDismissReaction, send }: Props) {
   const remaining = useServerClock(state.endsAt);
   const me = state.players.get(myId);
   const card = state.currentCard;
@@ -67,6 +74,30 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
   const lastReveal = state.phase === "REVEAL" ? [...state.revealedCards.values()].at(-1) : undefined;
   const revealWinner = lastReveal?.ownerId ? state.players.get(lastReveal.ownerId) : undefined;
 
+  // D8: burbujas entrantes -- useRoom solo sabe `playerId`, el nombre se
+  // resuelve aqui contra `state.players` (mismo cruce que ya hace
+  // `revealWinner` arriba). Un jugador que se fue de la sala entre que
+  // mando la reaccion y que esta burbuja termine de pintarse ya no esta en
+  // el mapa -- "Jugador" de respaldo, igual que PlayerView.name por
+  // defecto en AuctionRoom.onJoin, para no reventar la burbuja por eso.
+  // `emoji` es un indice 0..5 en la red (AuctionRoom.onReact); REACTIONS
+  // (mismo orden en los dos lados, ver su comentario) lo traduce de vuelta
+  // al emoji visual. Un indice fuera de rango (no deberia llegar nunca --
+  // el servidor ya valida antes de reenviar) se descarta en vez de pintar
+  // "undefined".
+  const incomingReactions: FloatingReaction[] = reactions.flatMap((r) => {
+    const emoji = REACTIONS[r.emoji];
+    if (!emoji) return [];
+    const senderName = state.players.get(r.playerId)?.name ?? "Jugador";
+    return [{ id: r.id, emoji, senderName }];
+  });
+  // partida.md, seccion Reacciones: "durante el reveal, que ya gasta dos
+  // [elementos del presupuesto de movimiento], las reacciones se muestran
+  // sin subida" -- mismo criterio que RevealBar/AuctionCard ya aplican para
+  // esa fase, solo que aqui se traduce a un booleano que <Reactions> sabe
+  // consumir directamente.
+  const reactionsWithoutRise = state.phase === "REVEAL";
+
   // Resumen entre rondas (encargo B5, punto 4): se dispara cuando
   // `slotIndex` AVANZA -- el puesto anterior se completo y `advance()`
   // (AuctionRoom.ts) paso al siguiente. El valor inicial de la ref es el
@@ -98,6 +129,20 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
     // no tape el ultimo bloque de contenido; sm: vuelve a flujo normal.
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 pb-28 sm:pb-6 md:p-6">
       {card && <AuctionCard card={card} price={state.currentBid || state.minimumBid} roomId={roomId} />}
+
+      {/*
+        D8/partida.md: "en movil, la fila va justo encima de los controles de
+        puja fijos; en escritorio, bajo la tarjeta". Dos sitios de montaje en
+        vez de uno reordenado por CSS -- el de escritorio esta fuera del flujo
+        que colapsa a una columna en movil (`sm:hidden` lo apaga ahi), y el de
+        movil vive junto a la barra fija de mas abajo (`hidden sm:hidden` lo
+        apaga en escritorio). Mismo breakpoint (`sm`) que ya usa esa barra
+        fija para decidir "movil vs escritorio" en este fichero.
+      */}
+      <div className="hidden sm:block">
+        <Reactions myName={me?.name ?? "Jugador"} incoming={incomingReactions} noRise={reactionsWithoutRise}
+          onExpire={onDismissReaction} onSend={(emoji) => send("react", { emoji: REACTIONS.indexOf(emoji) })} />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <div className="flex flex-col gap-6">
@@ -177,6 +222,12 @@ export function Auction({ state, myId, roomId, error, errorSeq, send }: Props) {
               Te reconectaste: vuelves a contar a partir de la próxima ronda. Por ahora, mira.
             </p>
           )}
+
+          {/* Ver el comentario del otro <Reactions> mas arriba: este es el sitio de movil, justo encima de la barra fija de abajo. */}
+          <div className="sm:hidden">
+            <Reactions myName={me?.name ?? "Jugador"} incoming={incomingReactions} noRise={reactionsWithoutRise}
+              onExpire={onDismissReaction} onSend={(emoji) => send("react", { emoji: REACTIONS.indexOf(emoji) })} />
+          </div>
 
           {/*
             Barra fija en movil, dentro del pulgar (MASTER.md S8): la

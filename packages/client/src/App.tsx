@@ -8,7 +8,8 @@ import { useRoom } from "./net/useRoom.js";
 
 export default function App() {
   const {
-    room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, createRoom, joinByCode, send,
+    room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, reactions, dismissReaction,
+    createRoom, joinByCode, send,
   } = useRoom();
   const inGame = state && state.phase !== "LOBBY";
 
@@ -64,6 +65,8 @@ export default function App() {
           roomId={room.roomId}
           error={bidError}
           errorSeq={bidErrorSeq}
+          reactions={reactions}
+          onDismissReaction={dismissReaction}
           send={send}
         />
       )}
