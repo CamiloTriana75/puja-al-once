@@ -23,10 +23,20 @@ El servicio se despliega en **Render** con la imagen Docker del repositorio. No 
 - [ ] Crear el deploy hook (Settings > Deploys > Deploy Hook) y guardarlo como secreto `RENDER_DEPLOY_HOOK` del environment `production` de GitHub. Copiar la salida una sola vez: Render solo la muestra al crearla.
 - [ ] Crear el environment `production` en GitHub con `PRODUCTION_URL` como variable y, si quieres, revisores requeridos ([configuración de environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)).
 - [ ] Decidir si la variedad actual es suficiente: el validador encuentra 10 candidatos por posición y avisa que las partidas repetirán candidatos.
-- [ ] Decidir el plan. `free` se duerme tras 15 minutos sin tráfico: el primer acceso posterior paga un arranque en frío de unos segundos. `starter` no se duerme nunca y cuesta unos pocos dólares al mes. Un plan de pago tampoco da más de una instancia, así que la regla de estado en memoria se sigue respetando igual.
+- [ ] Decidir el plan. `free` se duerme tras 15 minutos sin tráfico y el arranque en frío posterior tarda del orden de un minuto; `starter` no se duerme nunca. Ningún plan da más de una instancia, así que la regla de estado en memoria se respeta igual en los dos casos. La decisión tomada para V1 es `free`: ver [El plan free y el arranque en frío](#el-plan-free-y-el-arranque-en-frío) para saber qué se acepta y qué no con esa elección.
 - [ ] Completar los gates de aceptación V1 pendientes: partida E2E entre navegadores, móvil/teclado/movimiento reducido/Chrome/Safari y auditoría de datos y atribuciones.
 - [ ] Elegir un canal y destinatarios para alertas. El servidor escribe errores en logs y Render comprueba salud, pero aún no hay alertas externas configuradas.
 - [ ] Probar el despliegue y la recuperación en una ventana de prueba antes de anunciarlo.
+
+## El plan free y el arranque en frío
+
+V1 se despliega en el plan `free`. Merece la pena saber exactamente qué se acepta con esa elección, porque el arranque en frío no afecta a todos los momentos por igual.
+
+**Una partida en curso mantiene la instancia despierta.** Render cuenta como tráfico tanto las peticiones HTTP como los mensajes de WebSocket de las conexiones abiertas. Colyseus difunde el delta del estado cada 50 ms (`Room.broadcastPatch`, `DEFAULT_PATCH_RATE`) y durante una subasta el reloj de la cuenta atrás cambia el estado continuamente, así que hay bytes fluyendo mientras hay gente jugando. El plan free no duerme una instancia que está sirviendo una partida.
+
+**El arranque en frío muerde en un caso concreto**: alguien abre la portada, se queda pensando un rato largo y pulsa "Crear sala". La portada es una página sin sondeo, así que lleva más de 15 minutos sin tráfico; ese clic abre un WebSocket contra una instancia dormida y Render lo retiene mostrando su propia página de carga mientras arranca. Dura del orden de un minuto.
+
+**Lo que no arregla ningún ping.** Mantener la instancia despierta con peticiones periódicas consume prácticamente las 750 horas de instancia gratuitas del mes, deja el workspace en el tier Hobby —documentado para proyectos personales y prototipos— y no ayuda durante un despliegue, que es cuando el contenedor arranca de todas formas. Si el frío molesta en la práctica, la respuesta es `starter` (una línea en `render.yaml` y un deploy), no un vigilante.
 
 ## CI local
 
