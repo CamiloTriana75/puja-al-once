@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { boot, ColyseusTestServer } from "@colyseus/testing";
+import { DEFAULT_RULES } from "@fut/shared";
 import appConfig from "../src/index.js";
 
 let colyseus: ColyseusTestServer;
@@ -33,7 +34,7 @@ describe("puja", () => {
 
     expect(room.state.currentBid).toBe(firstBid);
     expect(room.state.currentBidderId).toBe(clients[0]!.sessionId);
-    expect(room.state.minimumBid).toBe(firstBid + 10);
+    expect(room.state.minimumBid).toBe(firstBid + DEFAULT_RULES.minIncrement);
     // La primera puja sustituye la ventana de apertura por el anti-snipe:
     // no tienen por que ser el mismo plazo (25s vs 10s por defecto).
     expect(room.state.endsAt).toBeGreaterThan(Date.now());
@@ -74,7 +75,8 @@ describe("puja", () => {
     const rejection = new Promise<{ reason: string }>((resolve) => {
       clients[0]!.onMessage("bid:rejected", resolve);
     });
-    clients[0]!.send("bid", { amount: 801 });
+    // Pujar el presupuesto entero deja sin nada para llenar el resto del once.
+    clients[0]!.send("bid", { amount: DEFAULT_RULES.startingBudget });
     expect((await rejection).reason).toBe("OVER_BUDGET");
   });
 
@@ -89,7 +91,7 @@ describe("puja", () => {
     await room.waitForNextPatch();
 
     const winner = room.state.players.get(clients[0]!.sessionId);
-    expect(winner?.budget).toBe(1_000 - firstBid);
+    expect(winner?.budget).toBe(DEFAULT_RULES.startingBudget - firstBid);
     expect(winner?.squad.get("GK")).toBeTruthy();
     expect(room.state.phase).toBe("REVEAL");
   });

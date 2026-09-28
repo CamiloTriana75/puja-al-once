@@ -7,7 +7,6 @@ export type Slot = (typeof SLOTS)[number];
 
 export type Foot = "L" | "R" | "B";
 export type Continent = "EU" | "SA" | "NA" | "AF" | "AS" | "OC";
-export type AgeBand = "<21" | "21-25" | "26-30" | "31-34" | "35+";
 
 export type Phase = "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "RESULTS";
 
@@ -47,13 +46,37 @@ export interface Rules {
   reconnectSeconds: number;
 }
 
+/**
+ * Economia calibrada contra el mazo entero, no a ojo. Sobre los 110 jugadores
+ * actuales (11 huecos, una carta por hueco):
+ *
+ * - suelo: ganar los once huecos con la carta mas barata de cada ronda cuesta
+ *   330 M (33% del presupuesto) -- con esto en juego la reserva de
+ *   `reservedBudget` es honesta: siempre se puede completar el once.
+ * - medio: un once "normal" (una carta cualquiera de cada ronda) cuesta
+ *   725 M (73%): el presupuesto aprieta de verdad.
+ * - techo: ganar la mejor carta de los once huecos costaria 1.390 M (139%),
+ *   o sea que el once perfecto es inalcanzable y siempre hay que elegir.
+ *
+ * La escala es deliberadamente plana y con techo en 200 M: casi todo el mazo
+ * se mueve entre 30 y 90 M y solo los cinco iconos (Messi 2015, Cruyff 1974,
+ * Ronaldo 1997, Rivaldo 1999, Beckenbauer 1974) llegan a 200. El salto de 90 a
+ * 200 no es un descuido, es lo que hace que ganarse uno de esos cinco sea la
+ * decision que define la partida.
+ *
+ * Antes de tocar estos numeros: `pnpm dataset:check` imprime esta misma tabla
+ * y falla si el once medio se sale de la ventana 70%-95% del presupuesto. Sin
+ * ese guardia, ampliar el mazo (mas cartas baratas) devuelve el bug original
+ * sin que nadie se entere.
+ */
 export const DEFAULT_RULES: Rules = {
   startingBudget: 1_000,
-  basePrice: 20,
+  basePrice: 30,
   openingBidTiers: [
-    { minimumRating: 95, price: 80 },
-    { minimumRating: 91, price: 60 },
-    { minimumRating: 87, price: 40 },
+    { minimumRating: 95, price: 200 },
+    { minimumRating: 91, price: 90 },
+    { minimumRating: 87, price: 70 },
+    { minimumRating: 82, price: 50 },
   ],
   minIncrement: 10,
   openWindowMs: 25_000,

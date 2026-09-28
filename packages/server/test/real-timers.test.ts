@@ -26,6 +26,11 @@ const REAL_RULES: Rules = {
   antiSnipeMs: 250,
   skipVoteMs: 250,
   revealMs: 200,
+  // Este fichero prueba relojes, no economia. Con el presupuesto real un
+  // jugador que puja el minimo en cada carta se queda sin fondos a mitad de
+  // partida, la carta se resuelve por timeout sola y el recuento de cartas
+  // reveladas deja de cuadrar -- sin que el reloj tenga nada que ver.
+  startingBudget: 999_999_999,
 };
 
 /** Poll de tiempo real hasta que `check()` sea verdad. Nunca llama a un hook. */

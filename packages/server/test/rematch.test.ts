@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { boot, ColyseusTestServer } from "@colyseus/testing";
-import { SLOTS } from "@fut/shared";
+import { DEFAULT_RULES, SLOTS, type Rules } from "@fut/shared";
 import appConfig from "../src/index.js";
 
 let colyseus: ColyseusTestServer;
@@ -9,11 +9,24 @@ beforeAll(async () => { colyseus = await boot(appConfig); });
 afterAll(async () => { await colyseus.shutdown(); });
 beforeEach(async () => { await colyseus.cleanup(); });
 
+/**
+ * Reglas de la partida completa: los relojes son los de verdad, el presupuesto
+ * no. Pujar el minimo en las 11 cartas puede pasar de 2.000 M segun como caiga
+ * el reparto, y una pujas rechazada por OVER_BUDGET deja la carta sin resolver
+ * -- aqui no se prueba la economia, se prueba la revancha.
+ */
+const MATCH_RULES: Rules = { ...DEFAULT_RULES, startingBudget: 999_999_999 };
+
 interface Hooks { onBidTimeout(): void; onRevealTimeout(): void; cardIdToPublicId: Map<string, string> }
 
-/** Juega una partida entera: todos pujan el minimo, cada uno se lleva una carta por hueco. */
+/**
+ * Juega una partida entera: todos pujan el minimo, cada uno se lleva una carta por hueco.
+ *
+ * Presupuesto de mentira por lo mismo que en results.test.ts: aqui se prueba la
+ * revancha, y que un puja se quede sin dinero por azar de reparto es otra cosa.
+ */
 async function playFullMatch() {
-  const room = await colyseus.createRoom("auction", {});
+  const room = await colyseus.createRoom("auction", { rules: MATCH_RULES });
   const clients = [];
   for (const name of ["Ana", "Bea", "Cid", "Dan"]) {
     clients.push(await colyseus.connectTo(room, { name }));
@@ -37,7 +50,7 @@ async function playFullMatch() {
 
 describe("rematch (D5)", () => {
   it("se ignora fuera de RESULTS, incluso si lo manda el anfitrion", async () => {
-    const room = await colyseus.createRoom("auction", {});
+    const room = await colyseus.createRoom("auction", { rules: MATCH_RULES });
     const ana = await colyseus.connectTo(room, { name: "Ana" });
     await colyseus.connectTo(room, { name: "Bea" });
     expect(room.state.hostId).toBe(ana.sessionId);
@@ -64,7 +77,7 @@ describe("rematch (D5)", () => {
     // Solo 3 (no 4): con maxClients=4 (D6 lo sube a 6, pero eso es otro
     // bloque) hace falta dejar un asiento libre para probar mas abajo que
     // la sala queda de verdad desbloqueada, no solo con la fase en LOBBY.
-    const room = await colyseus.createRoom("auction", {});
+    const room = await colyseus.createRoom("auction", { rules: MATCH_RULES });
     const clients = [];
     for (const name of ["Ana", "Bea", "Cid"]) {
       clients.push(await colyseus.connectTo(room, { name }));
@@ -90,7 +103,7 @@ describe("rematch (D5)", () => {
 
     const publicIdsBefore = new Map(hooks.cardIdToPublicId);
     const winnerId = clients[0]!.sessionId;
-    expect(room.state.players.get(winnerId)?.budget).toBeLessThan(1_000);
+    expect(room.state.players.get(winnerId)?.budget).toBeLessThan(MATCH_RULES.startingBudget);
 
     clients[0]!.send("rematch", {}); // Ana es la anfitriona
     await room.waitForNextPatch();
@@ -104,7 +117,7 @@ describe("rematch (D5)", () => {
     expect(room.locked).toBe(false);
     for (const client of clients) {
       const player = room.state.players.get(client.sessionId);
-      expect(player?.budget).toBe(1_000);
+      expect(player?.budget).toBe(MATCH_RULES.startingBudget);
       expect(player?.squad.size).toBe(0);
       expect(player?.ready).toBe(false);
     }

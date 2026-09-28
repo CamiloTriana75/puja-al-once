@@ -158,6 +158,28 @@ describe("voto de salto", () => {
     expect(room.state.remainingCount).toBe(3);
   });
 
+  it("resuelve el voto de salto cuando votan saltar todos los conectados", async () => {
+    const { room, clients, hooks } = await startedRoom();
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
+    await room.waitForNextPatch();
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    hooks.onRevealTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.players.get(clients[0]!.sessionId)?.squad.get("GK")).toBeTruthy();
+
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("SKIP_VOTE");
+
+    for (const client of clients) client.send("voteSkip", { skip: true });
+    await room.waitForNextPatch();
+
+    expect(room.state.phase).toBe("REVEAL");
+    expect(room.state.remainingCount).toBe(3);
+    expect([...room.state.revealedCards.values()].at(-1)?.ownerId).toBe("");
+  });
+
   it("quien ya ficho el hueco puede romper la unanimidad votando en contra, sin acabar entre los restringidos", async () => {
     // Mismo reparto que el test anterior (Ana ficha GK, quedan 4 cartas y 3
     // necesitando: margen de sobra para un voto de salto). Si Ana vota EN

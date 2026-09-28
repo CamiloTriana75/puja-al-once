@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { boot, ColyseusTestServer } from "@colyseus/testing";
 import type { Rng } from "@fut/shared";
+import { DEFAULT_RULES } from "@fut/shared";
 import appConfig from "../src/index.js";
 
 let colyseus: ColyseusTestServer;
@@ -79,7 +80,7 @@ describe("pass (D2)", () => {
     expect(revealed?.ownerId).toBe(clients[0]!.sessionId); // rngFirst -> primer elegible
     expect(revealed?.price).toBe(forcedPrice);
     const winner = room.state.players.get(clients[0]!.sessionId);
-    expect(winner?.budget).toBe(1_000 - forcedPrice);
+    expect(winner?.budget).toBe(DEFAULT_RULES.startingBudget - forcedPrice);
     expect(winner?.squad.get("GK")).toBeTruthy();
   });
 

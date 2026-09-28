@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { boot, ColyseusTestServer } from "@colyseus/testing";
-import { SLOTS } from "@fut/shared";
+import { DEFAULT_RULES, SLOTS } from "@fut/shared";
 import appConfig from "../src/index.js";
 
 let colyseus: ColyseusTestServer;
@@ -11,9 +11,19 @@ beforeEach(async () => { await colyseus.cleanup(); });
 
 interface Hooks { onBidTimeout(): void; onRevealTimeout(): void }
 
-/** Juega una partida entera: todos pujan el minimo, cada uno se lleva una carta por hueco. */
+/**
+ * Juega una partida entera: todos pujan el minimo, cada uno se lleva una carta por hueco.
+ *
+ * El presupuesto de mentira va a proposito: con el presupuesto real, ganar 11
+ * cartas al precio minimo puede pasar de los 2.000 M segun como caiga el
+ * reparto, el pujo se rechaza por OVER_BUDGET y la carta se queda sin resolver
+ * -- el bucle acaba en SKIP_VOTE y aqui no estamos probando economia sino que
+ * la partida llega a RESULTS con sus filas.
+ */
 async function playFullMatch() {
-  const room = await colyseus.createRoom("auction", {});
+  const room = await colyseus.createRoom("auction", {
+    rules: { ...DEFAULT_RULES, startingBudget: 999_999_999 },
+  });
   const clients = [];
   for (const name of ["Ana", "Bea", "Cid", "Dan"]) {
     clients.push(await colyseus.connectTo(room, { name }));
@@ -129,7 +139,9 @@ describe("reconexion", () => {
     // cerradas -- solo importa que el sessionId se conserve y que, una vez
     // en RESULTS, no quede ninguna ronda que proteger: se marca conectado
     // de inmediato en cuanto vuelve.
-    const room = await colyseus.createRoom("auction", {});
+    const room = await colyseus.createRoom("auction", {
+      rules: { ...DEFAULT_RULES, startingBudget: 999_999_999 },
+    });
     const clients = [];
     for (const name of ["Ana", "Bea", "Cid", "Dan"]) {
       clients.push(await colyseus.connectTo(room, { name }));

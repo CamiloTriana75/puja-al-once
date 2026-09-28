@@ -14,7 +14,18 @@ export type BidError =
   | "BID_TOO_LOW"
   | "OVER_BUDGET";
 
-/** Precio de salida segun la valoracion privada del candidato. */
+/**
+ * Precio de salida segun la valoracion privada del candidato.
+ *
+ * Cinco tramos (30 / 50 / 70 / 90 / 200) y anchos a proposito: el precio de
+ * salida es publico (`Auction.tsx` pinta "Sale desde X M"), asi que un precio
+ * graduado al detalle seria un radiador del rating -- con el precio al
+ * detalle, la mejor jugada seria siempre "comprar la mas cara de la ronda" y
+ * las pistas publicas (altura, pie, continente, decada) dejarian de servir.
+ * Manteniendo el rating unknowable dentro de cada tramo, el precio sigue
+ * marcando el valor relativo del jugador y el presupuesto aprieta: ver el
+ * calibrado en `DEFAULT_RULES`.
+ */
 export function openingBidForRating(rating: number, rules: Rules): number {
   return rules.openingBidTiers.find((tier) => rating >= tier.minimumRating)?.price ?? rules.basePrice;
 }
