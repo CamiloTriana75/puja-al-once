@@ -58,13 +58,40 @@ export function isAllowedOrigin(
   return nodeEnv !== "production" && ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
 }
 
-/** Fly termina TLS en el proxy y aporta Fly-Client-IP; local usa la IP del socket. */
+/**
+ * Direccion del cliente para el limitador de peticiones.
+ *
+ * Fly aporta `Fly-Client-IP` y Render usa `X-Forwarded-For`. Sin esto,
+ * detras de cualquiera de los dos proxies `req.socket.remoteAddress` es la
+ * IP del proxy, la misma para todos los usuarios: el limite por IP se
+ * convertiria en un limite global y a los pocos jugadores empezarian los
+ * 429.
+ *
+ * De `X-Forwarded-For` se lee la ULTIMA entrada, no la primera. Un proxy
+ * que anade la IP real al final deja delante lo que mando el cliente, que
+ * es falsificable a voluntad; la ultima es la que vio el proxy de
+ * confianza. Asi funciona igual tanto si el proxy reemplaza la cabecera
+ * (una sola entrada, la real) como si la anade.
+ *
+ * Esto no es un control de seguridad: el control real es `isAllowedOrigin`.
+ * Confiar en la cabecera assume que el servicio corre detras del proxy de
+ * la plataforma, que es el despliegue de este proyecto.
+ */
 export function clientAddress(
   headers: Record<string, string | string[] | undefined>,
   fallback: string | string[] | undefined,
 ): string {
   const flyIp = headers["fly-client-ip"];
   if (process.env.FLY_APP_NAME && typeof flyIp === "string" && flyIp.trim()) return flyIp.trim();
+
+  const forwarded = headers["x-forwarded-for"];
+  const chain = (Array.isArray(forwarded) ? forwarded.join(",") : forwarded ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const last = chain[chain.length - 1];
+  if (last) return last;
+
   const address = Array.isArray(fallback) ? fallback[0] : fallback;
   return address?.trim() || "unknown";
 }

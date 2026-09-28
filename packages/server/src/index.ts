@@ -38,7 +38,14 @@ const app = config({
 
       if (process.env.NODE_ENV === "production") {
         const address = clientAddress(req.headers, req.socket.remoteAddress);
-        if (req.path === "/rooms/public" && !publicListLimiter.allow(address, 20, 60_000)) {
+        // 60/min y no 20/min porque la landing consulta /rooms/public cada
+        // 10 s (ver screens/Landing.tsx): son 6 por minuto y cliente. Con
+        // 20 el cuarto jugador en la misma IP -- cuatro amigos en una casa
+        // comparten IP publica -- ya comia el limite entero y el
+        // "vestuario publico" empieza a devolver 429. 60 son 10 clientes
+        // detras de una misma IP, que es el caso real de este juego. El
+        // endpoint es barato y ya pasa el filtro de origen.
+        if (req.path === "/rooms/public" && !publicListLimiter.allow(address, 60, 60_000)) {
           res.setHeader("Retry-After", "60");
           res.status(429).json({ error: "RATE_LIMITED" });
           return;
