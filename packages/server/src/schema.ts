@@ -53,13 +53,17 @@ defineTypes(PlayerSchema, {
  * Los seis campos privados (`name`, `season`, `club`, `league`, `nation`,
  * `rating`) se quedan en su valor vacio hasta la fase REVEAL. Escribirlos antes
  * los publica al navegador: el Schema entero se sincroniza y se lee en DevTools.
+ *
+ * Tampoco hay edad ni banda de edad, y no es un olvido. `birthYear` vive en
+ * el dataset del servidor pero no tiene campo aqui: con el nombre y la
+ * temporada de una carta, la edad se deduce sola, y durante la puja la banda
+ * de edad era una pista regalada que ademas acortaba la lista de candidatos.
  */
 export class PublicCardSchema extends Schema {
   publicId!: string;
   slot!: string;
   heightCm!: number;
   foot!: string;
-  ageBand!: string;
   continent!: string;
   decade!: string;
 
@@ -76,7 +80,6 @@ defineTypes(PublicCardSchema, {
   slot: "string",
   heightCm: "number",
   foot: "string",
-  ageBand: "string",
   continent: "string",
   decade: "string",
   revealed: "boolean",
@@ -153,6 +156,8 @@ export class AuctionRoomState extends Schema {
    * cierra una fuga, el otro abre una puerta.
    */
   roomCode = "";
+  /** Publica solo indica que la sala aparece en el directorio del lobby. */
+  visibility = "private";
   /** playerId de quien creo la sala. Migra al siguiente conectado si se va antes de empezar. */
   hostId = "";
   phase = "LOBBY";
@@ -179,6 +184,7 @@ export class AuctionRoomState extends Schema {
 }
 defineTypes(AuctionRoomState, {
   roomCode: "string",
+  visibility: "string",
   hostId: "string",
   phase: "string",
   slotIndex: "number",

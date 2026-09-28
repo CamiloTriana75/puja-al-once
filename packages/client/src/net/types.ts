@@ -35,13 +35,16 @@ export interface PlayerView {
  * La carta de la mesa. El servidor NUNCA manda `cardId` ni `silhouetteId`
  * aqui -- solo `publicId`, opaco y valido solo dentro de esta sala. La
  * silueta se pide a `/silhouettes/:roomId/:publicId.png`.
+ *
+ * Tampoco hay edad ni banda de edad: no es que el cliente la esconda, es que
+ * el servidor no la manda. Ocultarla aqui seria dejarla en el Schema, donde
+ * DevTools la seguiria enseñando.
  */
 export interface CardView {
   publicId: string;
   slot: string;
   heightCm: number;
   foot: string;
-  ageBand: string;
   continent: string;
   decade: string;
   revealed: boolean;
@@ -90,6 +93,7 @@ export interface ClientState {
    * URL.
    */
   roomCode: string;
+  visibility?: "private" | "public";
   /** playerId de quien creo la sala. Migra al siguiente conectado si se va antes de empezar. */
   hostId: string;
   phase: "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "RESULTS";

@@ -12,9 +12,9 @@ beforeEach(async () => { await colyseus.cleanup(); });
 /** Campos que el navegador tiene permitido ver antes del reveal. Lista
  * blanca a proposito: si alguien anade un campo nuevo al Schema, este test
  * se rompe en vez de callarse -- una lista negra solo protege de las fugas
- * que su autor ya imagino. */
+ * que su autor ya imagino. Por eso `ageBand` no esta: la edad no viaja. */
 const PUBLIC_CARD_FIELDS = [
-  "publicId", "slot", "heightCm", "foot", "ageBand", "continent", "decade",
+  "publicId", "slot", "heightCm", "foot", "continent", "decade",
   "revealed", "name", "season", "club", "league", "nation", "rating",
 ].sort();
 
@@ -83,7 +83,7 @@ describe("lobby", () => {
   it("cada jugador arranca con el presupuesto inicial", async () => {
     const room = await colyseus.createRoom("auction", {});
     await colyseus.connectTo(room, { name: "Ana" });
-    expect([...room.state.players.values()][0]?.budget).toBe(1000);
+    expect([...room.state.players.values()][0]?.budget).toBe(DEFAULT_RULES.startingBudget);
   });
 
   it("no se queda bloqueado para siempre si alguien se va antes de arrancar", async () => {

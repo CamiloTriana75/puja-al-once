@@ -126,7 +126,6 @@ export function projectState(
     node.slot = pub.slot;
     node.heightCm = pub.heightCm;
     node.foot = pub.foot;
-    node.ageBand = pub.ageBand;
     node.continent = pub.continent;
     node.decade = pub.decade;
     schema.currentCard = node;

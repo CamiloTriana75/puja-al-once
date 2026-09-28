@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  ageBandOf, cardsBySlot, continentOf, decadeOf, parseDataset,
+  cardsBySlot, continentOf, decadeOf, parseDataset,
   toPrivate, toPublic, type CardSource,
 } from "../src/index.js";
 
@@ -26,14 +26,6 @@ describe("derivados", () => {
     expect(decadeOf(2015)).toBe("2010s");
   });
 
-  it("ageBandOf agrupa la edad en rangos", () => {
-    expect(ageBandOf(2006, 1980)).toBe("26-30");
-    expect(ageBandOf(2000, 1980)).toBe("<21");
-    expect(ageBandOf(2003, 1980)).toBe("21-25");
-    expect(ageBandOf(2013, 1980)).toBe("31-34");
-    expect(ageBandOf(2016, 1980)).toBe("35+");
-  });
-
   it("continentOf mapea la nacion", () => {
     expect(continentOf("BRA")).toBe("SA");
     expect(continentOf("ESP")).toBe("EU");
@@ -52,7 +44,6 @@ describe("toPublic", () => {
       slot: "CAM",
       heightCm: 182,
       foot: "R",
-      ageBand: "26-30",
       continent: "SA",
       decade: "2000s",
     });
@@ -60,6 +51,17 @@ describe("toPublic", () => {
     // jugador y temporada (es la respuesta), y la URL de la silueta filtra
     // al jugador por su nombre de fichero real aunque el resto vaya limpio.
     for (const leaked of ["cardId", "silhouetteId", "name", "season", "club", "league", "nation", "rating"]) {
+      expect(Object.hasOwn(pub, leaked)).toBe(false);
+    }
+  });
+
+  it("tampoco deja pasar la edad, ni en crudo ni en bandas", () => {
+    // La edad no es un campo cualquiera: con el nombre y la temporada se
+    // deduce en el reveal, asi que publicarla solo acortaba la lista de
+    // candidatos. Ni `birthYear` ni un `ageBand` derivado -- que reaparezca
+    // uno u otro rompe este test.
+    const pub = toPublic(ronaldinho2006);
+    for (const leaked of ["birthYear", "ageBand", "age", "edad"]) {
       expect(Object.hasOwn(pub, leaked)).toBe(false);
     }
   });

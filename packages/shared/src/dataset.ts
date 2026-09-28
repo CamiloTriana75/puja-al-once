@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SLOTS, type AgeBand, type Continent, type Slot } from "./types.js";
+import { SLOTS, type Continent, type Slot } from "./types.js";
 
 /** Cada hueco necesita al menos esto para que dos partidas no se repitan. */
 export const MIN_CARDS_PER_SLOT = 30;
@@ -8,6 +8,13 @@ export const CardSourceSchema = z.object({
   cardId: z.string().min(1),
   name: z.string().min(1),
   season: z.int().min(1950).max(2100),
+  /**
+   * Solo en el servidor. `CardPublic` no lo proyecta y `PublicCardSchema` no
+   * lo escribe a proposito: en cuanto se revela el nombre, la edad ya se
+   * deduce de la temporada, y durante la puja la banda de edad solo servia
+   * para acortar la lista de candidatos a adivinar. Se conserva aqui para el
+   * QA del dataset (reparto por edades), no para el juego.
+   */
   birthYear: z.int().min(1900).max(2100),
   club: z.string().min(1),
   league: z.string().min(1),
@@ -34,7 +41,6 @@ export interface CardPublic {
   slot: Slot;
   heightCm: number;
   foot: "L" | "R" | "B";
-  ageBand: AgeBand;
   continent: Continent;
   decade: string;
 }
@@ -64,15 +70,6 @@ export function decadeOf(season: number): string {
   return `${Math.floor(season / 10) * 10}s`;
 }
 
-export function ageBandOf(season: number, birthYear: number): AgeBand {
-  const age = season - birthYear;
-  if (age < 21) return "<21";
-  if (age <= 25) return "21-25";
-  if (age <= 30) return "26-30";
-  if (age <= 34) return "31-34";
-  return "35+";
-}
-
 export function continentOf(nation: string): Continent {
   const continent = NATION_CONTINENT[nation];
   if (!continent) throw new Error(`Nacion sin continente en el mapa: ${nation}`);
@@ -82,13 +79,17 @@ export function continentOf(nation: string): Continent {
 /**
  * Proyeccion publica. Es la unica forma legitima de construir lo que se manda
  * al navegador antes del reveal: si un campo no esta aqui, no puede filtrarse.
+ *
+ * Ni `birthYear` ni una banda de edad derivada: la edad es exactamente el
+ * tipo de dato que se deduce de la temporada en el reveal y que durante la
+ * puja solo acortaba la lista de candidatos. Vive en `CardSource` y no sale de
+ * ahi.
  */
 export function toPublic(card: CardSource): CardPublic {
   return {
     slot: card.slot,
     heightCm: card.heightCm,
     foot: card.foot,
-    ageBand: ageBandOf(card.season, card.birthYear),
     continent: continentOf(card.nation),
     decade: decadeOf(card.season),
   };
