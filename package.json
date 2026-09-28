@@ -12,7 +12,8 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "dataset:check": "tsx scripts/check-dataset.ts",
-    "silhouettes:build": "tsx tools/build-silhouettes.ts"
+    "silhouettes:build": "tsx tools/build-silhouettes.ts",
+    "og:assets": "python tools/build-og-assets.py"
   },
   "devDependencies": {
     "@fut/shared": "workspace:*",

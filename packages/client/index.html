@@ -3,10 +3,125 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Subasta Futbolera</title>
+
+    <title>Futbolera — Subastas de jugadores de fútbol</title>
+    <meta
+      name="description"
+      content="Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0B3D2E" />
+    <link rel="canonical" href="%SITE_URL%/" />
+
+    <!--
+      La app carga Barlow desde Google Fonts en index.css. Abrir la
+      conexion antes de pedir el CSS quita el salto de tipografia.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!--
+      Metadatos sociales. Sin esto, compartir el enlace en WhatsApp,
+      X, Telegram o Slack cae en el scraper que NO ejecuta JavaScript
+      y se ve solo el titulo, sin imagen ni descripcion.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Futbolera" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content="Futbolera — Subastas de jugadores de fútbol" />
+    <meta
+      property="og:description"
+      content="Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada."
+    />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:image" content="%SITE_URL%/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Futbolera: puja a ciegas por un jugador de fútbol oculto y arma tu once."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Futbolera — Subastas de jugadores de fútbol" />
+    <!--
+      Identica a og:description a proposito. Cabe de sobra en el limite de
+      X y mantenerlas distintas es solo una forma de que se separen.
+    -->
+    <meta
+      name="twitter:description"
+      content="Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada."
+    />
+    <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
+
+    <!--
+      VideoGame: el tipo de schema.org mas cercano que existe, y no
+      SoftwareApplication, que es para programas. numberOfPlayers con
+      QuantitativeValue es la forma que el esquema define paraVideoGame.
+
+      Sin aggregateRating ni review a proposito: no hay valoraciones
+      reales, y las inventadas son motivo de accion manual de Google.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Futbolera",
+        "alternateName": "Subastas de jugadores de fútbol",
+        "url": "%SITE_URL%/",
+        "description": "Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada.",
+        "inLanguage": "es",
+        "image": ["%SITE_URL%/og-image.png"],
+        "genre": ["Juego de mesa", "Juego de subastas", "Fútbol"],
+        "playMode": "MultiPlayer",
+        "numberOfPlayers": {
+          "@type": "QuantitativeValue",
+          "minValue": 2,
+          "maxValue": 4
+        },
+        "applicationCategory": "Game",
+        "operatingSystem": "Any (navegador)",
+        "browserRequirements": "Requiere JavaScript",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Sin JavaScript no hay juego: toda la interfaz es React. Este bloque
+      es para quien llega sin scripting -- y para los rastreadores que no
+      lo ejecutan. El contenido sale del texto real de la landing, no es
+      una lista de palabras. React monta su propio h1 sobre #root, asi que
+      un visitante con JS no ve nunca estas dos cabeceras a la vez.
+    -->
+    <noscript>
+      <div style="max-width: 42rem; margin: 0 auto; padding: 3rem 1.5rem; font-family: system-ui, sans-serif; color: #fff; background: #0b3d2e; line-height: 1.6">
+        <h1 style="font-size: 2rem; text-transform: uppercase; margin: 0 0 1rem">Futbolera — Subastas de jugadores de fútbol</h1>
+        <p>
+          Juego online de subastas de fútbol para 2-4 amigos, en el navegador y
+          sin instalar nada. El nombre del jugador está oculto: pujas a ciegas
+          y, cuando cae la silueta, ves de qué temporada se trata.
+        </p>
+        <h2 style="font-size: 1.25rem; text-transform: uppercase; margin: 2rem 0 0.5rem">Cómo se juega</h2>
+        <ol>
+          <li><strong>Observa.</strong> Recibes pistas de la carta. Su identidad sigue en secreto y tus amigos también están calculando.</li>
+          <li><strong>Arriesga.</strong> Decide cuánto vale esa silueta para tu equipo y puja por llevártela.</li>
+          <li><strong>Descubre.</strong> Se revela el jugador y su temporada exacta. Al final, el marcador decide quién fichó mejor.</li>
+        </ol>
+        <p style="margin-top: 2rem">
+          <strong>Activa JavaScript para jugar.</strong> Sin él la interfaz no se puede montar.
+        </p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
