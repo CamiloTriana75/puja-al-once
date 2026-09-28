@@ -4,8 +4,11 @@
 #
 # Lo que NO se declara aqui y hay que poner en el panel o como secreto:
 #   - PUBLIC_ORIGINS con el origen HTTPS exacto del juego. Se deja
-#     `sync: false` a proposito: el valor depende del dominio final, que
-#     todavia no esta elegido, y meterlo en el repositorio lo publicaria.
+#     `sync: false` a proposito: el hostname definitivo lo decide Render al
+#     crear el servicio, no este fichero, asi que no se puede fijar aqui sin
+#     adivinar. Como cliente y servidor se sirven desde el mismo dominio,
+#     dejarlo vacio tambien funciona: el filtro de origen acepta el mismo
+#     origen. Ponerlo solo anade el dominio a la lista, no restringe.
 #   - El deploy hook, que se guarda como secreto RENDER_DEPLOY_HOOK en el
 #     environment `production` de GitHub (ver .github/workflows/deploy-production.yml).
 

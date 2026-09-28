@@ -11,11 +11,15 @@ import tailwindcss from "@tailwindcss/vite";
  * aqui salen el canonical y el og:url de index.html, el Sitemap de
  * robots.txt y el <loc> de sitemap.xml, para que no puedan discrepar.
  *
- * Es la que produce el servicio de render.yaml. Si el dominio cambia --
- * dominio propio, otro nombre de servicio -- cambiala aqui, o exporta
- * VITE_SITE_URL para no tocar el fichero. Es publico, no un secreto.
+ * Es la que produce el servicio de render.yaml. El sufijo `-vyo6` no es
+ * decorativo: Render no tenia libre el nombre tal cual y le anadio uno
+ * propio al crear el servicio. Ese hostname es el que existe, asi que es
+ * el que va aqui; el nombre del servicio en render.yaml sigue siendo el
+ * corto. Si el dominio cambia -- dominio propio, otro nombre de servicio
+ * -- cambiala aqui, o exporta VITE_SITE_URL para no tocar el fichero. Es
+ * publico, no un secreto.
  */
-const DEFAULT_SITE_URL = "https://subasta-futbolera.onrender.com";
+const DEFAULT_SITE_URL = "https://subasta-futbolera-vyo6.onrender.com";
 
 function siteUrl(): string {
   return (process.env.VITE_SITE_URL ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
