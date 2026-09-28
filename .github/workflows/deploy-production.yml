@@ -1,0 +1,59 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type “deploy” to request a production deployment
+        required: true
+        type: choice
+        options:
+          - no
+          - deploy
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: fly-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Validate and deploy to Fly.io
+    if: ${{ inputs.confirm == 'deploy' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 26
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm dataset:check
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - run: docker build --tag subasta-futbolera:production-check .
+      - run: bash scripts/smoke-container.sh subasta-futbolera:production-check
+      - name: Check deployment configuration
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          test -n "$FLY_API_TOKEN" || { echo "Missing FLY_API_TOKEN secret"; exit 1; }
+          test -n "$PRODUCTION_URL" || { echo "Missing PRODUCTION_URL environment variable"; exit 1; }
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # pinned setup-flyctl revision
+      - name: Deploy
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Verify deployed health endpoint
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: curl --fail --show-error --silent --retry 12 --retry-all-errors --retry-delay 5 "${PRODUCTION_URL%/}/health/ready"
