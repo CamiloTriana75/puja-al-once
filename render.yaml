@@ -18,11 +18,13 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    # El plan free se duerme tras 15 minutos sin traffic. Para un juego donde
+    # El plan free se duerme tras 15 minutos sin trafico. Para un juego donde
     # avisas a tus amigos por la noche, eso significa que el primero que
-    # entra espera el arranque en frio (unos segundos, no un minuto, pero
-    # seconds visibles). Cambia a `starter` para que la instancia no se
-    # duerma nunca: es un servicio pequeno, no hace falta mas.
+    # entra espera el arranque en frio, del orden de un minuto. Una partida
+    # en curso NO se duerme: el reloj de la cuenta atras cambia el estado cada
+    # 50 ms y Colyseus lo difunde por el WebSocket, que Render cuenta como
+    # trafico. Cambia a `starter` para que la instancia no se duerma nunca:
+    # es un servicio pequeno, no hace falta mas. Ver docs/PRODUCCION.md.
     plan: free
     # Un push a main NO despliega por si solo. El deploy sale de GitHub
     # Actions, que antes repite la puerta de calidad entera: desplegar algo
