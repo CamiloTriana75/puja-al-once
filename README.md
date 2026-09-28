@@ -110,8 +110,8 @@ nuevo al Schema rompe el test en vez de colarse.
 ## Despliegue
 
 Ver [`docs/PRODUCCION.md`](docs/PRODUCCION.md). En resumen: una imagen Docker,
-un proceso, y **una sola Machine** de Fly -- las salas viven en memoria, asi
-que dos instancias separarian a los jugadores y un reinicio termina las
+un proceso, y **una sola instancia** en Render -- las salas viven en memoria,
+asi que dos instancias separarian a los jugadores y un reinicio termina las
 partidas en curso.
 
 ## Licencia

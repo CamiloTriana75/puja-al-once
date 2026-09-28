@@ -46,7 +46,7 @@ Dos agentes en paralelo, lanzados justo antes de este handoff:
 
 ## En pausa — no las hagas salvo que se pida explícitamente
 
-D6 (más de 4 jugadores), D7 (velocidad de partida), D8 (reacciones — puede que ya se esté haciendo, ver arriba), D9 (sonido), despliegue permanente en Fly.io.
+D6 (más de 4 jugadores), D7 (velocidad de partida), D8 (reacciones — puede que ya se esté haciendo, ver arriba), D9 (sonido), el primer despliegue permanente a producción (la infraestructura está preparada y documentada en `docs/PRODUCCION.md`; se hará en Render, no en Fly.io).
 
 ## Cómo trabajar en este repo
 

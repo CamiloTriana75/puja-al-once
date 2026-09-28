@@ -1,0 +1,40 @@
+# Blueprint de Render. "New > Blueprint" en el panel, apuntando a este
+# repositorio: Render lee este fichero y crea el servicio con lo que hay
+# aqui escrito, sin que haya que tocar nada a mano en el panel.
+#
+# Lo que NO se declara aqui y hay que poner en el panel o como secreto:
+#   - PUBLIC_ORIGINS con el origen HTTPS exacto del juego. Se deja
+#     `sync: false` a proposito: el valor depende del dominio final, que
+#     todavia no esta elegido, y meterlo en el repositorio lo publicaria.
+#   - El deploy hook, que se guarda como secreto RENDER_DEPLOY_HOOK en el
+#     environment `production` de GitHub (ver .github/workflows/deploy-production.yml).
+
+services:
+  - type: web
+    name: subasta-futbolera
+    # La imagen ya compila cliente y servidor en un solo proceso: este
+    # servicio es el juego entero, no un backend al que haya que pegarle
+    # un frontend aparte.
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # El plan free se duerme tras 15 minutos sin traffic. Para un juego donde
+    # avisas a tus amigos por la noche, eso significa que el primero que
+    # entra espera el arranque en frio (unos segundos, no un minuto, pero
+    # seconds visibles). Cambia a `starter` para que la instancia no se
+    # duerma nunca: es un servicio pequeno, no hace falta mas.
+    plan: free
+    # Un push a main NO despliega por si solo. El deploy sale de GitHub
+    # Actions, que antes repite la puerta de calidad entera: desplegar algo
+    # que no ha pasado los tests no tiene sentido.
+    autoDeploy: false
+    # El servidor sirve /health/ready y /health/live; Render no marca la
+    # instancia como sana hasta que el primero responde.
+    healthCheckPath: /health/ready
+    # Render inyecta PORT y espera que el contenedor escuche en ese puerto.
+    # El Dockerfile dice EXPOSE 2567, que es el valor por defecto del
+    # servidor, pero el proceso real hace listen(Number(process.env.PORT ||
+    # 2567)) -- EXPOSE es documentacion, no configuracion de escucha.
+    envVars:
+      - key: PUBLIC_ORIGINS
+        sync: false

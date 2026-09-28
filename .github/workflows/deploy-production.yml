@@ -16,12 +16,12 @@ permissions:
   deployments: write
 
 concurrency:
-  group: fly-production
+  group: render-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Validate and deploy to Fly.io
+    name: Validate and deploy to Render
     if: ${{ inputs.confirm == 'deploy' }}
     runs-on: ubuntu-latest
     environment: production
@@ -43,17 +43,21 @@ jobs:
       - run: bash scripts/smoke-container.sh subasta-futbolera:production-check
       - name: Check deployment configuration
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: |
-          test -n "$FLY_API_TOKEN" || { echo "Missing FLY_API_TOKEN secret"; exit 1; }
+          test -n "$RENDER_DEPLOY_HOOK" || { echo "Missing RENDER_DEPLOY_HOOK secret"; exit 1; }
           test -n "$PRODUCTION_URL" || { echo "Missing PRODUCTION_URL environment variable"; exit 1; }
-      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # pinned setup-flyctl revision
-      - name: Deploy
-        run: flyctl deploy --remote-only
+      # El deploy hook de Render dispara el build y el swap en su panel y no
+      # devuelve nada sobre si el servicio ha quedado sano: solo acepta el
+      # disparo. Por eso el paso siguiente es el que de verdad verifica el
+      # despliegue, y por eso reintenta en vez de mirar una vez.
+      - name: Trigger deployment
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          curl --fail --show-error --silent --request POST "$RENDER_DEPLOY_HOOK"
       - name: Verify deployed health endpoint
         env:
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
-        run: curl --fail --show-error --silent --retry 12 --retry-all-errors --retry-delay 5 "${PRODUCTION_URL%/}/health/ready"
+        run: curl --fail --show-error --silent --retry 20 --retry-all-errors --retry-delay 10 "${PRODUCTION_URL%/}/health/ready"
