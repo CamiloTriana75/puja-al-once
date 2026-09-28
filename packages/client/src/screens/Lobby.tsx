@@ -60,6 +60,17 @@ function CheckIcon() {
   );
 }
 
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4" />
+    </svg>
+  );
+}
+
 /** Icono de hueco libre (usuario en trazo discontinuo), trazo 2 sobre 24x24 -- MASTER.md S7: SVG, nunca emoji. */
 function EmptySeatIcon() {
   return (
@@ -81,45 +92,79 @@ function ClockIcon() {
 }
 
 /** Codigo de sala en grande, con boton de copiar. Vive en su propio panel para que no se confunda con el resto de la lista de espera. */
-function RoomCodePanel({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
+function RoomCodePanel({ code, visibility }: { code: string; visibility: "private" | "public" }) {
+  const [feedback, setFeedback] = useState<"code" | "invite" | "fallback" | null>(null);
 
-  // El "¡Copiado!" es transitorio a proposito: confirma la accion sin dejar
-  // un estado que alguien tenga que deshacer a mano.
   useEffect(() => {
-    if (!copied) return;
-    const id = setTimeout(() => setCopied(false), 2000);
+    if (!feedback) return;
+    const id = setTimeout(() => setFeedback(null), 2200);
     return () => clearTimeout(id);
-  }, [copied]);
+  }, [feedback]);
 
-  const copy = async () => {
+  const copyCode = async () => {
     try {
       await navigator.clipboard.writeText(code);
-      setCopied(true);
+      setFeedback("code");
     } catch {
-      // Portapapeles sin permiso o sin API (http no seguro, navegador
-      // viejo): el codigo sigue legible y seleccionable a mano justo
-      // encima, asi que el fallo no deja a nadie sin forma de compartirlo.
+      setFeedback("fallback");
+    }
+  };
+
+  const shareInvite = async () => {
+    const url = new URL(`/sala/${code}`, window.location.origin).toString();
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Subasta Futbolera", text: "¡Únete a mi sala!", url });
+        setFeedback("invite");
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setFeedback("fallback");
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setFeedback("invite");
+    } catch {
+      setFeedback("fallback");
     }
   };
 
   return (
-    <div className="panel flex items-center justify-between gap-4 bg-ink p-4">
+    <div className="panel flex flex-wrap items-center justify-between gap-3 bg-ink p-4">
       <div>
         <p className="font-display text-xs font-bold uppercase tracking-[0.12em] text-mute">Código de la sala</p>
         <p className="tnum font-display text-[clamp(2rem,8vw,3rem)] font-black tracking-[0.08em] text-lime">{code}</p>
+        <p className={`mt-1 font-body text-xs font-semibold ${visibility === "public" ? "text-lime" : "text-mute"}`}>
+          {visibility === "public" ? "Pública · aparece en el vestuario" : "Privada · comparte el código"}
+        </p>
       </div>
-      <button
-        type="button"
-        onClick={() => void copy()}
-        className="flex h-11 min-w-11 cursor-pointer items-center justify-center gap-2 border-2 border-white/20 px-3 text-white transition-colors duration-200 hover:border-lime hover:text-lime"
-        aria-label={copied ? "Código copiado" : "Copiar código"}
-      >
-        {copied ? <CheckIcon /> : <CopyIcon />}
-        <span aria-live="polite" className="font-body text-sm font-semibold">
-          {copied ? "¡Copiado!" : "Copiar"}
-        </span>
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void copyCode()}
+          className="flex h-11 w-11 cursor-pointer items-center justify-center border-2 border-white/20 text-white transition-colors duration-200 hover:border-lime hover:text-lime sm:w-auto sm:gap-2 sm:px-3"
+          aria-label="Copiar código de sala"
+          title="Copiar código"
+        >
+          {feedback === "code" ? <CheckIcon /> : <CopyIcon />}
+          <span className="hidden font-body text-sm font-semibold sm:inline">Copiar</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => void shareInvite()}
+          className="flex h-11 w-11 cursor-pointer items-center justify-center border-2 border-lime bg-lime text-ink transition-colors duration-200 hover:border-white hover:bg-white sm:w-auto sm:gap-2 sm:px-3"
+          aria-label="Compartir invitación a la sala"
+          title="Compartir invitación"
+        >
+          <ShareIcon />
+          <span className="hidden font-body text-sm font-bold sm:inline">Invitar</span>
+        </button>
+      </div>
+      <p aria-live="polite" className="min-h-4 w-full font-body text-xs text-mute">
+        {feedback === "code" ? "Código copiado" : feedback === "invite" ? "Invitación lista para compartir" : feedback === "fallback" ? "Comparte el código visible con tu grupo" : ""}
+      </p>
     </div>
   );
 }
@@ -353,7 +398,7 @@ export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) 
 
   return (
     <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 p-6">
-      <RoomCodePanel code={state.roomCode} />
+      <RoomCodePanel code={state.roomCode} visibility={state.visibility ?? "private"} />
 
       {/* El requisito explicito de este encargo: "quien ya pulso Listo
           tiene que ser imposible de no ver". El contador va ANTES de la

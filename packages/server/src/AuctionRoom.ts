@@ -1,4 +1,4 @@
-import { Client, Room } from "@colyseus/core";
+import { Client, Room, type AuthContext } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
@@ -15,14 +15,18 @@ import { fileURLToPath } from "node:url";
 import { AuctionRoomState, RevealedCardSchema, StandingSchema } from "./schema.js";
 import { projectState } from "./project.js";
 import { drawRound } from "./setup.js";
+import { clientAddress, isAllowedOrigin, RateLimiter } from "./requestPolicy.js";
 
 // Ruta anclada al modulo, no al cwd: `pnpm --filter @fut/server test` (y
 // `pnpm -r test` desde la raiz) ejecutan con cwd = packages/server, asi que
 // una ruta relativa tipo "data/players.json" no encontraria el dataset.
 const DATASET_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/players.json");
 const DEFAULT_DATASET: CardSource[] = parseDataset(JSON.parse(readFileSync(DATASET_PATH, "utf8")));
+const matchmakeLimiter = new RateLimiter();
 
 export interface AuctionRoomOptions {
+  /** La privacidad es explícita; todas las creaciones conservan el valor privado por defecto. */
+  visibility?: "private" | "public";
   /** Solo para tests: sustituye el dataset real por uno pequeno y controlado. */
   dataset?: CardSource[];
   /** Solo para tests: fuente de azar determinista. */
@@ -108,7 +112,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     }
   }
 
-  onCreate(options?: AuctionRoomOptions): void {
+  async onCreate(options?: AuctionRoomOptions): Promise<void> {
     // `options` es exactamente lo que el cliente manda en `client.create(...)`
     // -- Colyseus no filtra nada. Fuera de test, cualquiera podria crear una
     // sala con presupuesto inflado o un mazo trucado y meter a otros
@@ -140,6 +144,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     // asi que generateRoomCode nunca llama a Math.random por su cuenta --
     // packages/shared tiene prohibido hacerlo.
     this.state.roomCode = generateRoomCode(this.rng);
+    this.state.visibility = options?.visibility === "public" ? "public" : "private";
     // setMetadata(), no una propiedad suelta en `this.listing`: es la API
     // publica y estable de Colyseus para datos consultables de la sala (ver
     // el metodo GET /rooms/:code en index.ts, que resuelve por aqui via
@@ -147,7 +152,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     // sabe leer valores que el CLIENTE manda en clientOptions al crear --
     // aqui el codigo lo inventa el SERVIDOR dentro de onCreate, asi que
     // filterBy nunca podria verlo a tiempo.
-    void this.setMetadata({ code: this.state.roomCode });
+    await this.setMetadata({ code: this.state.roomCode, visibility: this.state.visibility });
 
     this.onMessage("ready", (client) => this.onReady(client));
     this.onMessage("bid", (client, message: { amount?: unknown }) => {
@@ -164,6 +169,19 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.sync();
   }
 
+  static async onAuth(_token: string, _options: unknown, context: AuthContext): Promise<boolean> {
+    const origin = context.headers.origin;
+    const originValue = Array.isArray(origin) ? origin[0] : origin;
+    const host = context.headers.host;
+    if (!isAllowedOrigin(originValue, host)) throw new Error("Origen no permitido");
+
+    if (process.env.NODE_ENV === "production") {
+      const address = clientAddress(context.headers, context.ip);
+      if (!matchmakeLimiter.allow(address, 60, 60_000)) throw new Error("Demasiadas solicitudes; inténtalo de nuevo en un minuto");
+    }
+    return true;
+  }
+
   onJoin(client: Client, options?: { name?: string }): void {
     if (this.game.phase !== "LOBBY") {
       // Sin esto, un asiento liberado a mitad de partida (maxClients=4 pero
@@ -177,9 +195,12 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     // partida -- ver el comentario grande alli.
     if (this.state.hostId === "") this.state.hostId = client.sessionId;
 
+    const safeName = typeof options?.name === "string"
+      ? options.name.replace(/[\u0000-\u001f\u007f-\u009f]/g, "").trim().slice(0, 18)
+      : "";
     this.game.players.push({
       playerId: client.sessionId,
-      name: options?.name ?? `Jugador ${this.game.players.length + 1}`,
+      name: safeName || `Jugador ${this.game.players.length + 1}`,
       budget: this.rules.startingBudget,
       squad: {},
       connected: true,
@@ -834,5 +855,16 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     if (!this.state.revealedCards.has(cardId)) return undefined;
 
     return this.byId.get(cardId)?.silhouetteId;
+  }
+
+  /**
+   * Resuelve la foto de una carta por su `cardId` solo cuando ya forma parte
+   * de `revealedCards`. RESULTS ya publica ese identificador, y la ceremonia
+   * necesita mostrar las fotos juntas sin reconstruir los `publicId` de la
+   * partida. La misma puerta de reveal protege esta ruta.
+   */
+  public photoIdForRevealedCard(cardId: string): string | undefined {
+    const revealed = this.state.revealedCards.get(cardId);
+    return revealed?.silhouetteId;
   }
 }

@@ -91,6 +91,48 @@ export function ceremonyPoints(steps: CeremonyStep[], players: PlayerView[]): Ma
   return points;
 }
 
+export interface CeremonyChampion {
+  playerId: string;
+  name: string;
+  points: number;
+}
+
+/**
+ * Quien(es) gana(n) la partida, tal y como lo cuenta la clasificacion final.
+ *
+ * La fuente de verdad es `state.standings` -- lo calcula el servidor en
+ * `AuctionRoom.finish()` con `scoreMatch`, que desempata por puntos, luego
+ * rating total y luego presupuesto restante (`packages/shared/src/scoring.ts`).
+ * Leerlo aqui, en vez de quedarse solo con los puntos de la ceremonia, evita
+ * el contradicto que habia antes: dos jugadores empatados en puntos declaraba
+ * campañas la ceremonia ("Campeones: A · B") mientras la tabla de abajo
+ * escondia a uno detras del desempate del servidor y lo pintaba como segundo.
+ * Ahora las dos pantallas cuentan exactamente lo mismo, y solo hay varios
+ * campeones cuando el servidor dice que hay varios (empate en los tres
+ * criterios).
+ *
+ * El segundo camino es un red de seguridad, no una via normal: `standings`
+ * solo se rellena en RESULTS y la ceremonia solo se monta en RESULTS. Si
+ * llegara vacio, se cae a los puntos de la ceremonia en vez de quedarse sin
+ * campeon.
+ */
+export function ceremonyChampions(state: ClientState): CeremonyChampion[] {
+  const ranked = state.standings.filter((row) => row.rank === 1);
+  if (ranked.length > 0) {
+    return ranked.map((row) => ({
+      playerId: row.playerId,
+      name: state.players.get(row.playerId)?.name ?? "?",
+      points: row.points,
+    }));
+  }
+
+  const points = ceremonyPoints(buildCeremonySteps(state), [...state.players.values()]);
+  const best = Math.max(0, ...[...points.values()]);
+  return [...state.players.values()]
+    .filter((player) => (points.get(player.playerId) ?? 0) === best)
+    .map((player) => ({ playerId: player.playerId, name: player.name, points: best }));
+}
+
 export interface CeremonyAward {
   title: string;
   playerId: string;

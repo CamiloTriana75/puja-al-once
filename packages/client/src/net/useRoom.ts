@@ -2,7 +2,7 @@ import { Client, type Room } from "colyseus.js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isConsentedLeave } from "./connectionStatus.js";
 import { WS_URL } from "./endpoints.js";
-import { describeRoomLookupError, lookupRoomByCode } from "./roomLookup.js";
+import { describeRoomLookupError, fetchPublicRooms, lookupRoomByCode, type RoomVisibility } from "./roomLookup.js";
 import type { ClientState } from "./types.js";
 
 /**
@@ -119,7 +119,7 @@ export interface Connection {
   /** Retira una reaccion de `reactions` por `id` -- lo llama `Reactions.onExpire` cuando su burbuja ya termino de animarse. */
   dismissReaction: (id: string) => void;
   /** Crea una sala nueva. Nunca coincide con una existente -- a diferencia de `joinOrCreate`, `create` no busca hueco en otra sala antes. */
-  createRoom: (name: string) => Promise<void>;
+  createRoom: (name: string, visibility?: RoomVisibility) => Promise<void>;
   /**
    * Resuelve el codigo por HTTP (ver roomLookup.ts) antes de intentar el
    * join por WebSocket: es lo que permite distinguir sala inexistente,
@@ -127,6 +127,8 @@ export interface Connection {
    * hace (todas esas salas estan "locked" y Colyseus no dice por que).
    */
   joinByCode: (name: string, code: string) => Promise<void>;
+  /** Entra a una sala elegida desde el directorio público. */
+  joinPublicRoom: (name: string, roomId: string) => Promise<void>;
   send: (type: string, payload?: unknown) => void;
   leave: () => void;
 }
@@ -191,11 +193,15 @@ export function useRoom(): Connection {
     reconnectionTokenRef.current = joined.reconnectionToken;
     retryCountRef.current = 0;
     clearRetryTimeout();
+    setReactions([]);
     setConnectionStatus("connected");
 
     // onStateChange dispara en cada patch: React vuelve a pintar con el objeto vivo.
     joined.onStateChange((next) => {
       setState({ ...next } as ClientState);
+      // Las burbujas son efímeras de la partida actual. No deben reaparecer
+      // al terminar la ceremonia ni al jugar la revancha en la misma sala.
+      if (next.phase === "RESULTS" || next.phase === "LOBBY") setReactions([]);
       // Confirmacion de exito -- derivada del propio estado del servidor,
       // nunca escrita por el cliente: si ahora soy yo quien va ganando la
       // puja, el ultimo envio se acepto, y cualquier rechazo anterior ya
@@ -213,8 +219,11 @@ export function useRoom(): Connection {
     // deliberadamente `{ playerId, emoji }` a secas). Auction.tsx la pasa
     // a <Reactions incoming={...}>, que ya sabe pintar y expirar burbujas
     // por id; `dismissReaction` (mas abajo) es la mitad que le falta para
-    // que esta lista tampoco crezca sin limite.
+    // que esta lista tampoco crezca sin limite. El servidor tambien nos
+    // hace eco de la reaccion propia; esa ya se pinto optimistamente en el
+    // boton, asi que guardarla aqui la duplicaria en pantalla.
     joined.onMessage("reaction", (msg: { playerId: string; emoji: number }) => {
+      if (msg.playerId === joined.sessionId) return;
       const reaction: IncomingReaction = { id: `${Date.now()}-${Math.random()}`, ...msg };
       setReactions((prev) => [...prev, reaction]);
     });
@@ -311,12 +320,33 @@ export function useRoom(): Connection {
   useEffect(() => clearRetryTimeout, [clearRetryTimeout]);
 
   const createRoom = useCallback(
-    async (name: string) => {
+    async (name: string, visibility: RoomVisibility = "private") => {
       const client = clientRef.current;
       if (!client) return;
       setStartError(null);
       try {
-        attach(await client.create<ClientState>("auction", { name }));
+        attach(await client.create<ClientState>("auction", { name, visibility }));
+      } catch (cause) {
+        setStartError(cause instanceof Error ? cause.message : String(cause));
+      }
+    },
+    [attach],
+  );
+
+  const joinPublicRoom = useCallback(
+    async (name: string, roomId: string) => {
+      const client = clientRef.current;
+      if (!client) return;
+      setStartError(null);
+      try {
+        // El listado se vuelve a validar al pulsar para distinguir una sala
+        // que ya arrancó o se llenó mientras aparecía en pantalla.
+        const rooms = await fetchPublicRooms();
+        if (!rooms.some((candidate) => candidate.roomId === roomId)) {
+          setStartError("Esa sala ya no está disponible. Actualiza el listado y prueba otra.");
+          return;
+        }
+        attach(await client.joinById<ClientState>(roomId, { name }));
       } catch (cause) {
         setStartError(cause instanceof Error ? cause.message : String(cause));
       }
@@ -381,6 +411,6 @@ export function useRoom(): Connection {
 
   return {
     room, state, connectionStatus, retryNow,
-    startError, bidError, bidErrorSeq, reactions, dismissReaction, createRoom, joinByCode, send, leave,
+    startError, bidError, bidErrorSeq, reactions, dismissReaction, createRoom, joinByCode, joinPublicRoom, send, leave,
   };
 }

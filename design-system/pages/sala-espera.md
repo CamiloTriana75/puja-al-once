@@ -32,3 +32,9 @@ Hace falta un estado visible de "se perdió la conexión, reintentando" que cubr
 - Barra de progreso falsa que avanza sola sin corresponder a nada.
 - Contador de tiempo de espera. Solo genera ansiedad.
 - Ocultar los huecos libres para que la sala parezca más llena.
+
+## Compartir la sala
+
+- Mostrar el código grande para poder dictarlo y mantener un control separado para copiarlo.
+- Ofrecer una acción de invitación que use el diálogo nativo de compartir cuando esté disponible; en escritorio copia el enlace completo como alternativa.
+- Al copiar o compartir, confirmar la acción con texto accesible y temporal.

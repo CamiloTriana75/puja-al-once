@@ -5,24 +5,77 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
+import { clientAddress, isAllowedOrigin, RateLimiter } from "./requestPolicy.js";
 
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
 // AuctionRoom.ts: pnpm fija el cwd de cada paquete al ejecutar sus scripts.
 const SILHOUETTES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/silhouettes");
 const PHOTOS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/photos");
 const CLIENT_DIST = resolve(dirname(fileURLToPath(import.meta.url)), "../../client/dist");
+const publicListLimiter = new RateLimiter();
+const roomLookupLimiter = new RateLimiter();
 
 const app = config({
   initializeGameServer: (gameServer) => {
     gameServer.define("auction", AuctionRoom);
   },
   initializeExpress: (app) => {
-    app.use((_req, res, next) => {
-      res.header("Access-Control-Allow-Origin", "*");
+    app.use((req, res, next) => {
+      const origin = req.get("origin");
+      const host = req.get("host");
+      if (!isAllowedOrigin(origin, host)) {
+        res.status(403).json({ error: "ORIGIN_NOT_ALLOWED" });
+        return;
+      }
+      res.header("Vary", "Origin");
+      if (origin) res.header("Access-Control-Allow-Origin", origin);
+      res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      if (req.method === "OPTIONS") {
+        res.status(204).end();
+        return;
+      }
+
+      if (process.env.NODE_ENV === "production") {
+        const address = clientAddress(req.headers, req.socket.remoteAddress);
+        if (req.path === "/rooms/public" && !publicListLimiter.allow(address, 20, 60_000)) {
+          res.setHeader("Retry-After", "60");
+          res.status(429).json({ error: "RATE_LIMITED" });
+          return;
+        }
+        if (/^\/rooms\/[^/]+$/.test(req.path) && req.path !== "/rooms/public" && !roomLookupLimiter.allow(address, 30, 60_000)) {
+          res.setHeader("Retry-After", "60");
+          res.status(429).json({ error: "RATE_LIMITED" });
+          return;
+        }
+      }
       next();
     });
 
     app.get("/time", (_req, res) => res.json({ now: Date.now() }));
+    app.get("/health/live", (_req, res) => res.json({ status: "ok" }));
+    app.get("/health/ready", (_req, res) => res.json({ status: "ok" }));
+
+    // Unicamente el lobby publico aparece aqui: no revela nombres ni estado
+    // de cartas y omite salas vacias, llenas, privadas o ya iniciadas.
+    app.get("/rooms/public", async (_req, res) => {
+      const listings = await matchMaker.query({ name: "auction" });
+      const rooms = listings.flatMap((listing) => {
+        if (listing.metadata?.visibility !== "public") return [];
+        const room = matchMaker.getLocalRoomById(listing.roomId) as AuctionRoom | undefined;
+        if (!room || room.state.phase !== "LOBBY" || room.clients.length === 0 || room.clients.length >= room.maxClients) return [];
+        const ready = [...room.state.players.values()].filter((player) => player.connected && player.ready).length;
+        return [{
+          roomId: listing.roomId,
+          code: listing.metadata.code,
+          players: room.clients.length,
+          capacity: room.maxClients,
+          ready,
+        }];
+      });
+      rooms.sort((a, b) => b.players - a.players || String(a.code).localeCompare(String(b.code)));
+      res.json({ rooms });
+    });
 
     // Resuelve el codigo de sala (dictado por voz, ver
     // `@fut/shared/roomCode.ts`) al `roomId` interno que hace falta para
@@ -134,6 +187,34 @@ const app = config({
         // Sin foto real para este silhouetteId (silueta generica, o el
         // fichero no se genero): 404, igual que los demas fallos de esta
         // ruta -- el cliente ya sabe quedarse con la silueta si esto falla.
+        res.status(404).end();
+      }
+    });
+
+    // En RESULTS la ceremonia ya conoce los `cardId` de cada plantilla. Esta
+    // ruta permite cargar sus fotos en una sola vista y mantiene la misma
+    // frontera de privacidad: solo existe resolución si la carta ya está en
+    // `revealedCards`; el identificador de una carta aún en subasta responde
+    // con el mismo 404 genérico.
+    app.get("/photos/revealed/:roomId/:cardId.png", async (req, res) => {
+      const { roomId, cardId } = req.params;
+      const room = matchMaker.getLocalRoomById(roomId) as AuctionRoom | undefined;
+      if (!room || typeof room.photoIdForRevealedCard !== "function") {
+        res.status(404).end();
+        return;
+      }
+
+      const photoId = room.photoIdForRevealedCard(cardId);
+      if (!photoId) {
+        res.status(404).end();
+        return;
+      }
+
+      try {
+        const buffer = await readFile(resolve(PHOTOS_DIR, `${photoId}.png`));
+        res.header("Content-Type", "image/png");
+        res.send(buffer);
+      } catch {
         res.status(404).end();
       }
     });

@@ -1,5 +1,15 @@
 import { HTTP_URL } from "./endpoints.js";
 
+export type RoomVisibility = "private" | "public";
+
+export interface PublicRoomSummary {
+  roomId: string;
+  code: string;
+  players: number;
+  capacity: number;
+  ready: number;
+}
+
 /** Los tres motivos que puede devolver `GET /rooms/:code` -- ver packages/server/src/index.ts. */
 export type RoomLookupErrorReason = "NOT_FOUND" | "FULL" | "STARTED" | string;
 
@@ -42,4 +52,11 @@ export async function lookupRoomByCode(code: string): Promise<RoomLookupResult> 
   const body = (await res.json()) as { roomId?: string; reason?: string };
   if (res.ok) return { ok: true, roomId: body.roomId };
   return { ok: false, reason: body.reason };
+}
+
+export async function fetchPublicRooms(): Promise<PublicRoomSummary[]> {
+  const res = await fetch(`${HTTP_URL}/rooms/public`);
+  if (!res.ok) throw new Error("No se pudo actualizar el vestuario público.");
+  const body = (await res.json()) as { rooms?: PublicRoomSummary[] };
+  return Array.isArray(body.rooms) ? body.rooms : [];
 }

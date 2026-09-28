@@ -1,20 +1,27 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { buildCeremonySteps, ceremonyPoints, computeAwards, type CeremonyStep } from "../net/ceremony.js";
+import { HTTP_URL } from "../net/endpoints.js";
+import { buildCeremonySteps, ceremonyChampions, ceremonyPoints, computeAwards, type CeremonyStep } from "../net/ceremony.js";
 import type { ClientState } from "../net/types.js";
 
 /**
- * Duraciones de design-system/pages/ceremonia.md: entrada ~1.5s, cada paso
- * de puesto ~3s (con el destape de rating a los ~0.8s), campeon y premios
- * con sus propios tiempos de lectura. Cada cliente reproduce la ceremonia
- * por su cuenta al entrar en RESULTS -- no hay coordinacion de servidor, asi
- * que estos numeros son enteramente del cliente.
+ * Duraciones de design-system/pages/ceremonia.md: entrada ~2s, cada paso de
+ * puesto ~4.8s (con el destape de rating a los ~1.8s), campeon y premios con
+ * sus propios tiempos de lectura. Cada cliente reproduce la ceremonia por su
+ * cuenta al entrar en RESULTS -- no hay coordinacion de servidor, asi que
+ * estos numeros son enteramente del cliente.
+ *
+ * El paso por puesto es el corazon de la secuencia -- es donde se ve, puesto a
+ * puesto, que jugador eligio cada uno -- asi que va deliberadamente lento: hay
+ * tiempo de leer la carta, ver el destape y entender quien se lleva el punto
+ * antes de que aparezca el siguiente puesto. Sale en ~1 minuto con button de
+ * salto siempre a mano.
  */
-export const INTRO_MS = 1500;
-export const STEP_MS = 3000;
-export const REVEAL_DELAY_MS = 800;
-export const CHAMPION_MS = 3400;
-export const AWARDS_MS = 4200;
+export const INTRO_MS = 2000;
+export const STEP_MS = 4800;
+export const REVEAL_DELAY_MS = 1800;
+export const CHAMPION_MS = 4200;
+export const AWARDS_MS = 5000;
 
 type Stage =
   | { kind: "intro" }
@@ -116,47 +123,83 @@ function ConfettiCanvas() {
 function CeremonyCard({
   entry,
   revealRating,
+  roomId,
 }: {
   entry: CeremonyStep["entries"][number];
   revealRating: boolean;
+  roomId?: string;
 }) {
   const reducedMotion = useReducedMotion();
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const photoUrl = roomId ? `${HTTP_URL}/photos/revealed/${roomId}/${entry.cardId}.png` : null;
+
+  useEffect(() => setPhotoFailed(false), [entry.cardId]);
+
   return (
     <li
-      className={`panel flex items-center justify-between gap-4 bg-ink px-5 py-4 ${
-        entry.wins && revealRating ? "ring-2 ring-lime" : ""
+      className={`panel relative flex min-h-32 items-stretch gap-3 bg-ink p-3 sm:gap-4 sm:p-4 ${
+        entry.wins && revealRating ? "ring-2 ring-inset ring-lime" : ""
       }`}
     >
-      <div className="min-w-0">
-        <p className="truncate font-display text-lg font-extrabold uppercase tracking-wide text-white">
-          {entry.card.name} <span className="tnum text-mute">{entry.card.season}</span>
-        </p>
-        <p className="truncate font-body text-sm text-mute">
-          {entry.playerName} · {entry.card.price} M
-        </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-3">
-        {entry.wins && revealRating && (
-          <span className="bg-lime px-2 py-1 font-display text-xs font-black uppercase tracking-wide text-ink">
-            Gana
-          </span>
+      <div className="relative isolate flex w-20 shrink-0 items-end justify-center overflow-hidden bg-green sm:w-24">
+        <div aria-hidden className="absolute -right-6 top-0 h-full w-1/2 -skew-x-[18deg] bg-lime" />
+        <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/4 bg-deep" />
+        <span aria-hidden className="absolute bottom-3 z-10 font-display text-3xl font-black text-ink">
+          {entry.card.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("")}
+        </span>
+        {!photoFailed && photoUrl && (
+          <img
+            src={photoUrl}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            onError={() => setPhotoFailed(true)}
+            className="absolute inset-0 z-20 h-full w-full object-contain object-bottom"
+          />
         )}
-        <motion.span
-          key={revealRating ? "revealed" : "hidden"}
-          initial={reducedMotion ? false : { opacity: 0, rotateX: revealRating ? -90 : 0 }}
-          animate={{ opacity: 1, rotateX: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className={`tnum font-display text-4xl font-black ${revealRating ? "text-lime" : "text-mute"}`}
-        >
-          {revealRating ? entry.card.rating : "?"}
-        </motion.span>
+        <span className="absolute bottom-1 left-1 z-30 bg-ink px-1.5 py-0.5 font-display text-[10px] font-black text-white">
+          {entry.card.season}
+        </span>
       </div>
+
+      <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
+        <div className="min-w-0">
+          <p className="line-clamp-2 font-display text-lg font-extrabold uppercase leading-[0.95] tracking-wide text-white sm:text-xl">
+            {entry.card.name}
+          </p>
+          <p className="mt-1 truncate font-body text-xs text-mute sm:text-sm">
+            {entry.card.club} · {entry.playerName} · {entry.card.price} M
+          </p>
+        </div>
+        <div className="mt-2 flex items-end justify-between gap-2">
+          <span className="font-display text-[10px] font-bold uppercase tracking-[0.14em] text-mute sm:text-xs">
+            Rating
+          </span>
+          {entry.wins && revealRating && (
+            <span className="bg-lime px-2 py-1 font-display text-[10px] font-black uppercase tracking-wide text-ink sm:text-xs">
+              Gana el puesto
+            </span>
+          )}
+        </div>
+      </div>
+
+      <motion.span
+        key={revealRating ? "revealed" : "hidden"}
+        initial={reducedMotion ? false : { opacity: 0, rotateX: revealRating ? -90 : 0 }}
+        animate={{ opacity: 1, rotateX: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className={`tnum flex min-w-12 items-center justify-center border-l border-white/10 pl-3 font-display text-4xl font-black sm:min-w-16 sm:pl-4 sm:text-5xl ${revealRating ? "text-lime" : "text-mute"}`}
+      >
+        {revealRating ? entry.card.rating : "?"}
+      </motion.span>
     </li>
   );
 }
 
 interface Props {
   state: ClientState;
+  roomId?: string;
   onFinished: () => void;
 }
 
@@ -168,18 +211,31 @@ interface Props {
  * servidor que la dispare, el propio cambio de fase a RESULTS ya llega
  * igual (y casi a la vez) a todos.
  */
-export function Ceremony({ state, onFinished }: Props) {
+export function Ceremony({ state, roomId, onFinished }: Props) {
   const reducedMotion = useReducedMotion();
   const steps = useMemo(() => buildCeremonySteps(state), [state]);
   const players = useMemo(() => [...state.players.values()], [state]);
   const awards = useMemo(() => computeAwards(state), [state]);
+  const champions = useMemo(() => ceremonyChampions(state), [state]);
 
   const [stage, setStage] = useState<Stage>({ kind: "intro" });
   const [ratingRevealed, setRatingRevealed] = useState(false);
-  const [scoreboard, setScoreboard] = useState<Map<string, number>>(
-    () => new Map(players.map((p) => [p.playerId, 0])),
-  );
   const [announcement, setAnnouncement] = useState("");
+
+  // El marcador es DERIVADO, nunca acumulado: son los puntos de los pasos ya
+  // resueltos, recalculados con `ceremonyPoints` a partir de `steps`. Antes se
+  // iba sumando dentro del temporizador del destape, y eso hacia que cualquier
+  // patch del servidor durante la ceremonia (un jugador que cierra la pestana
+  // en RESULTS, por ejemplo) re-programara ese temporizador y volviera a sumar
+  // el mismo punto dos veces. `useRoom` da un objeto de estado nuevo en cada
+  // patch, asi que las dependencias de este componente cambian; que el
+  // marcador dependa solo de cuantos pasos se han resuelto lo hace inmune.
+  const resolvedSteps = useMemo(() => {
+    if (stage.kind === "step") return steps.slice(0, ratingRevealed ? stage.index + 1 : stage.index);
+    if (stage.kind === "champion" || stage.kind === "awards" || stage.kind === "done") return steps;
+    return [];
+  }, [stage, steps, ratingRevealed]);
+  const scoreboard = useMemo(() => ceremonyPoints(resolvedSteps, players), [resolvedSteps, players]);
 
   // Con movimiento reducido la ceremonia avanza igual pero sin animar nada:
   // el rating de cada paso llega ya destapado (nunca se oculta informacion
@@ -203,12 +259,6 @@ export function Ceremony({ state, onFinished }: Props) {
           setRatingRevealed(true);
           if (step) {
             const winners = step.entries.filter((e) => e.wins);
-            setScoreboard((prev) => {
-              const next = new Map(prev);
-              const share = winners.length > 0 ? 1 / winners.length : 0;
-              for (const w of winners) next.set(w.playerId, (next.get(w.playerId) ?? 0) + share);
-              return next;
-            });
             const announced = winners.length === 0
               ? `${step.label}: nadie lo ficho.`
               : winners.length === 1
@@ -226,7 +276,7 @@ export function Ceremony({ state, onFinished }: Props) {
     } else if (stage.kind === "champion") {
       advance({ kind: "awards" }, CHAMPION_MS);
     } else if (stage.kind === "awards") {
-      advance({ kind: "done" }, AWARDS_MS);
+      advance({ kind: "done" }, awards.length > 0 ? AWARDS_MS : 0);
     } else if (stage.kind === "done") {
       onFinished();
     }
@@ -237,32 +287,55 @@ export function Ceremony({ state, onFinished }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, steps, revealDelay]);
 
-  const champion = useMemo(() => {
-    let best: { playerId: string; name: string; points: number } | null = null;
-    for (const p of players) {
-      const points = scoreboard.get(p.playerId) ?? 0;
-      if (!best || points > best.points) best = { playerId: p.playerId, name: p.name, points };
-    }
-    return best;
-  }, [players, scoreboard]);
+  const completedSteps = stage.kind === "step"
+    ? stage.index
+    : stage.kind === "champion" || stage.kind === "awards" || stage.kind === "done"
+      ? steps.length
+      : 0;
+  const pointLabel = (points: number) => points.toLocaleString("es-CO", { maximumFractionDigits: 2 });
 
   const skip = () => setStage({ kind: "done" });
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-deep">
+    <div className="fixed inset-0 z-50 flex min-h-full flex-col overflow-y-auto overscroll-contain bg-deep">
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
 
-      <div className="flex justify-end p-4">
-        <button
-          type="button"
-          onClick={skip}
-          className="flex h-11 min-w-[44px] cursor-pointer items-center gap-2 border-2 border-white/30 px-4 font-display text-sm font-bold uppercase tracking-wide text-white transition-colors duration-200 hover:border-lime hover:text-lime"
+      <div className="sticky top-0 z-40 bg-deep/95 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-xs font-bold uppercase tracking-[0.16em] text-mute">Final de temporada</p>
+            <p className="font-display text-sm font-black uppercase tracking-wide text-white">
+              {stage.kind === "intro" ? "La hora de la verdad" : stage.kind === "step" ? `Puesto ${stage.index + 1} de ${steps.length}` : "Marcador final"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={skip}
+            className="flex h-11 shrink-0 cursor-pointer items-center gap-2 border-2 border-white/30 px-3 font-display text-xs font-bold uppercase tracking-wide text-white transition-colors duration-200 hover:border-lime hover:text-lime sm:px-4 sm:text-sm"
+          >
+            <SkipIcon />
+            Saltar ceremonia
+          </button>
+        </div>
+        <div
+          role="progressbar"
+          aria-label="Progreso de la ceremonia"
+          aria-valuemin={0}
+          aria-valuemax={steps.length}
+          aria-valuenow={completedSteps}
+          aria-valuetext={`${completedSteps} de ${steps.length} puestos revelados`}
+          className="mx-auto mt-3 flex w-full max-w-3xl gap-1"
         >
-          <SkipIcon />
-          Saltar ceremonia
-        </button>
+          {steps.map((step, index) => (
+            <span
+              key={step.slot}
+              aria-hidden="true"
+              className={`h-1.5 flex-1 ${index < completedSteps ? "bg-lime" : stage.kind === "step" && index === stage.index ? "bg-green" : "bg-white/15"}`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Marcador -- cifras tabulares, siempre visible durante la secuencia de puestos y el campeon. */}
@@ -278,14 +351,14 @@ export function Ceremony({ state, onFinished }: Props) {
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className="tnum font-display text-xl font-black text-lime"
               >
-                {scoreboard.get(p.playerId) ?? 0}
+                {pointLabel(scoreboard.get(p.playerId) ?? 0)}
               </motion.span>
             </li>
           ))}
         </ol>
       )}
 
-      <div className="flex flex-1 items-center justify-center px-4 py-8">
+      <div className="flex flex-1 items-center justify-center px-4 py-6 sm:py-8">
         <AnimatePresence mode="wait">
           {stage.kind === "intro" && (
             <motion.div
@@ -309,7 +382,7 @@ export function Ceremony({ state, onFinished }: Props) {
               initial={reducedMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reducedMotion ? undefined : { opacity: 0 }}
-              className="w-full max-w-2xl"
+              className="w-full max-w-4xl"
             >
               <p className="text-center font-display text-xs font-bold uppercase tracking-[0.2em] text-mute">
                 Puesto {stage.index + 1} de {steps.length}
@@ -322,16 +395,16 @@ export function Ceremony({ state, onFinished }: Props) {
                   Sin fichaje
                 </p>
               ) : (
-                <ul className="flex flex-col gap-px bg-white/10">
+                <ul className="grid gap-2 sm:grid-cols-2">
                   {steps[stage.index]!.entries.map((entry) => (
-                    <CeremonyCard key={entry.playerId} entry={entry} revealRating={ratingRevealed || reducedMotion === true} />
+                    <CeremonyCard key={entry.playerId} entry={entry} roomId={roomId} revealRating={ratingRevealed || reducedMotion === true} />
                   ))}
                 </ul>
               )}
             </motion.div>
           )}
 
-          {stage.kind === "champion" && champion && (
+          {stage.kind === "champion" && champions.length > 0 && (
             <motion.div
               key="champion"
               initial={reducedMotion ? false : { opacity: 0 }}
@@ -349,7 +422,7 @@ export function Ceremony({ state, onFinished }: Props) {
                 transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: reducedMotion ? 0 : 0.15 }}
                 className="mt-4 font-display text-sm font-bold uppercase tracking-[0.2em] text-mute"
               >
-                Campeón
+                {champions.length > 1 ? "Campeones" : "Campeón"}
               </motion.p>
               <motion.h1
                 initial={reducedMotion ? false : { opacity: 0, x: -24 }}
@@ -357,9 +430,11 @@ export function Ceremony({ state, onFinished }: Props) {
                 transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: reducedMotion ? 0 : 0.15 }}
                 className="font-display text-[clamp(2.5rem,10vw,7rem)] font-black uppercase leading-[0.85] tracking-tighter text-lime"
               >
-                {champion.name}
+                {champions.map((champion) => champion.name).join(" · ")}
               </motion.h1>
-              <p className="tnum mt-2 font-display text-2xl font-extrabold text-white">{champion.points} pts</p>
+              <p className="tnum mt-2 font-display text-2xl font-extrabold text-white">
+                {pointLabel(champions[0]!.points)} pts{champions.length > 1 ? " cada uno" : ""}
+              </p>
             </motion.div>
           )}
 

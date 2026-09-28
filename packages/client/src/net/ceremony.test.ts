@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCeremonySteps, ceremonyPoints, computeAwards } from "./ceremony.js";
+import { buildCeremonySteps, ceremonyChampions, ceremonyPoints, computeAwards } from "./ceremony.js";
 import type { ClientState, PlayerView, RevealedCardView } from "./types.js";
 
 function player(overrides: Partial<PlayerView> & { playerId: string; name: string }): PlayerView {
@@ -149,6 +149,54 @@ describe("ceremonyPoints", () => {
     const steps = buildCeremonySteps(state);
     const points = ceremonyPoints(steps, players);
     expect(points.get("a")).toBe(0);
+  });
+});
+
+describe("ceremonyChampions", () => {
+  /** Ana y Bea con el mismo GK (rating igual, empate), y Ana con un hueco mas. */
+  function tiedState(standings: ClientState["standings"]): ClientState {
+    return baseState({
+      players: new Map([
+        ["a", player({ playerId: "a", name: "Ana", squad: new Map([["GK", "card-a"]]) })],
+        ["b", player({ playerId: "b", name: "Bea", squad: new Map([["GK", "card-b"]]) })],
+      ]),
+      revealedCards: new Map([
+        ["card-a", revealed({ cardId: "card-a", slot: "GK", rating: 90, ownerId: "a", price: 50 })],
+        ["card-b", revealed({ cardId: "card-b", slot: "GK", rating: 90, ownerId: "b", price: 20 })],
+      ]),
+      standings,
+    });
+  }
+
+  it("sigue la clasificacion del servidor, incluido su desempate", () => {
+    // Empate en puntos y en rating total; el servidor desempata por
+    // presupuesto restante y deja a Ana primero. La ceremonia dice Ana.
+    const champions = ceremonyChampions(
+      tiedState([
+        { playerId: "a", points: 0.5, totalRating: 90, budgetLeft: 100, rank: 1 },
+        { playerId: "b", points: 0.5, totalRating: 90, budgetLeft: 900, rank: 2 },
+      ]),
+    );
+    expect(champions.map((c) => c.playerId)).toEqual(["a"]);
+    expect(champions[0]?.name).toBe("Ana");
+  });
+
+  it("declara dos campeones solo cuando el servidor comparte el rank 1", () => {
+    const champions = ceremonyChampions(
+      tiedState([
+        { playerId: "a", points: 0.5, totalRating: 90, budgetLeft: 500, rank: 1 },
+        { playerId: "b", points: 0.5, totalRating: 90, budgetLeft: 500, rank: 1 },
+      ]),
+    );
+    expect(champions.map((c) => c.name)).toEqual(["Ana", "Bea"]);
+  });
+
+  it("sin standings cae a los puntos de la ceremonia en vez de quedarse sin campeon", () => {
+    // Red de seguridad: `standings` solo se rellena en RESULTS, pero si
+    // llegara vacio la pantalla de campeon no puede quedarse en blanco.
+    const champions = ceremonyChampions(tiedState([]));
+    expect(champions.map((c) => c.name)).toEqual(["Ana", "Bea"]);
+    expect(champions[0]?.points).toBe(0.5);
   });
 });
 

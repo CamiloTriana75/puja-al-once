@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { describeRoomLookupError } from "./roomLookup.js";
+import { describe, expect, it, vi } from "vitest";
+import { describeRoomLookupError, fetchPublicRooms } from "./roomLookup.js";
 
 describe("describeRoomLookupError", () => {
   it("distingue sala inexistente, llena y ya empezada con tres mensajes distintos", () => {
@@ -24,5 +24,23 @@ describe("describeRoomLookupError", () => {
 
   it("un motivo desconocido cae en un mensaje generico, no revienta", () => {
     expect(describeRoomLookupError("ALGO_NUEVO")).toBeTruthy();
+  });
+});
+
+describe("fetchPublicRooms", () => {
+  it("lee el directorio del servidor y devuelve las salas disponibles", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ rooms: [{ roomId: "r1", code: "ABCDE", players: 2, capacity: 4, ready: 1 }] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await expect(fetchPublicRooms()).resolves.toEqual([
+        { roomId: "r1", code: "ABCDE", players: 2, capacity: 4, ready: 1 },
+      ]);
+      expect(fetchMock).toHaveBeenCalledWith(expect.stringMatching(/\/rooms\/public$/));
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

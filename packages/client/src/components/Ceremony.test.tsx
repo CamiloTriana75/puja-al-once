@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import type { ElementType, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Ceremony, INTRO_MS, STEP_MS } from "./Ceremony.js";
+import { Ceremony, INTRO_MS, REVEAL_DELAY_MS, STEP_MS } from "./Ceremony.js";
 import type { ClientState, PlayerView, RevealedCardView } from "../net/types.js";
 
 /**
@@ -101,7 +101,14 @@ function baseState(overrides: Partial<ClientState>): ClientState {
   };
 }
 
-/** Estado minimo: dos jugadores, un unico puesto (GK) fichado por cada uno, Ana con mejor rating. */
+/**
+ * Estado minimo: dos jugadores, un unico puesto (GK) fichado por cada uno, Ana con mejor rating.
+ *
+ * `standings` es lo que el servidor publica en `AuctionRoom.finish()`: Ana
+ * rank 1 con 1 punto, Bea rank 2 con 0. La ceremonia lo usa para decidir quien
+ * es campeon (ver `ceremonyChampions`), asi que estos fixtures no son
+ * decorativos: si esa fila falta, la champions cae al red de seguridad.
+ */
 function twoPlayerState(): ClientState {
   return baseState({
     players: new Map([
@@ -112,6 +119,10 @@ function twoPlayerState(): ClientState {
       ["card-a", revealed({ cardId: "card-a", slot: "GK", name: "Casillas", rating: 90, ownerId: "a", price: 50 })],
       ["card-b", revealed({ cardId: "card-b", slot: "GK", name: "Valdes", rating: 70, ownerId: "b", price: 20 })],
     ]),
+    standings: [
+      { playerId: "a", points: 1, totalRating: 90, budgetLeft: 950, rank: 1 },
+      { playerId: "b", points: 0, totalRating: 70, budgetLeft: 980, rank: 2 },
+    ],
   });
 }
 
@@ -134,8 +145,7 @@ describe("Ceremony", () => {
 
   it("empieza con la entrada 'La hora de la verdad'", () => {
     render(<Ceremony state={twoPlayerState()} onFinished={vi.fn()} />);
-    expect(screen.getByText(/la hora/i)).toBeInTheDocument();
-    expect(screen.getByText(/de la verdad/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /la hora.*verdad/i })).toBeInTheDocument();
   });
 
   it("el rating aparece tapado con '?' antes del destape, y como numero despues", () => {
@@ -149,24 +159,24 @@ describe("Ceremony", () => {
     });
     expect(screen.getAllByText("?").length).toBeGreaterThan(0);
 
-    // Pasan los ~800ms del destape dentro del paso.
+    // Pasan los ms del destape dentro del paso.
     act(() => {
-      vi.advanceTimersByTime(800);
+      vi.advanceTimersByTime(REVEAL_DELAY_MS);
     });
     expect(screen.getByText("90")).toBeInTheDocument();
     expect(screen.getByText("70")).toBeInTheDocument();
     expect(screen.queryByText("?")).not.toBeInTheDocument();
   });
 
-  it("marca 'Gana' solo en la carta de mejor rating tras el destape", () => {
+  it("marca 'Gana el puesto' solo en la carta de mejor rating tras el destape", () => {
     render(<Ceremony state={twoPlayerState()} onFinished={vi.fn()} />);
     act(() => {
       vi.advanceTimersByTime(INTRO_MS);
     });
     act(() => {
-      vi.advanceTimersByTime(800);
+      vi.advanceTimersByTime(REVEAL_DELAY_MS);
     });
-    expect(screen.getByText("Gana")).toBeInTheDocument();
+    expect(screen.getByText("Gana el puesto")).toBeInTheDocument();
   });
 
   it("'Saltar ceremonia' llama a onFinished de inmediato", () => {
@@ -208,5 +218,81 @@ describe("Ceremony", () => {
       });
     }
     expect(screen.getByText("Sin fichaje")).toBeInTheDocument();
+  });
+
+  it("el marcador suma el punto solo a partir del destape del paso", () => {
+    render(<Ceremony state={twoPlayerState()} onFinished={vi.fn()} />);
+
+    // En la entrada todos a 0, todavia no se ha revelado nada.
+    expect(screen.getByText("Ana").parentElement?.textContent).toContain("0");
+    expect(screen.getByText("Bea").parentElement?.textContent).toContain("0");
+
+    act(() => {
+      vi.advanceTimersByTime(INTRO_MS);
+    });
+    act(() => {
+      vi.advanceTimersByTime(REVEAL_DELAY_MS);
+    });
+    // Ana gano el GK: su marcador sube a 1 y el de Bea se queda en 0.
+    expect(screen.getByText("Ana").parentElement?.textContent).toContain("1");
+    expect(screen.getByText("Bea").parentElement?.textContent).toContain("0");
+  });
+
+  it("un patch del servidor a mitad de paso no reinicia ni duplica el marcador", () => {
+    // `useRoom` entrega un objeto de estado NUEVO en cada patch, asi que
+    // durante la ceremonia un jugador que se desconecta (por ejemplo) rehace
+    // las dependencias del efecto. El marcador es derivado de los pasos ya
+    // resueltos, no una suma dentro del temporizador: por eso el punto del GK
+    // sigue valiendo 1 y no 2, y el paso no vuelve a tapar el rating.
+    const state = twoPlayerState();
+    const { rerender } = render(<Ceremony state={state} onFinished={vi.fn()} />);
+    act(() => {
+      vi.advanceTimersByTime(INTRO_MS);
+    });
+    act(() => {
+      vi.advanceTimersByTime(REVEAL_DELAY_MS);
+    });
+    expect(screen.getByText("Ana").parentElement?.textContent).toContain("1");
+
+    act(() => {
+      rerender(<Ceremony state={{ ...state }} onFinished={vi.fn()} />);
+    });
+    act(() => {
+      vi.advanceTimersByTime(REVEAL_DELAY_MS);
+    });
+    expect(screen.getByText("Ana").parentElement?.textContent).toContain("1");
+    expect(screen.queryByText("?")).not.toBeInTheDocument();
+  });
+
+  it("el campeon lo decide la clasificacion del servidor, no solo los puntos de la ceremonia", () => {
+    // Ana y Bea empatan en el GK (mismo rating, mismo punto) y comparten
+    // rating total, pero a Bea le queda menos presupuesto. El servidor los
+    // desempata por budgetLeft y da el rank 1 a Bea: la ceremonia debe decir
+    // Bea, no "Campeones: Ana · Bea" mientras la tabla de abajo solo pinta a
+    // Bea como primera.
+    const state = twoPlayerState();
+    const state2: ClientState = {
+      ...state,
+      revealedCards: new Map([
+        ["card-a", revealed({ cardId: "card-a", slot: "GK", name: "Casillas", rating: 90, ownerId: "a", price: 50 })],
+        ["card-b", revealed({ cardId: "card-b", slot: "GK", name: "Valdes", rating: 90, ownerId: "b", price: 20 })],
+      ]),
+      standings: [
+        { playerId: "a", points: 0.5, totalRating: 90, budgetLeft: 950, rank: 2 },
+        { playerId: "b", points: 0.5, totalRating: 90, budgetLeft: 980, rank: 1 },
+      ],
+    };
+    render(<Ceremony state={state2} onFinished={vi.fn()} />);
+    act(() => {
+      vi.advanceTimersByTime(INTRO_MS);
+    });
+    for (let i = 0; i < 11; i++) {
+      act(() => {
+        vi.advanceTimersByTime(STEP_MS);
+      });
+    }
+    expect(screen.getByText("Campeón")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bea" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Ana" })).not.toBeInTheDocument();
   });
 });

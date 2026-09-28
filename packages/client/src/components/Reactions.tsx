@@ -20,8 +20,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
  */
 export const REACTIONS = ["😂", "😮", "🔥", "😭", "👏", "😡"] as const;
 export type ReactionEmoji = (typeof REACTIONS)[number];
+const REACTION_NAMES = ["risa", "sorpresa", "fuego", "llanto", "aplausos", "rabia"] as const;
 
-/** Enfriamiento visual tras cada pulsacion -- el servidor (cuando exista) limita igual, esto es solo el reflejo en el boton. */
+/** Enfriamiento visual tras cada pulsacion; el servidor tambien aplica el limite. */
 const COOLDOWN_MS = 600;
 /** Cuanto tarda la burbuja en subir y desvanecerse -- partida.md: "1.5s, ease-out". */
 const BUBBLE_LIFETIME_MS = 1500;
@@ -35,7 +36,7 @@ export interface FloatingReaction {
 interface BubbleProps {
   reaction: FloatingReaction;
   onExpire: (id: string) => void;
-  /** Desplazamiento horizontal aleatorio para que varias burbujas seguidas no se apilen exactas -- puramente cosmetico, decidido una vez por burbuja. */
+  /** Desplazamiento horizontal estable para que burbujas seguidas no se apilen exactas. */
   offsetX: number;
   /**
    * Sin subida -- ni por `prefers-reduced-motion` (`reducedMotion`, ya
@@ -146,7 +147,11 @@ export function Reactions({ myName, incoming = [], onSend, noRise = false, onExp
 
   const offsetFor = (id: string) => {
     if (!offsetsRef.current.has(id)) {
-      offsetsRef.current.set(id, Math.round((Math.random() - 0.5) * 48));
+      // Determinista y estable entre renders: no introduce aleatoriedad ni
+      // mutación de identidad visual mientras React vuelve a pintar.
+      let hash = 2166136261;
+      for (const character of id) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+      offsetsRef.current.set(id, (Math.abs(hash) % 49) - 24);
     }
     return offsetsRef.current.get(id)!;
   };
@@ -181,13 +186,13 @@ export function Reactions({ myName, incoming = [], onSend, noRise = false, onExp
       </div>
 
       <div role="group" aria-label="Reacciones" className="flex flex-wrap justify-center gap-2">
-        {REACTIONS.map((emoji) => (
+        {REACTIONS.map((emoji, index) => (
           <button
             key={emoji}
             type="button"
             onClick={() => send(emoji)}
             disabled={cooling}
-            aria-label={`Reaccionar con ${emoji}`}
+            aria-label={`Reaccionar: ${REACTION_NAMES[index]}`}
             className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center border-2 border-white/20 bg-ink text-2xl transition-colors duration-200 hover:border-lime disabled:cursor-not-allowed disabled:opacity-40"
           >
             {emoji}

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { boot, ColyseusTestServer } from "@colyseus/testing";
-import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from "@fut/shared";
+import { DEFAULT_RULES, ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH } from "@fut/shared";
 import appConfig from "../src/index.js";
 
 let colyseus: ColyseusTestServer;
@@ -56,7 +56,7 @@ describe("codigo de sala", () => {
 
     expect(room.state.players.size).toBe(2);
     expect(room.state.players.get(bea.sessionId)?.name).toBe("Bea");
-    expect(room.state.players.get(bea.sessionId)?.budget).toBe(1000);
+    expect(room.state.players.get(bea.sessionId)?.budget).toBe(DEFAULT_RULES.startingBudget);
   });
 
   describe("los tres rechazos son distinguibles", () => {
@@ -121,6 +121,84 @@ describe("codigo de sala", () => {
       const reasons = new Set([notFound.reason, isFull.reason, isStarted.reason]);
       expect(reasons.size).toBe(3);
     });
+  });
+});
+
+describe("directorio de salas publicas", () => {
+  it("solo lista salas publicas en lobby con cupo y devuelve informacion minima", async () => {
+    const privateRoom = await colyseus.createRoom("auction", {});
+    await colyseus.connectTo(privateRoom, { name: "Privada" });
+
+    const publicRoom = await colyseus.createRoom("auction", { visibility: "public" });
+    await colyseus.connectTo(publicRoom, { name: "Pública" });
+    expect(privateRoom.state.visibility).toBe("private");
+    expect(publicRoom.state.visibility).toBe("public");
+
+    const res = await fetch(`${BASE_URL}/rooms/public`);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { rooms: Array<Record<string, unknown>> };
+    expect(body.rooms).toEqual([
+      { roomId: publicRoom.roomId, code: publicRoom.state.roomCode, players: 1, capacity: 4, ready: 0 },
+    ]);
+    expect(JSON.stringify(body)).not.toContain("Pública");
+    expect(JSON.stringify(body)).not.toContain("Privada");
+  });
+
+  it("no publica salas llenas ni partidas que ya comenzaron", async () => {
+    await colyseus.createRoom("auction", { visibility: "public" });
+    const full = await colyseus.createRoom("auction", { visibility: "public" });
+    for (const name of ["Ana", "Bea", "Cid", "Dan"]) {
+      await colyseus.connectTo(full, { name });
+    }
+
+    const started = await colyseus.createRoom("auction", { visibility: "public" });
+    const clients = [];
+    for (const name of ["Eva", "Fran"]) clients.push(await colyseus.connectTo(started, { name }));
+    for (const client of clients) client.send("ready", {});
+    await started.waitForNextPatch();
+
+    const res = await fetch(`${BASE_URL}/rooms/public`);
+    const body = (await res.json()) as { rooms: Array<{ roomId: string }> };
+    expect(body.rooms).toEqual([]);
+  });
+
+  it("permite entrar al identificador de una sala pública del listado", async () => {
+    const room = await colyseus.createRoom("auction", { visibility: "public" });
+    await colyseus.connectTo(room, { name: "Ana" });
+    const response = await fetch(`${BASE_URL}/rooms/public`);
+    const { rooms } = (await response.json()) as { rooms: Array<{ roomId: string }> };
+
+    const secondPlayer = await colyseus.sdk.joinById(rooms[0]!.roomId, { name: "Bea" });
+    await room.waitForNextPatch();
+
+    expect(room.state.players.size).toBe(2);
+    expect(room.state.players.get(secondPlayer.sessionId)?.name).toBe("Bea");
+  });
+
+  it("expone una comprobacion de salud para el balanceador", async () => {
+    const res = await fetch(`${BASE_URL}/health/ready`);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ status: "ok" });
+
+    const sameOrigin = await fetch(`${BASE_URL}/health/ready`, { headers: { Origin: BASE_URL } });
+    expect(sameOrigin.headers.get("access-control-allow-origin")).toBe(BASE_URL);
+
+    const externalOrigin = await fetch(`${BASE_URL}/health/ready`, { headers: { Origin: "https://intruso.example" } });
+    expect(externalOrigin.status).toBe(403);
+  });
+});
+
+describe("nombre de jugador", () => {
+  it("quita controles, recorta a 18 caracteres y reemplaza el resultado vacío", async () => {
+    const room = await colyseus.createRoom("auction", {});
+    const client = await colyseus.connectTo(room, { name: "\u0000  Ana\n" + "X".repeat(30) });
+    await room.waitForNextPatch();
+    expect(room.state.players.get(client.sessionId)?.name).toBe(("Ana" + "X".repeat(18)).slice(0, 18));
+
+    const unnamed = await colyseus.connectTo(room, { name: "   " });
+    await room.waitForNextPatch();
+    expect(room.state.players.get(unnamed.sessionId)?.name).toBeTruthy();
+    expect(room.state.players.get(unnamed.sessionId)?.name.length).toBeLessThanOrEqual(18);
   });
 });
 

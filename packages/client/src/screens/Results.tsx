@@ -1,39 +1,33 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Ceremony } from "../components/Ceremony.js";
 import { SquadGrid } from "../components/SquadGrid.js";
+import { buildCeremonySteps } from "../net/ceremony.js";
 import type { ClientState } from "../net/types.js";
-
-const SLOTS = ["GK", "LB", "CB1", "CB2", "RB", "CDM", "CM", "CAM", "LW", "ST", "RW"] as const;
-
-/** Recalcula, solo para pintar, que huecos gano cada jugador. */
-function wonSlotsByPlayer(state: ClientState): Map<string, Set<string>> {
-  const result = new Map<string, Set<string>>();
-  for (const player of state.players.values()) result.set(player.playerId, new Set());
-
-  for (const slot of SLOTS) {
-    const holders = [...state.players.values()]
-      .map((p) => ({ id: p.playerId, card: p.squad.get(slot) }))
-      .filter((h): h is { id: string; card: string } => h.card !== undefined)
-      .map((h) => ({ id: h.id, rating: state.revealedCards.get(h.card)?.rating ?? -1 }));
-
-    if (holders.length === 0) continue;
-    const best = Math.max(...holders.map((h) => h.rating));
-    for (const holder of holders) {
-      if (holder.rating === best) result.get(holder.id)?.add(slot);
-    }
-  }
-  return result;
-}
 
 interface Props {
   state: ClientState;
   myId: string;
+  roomId: string;
   send: (type: string, payload?: unknown) => void;
 }
 
-export function Results({ state, myId, send }: Props) {
-  const won = wonSlotsByPlayer(state);
+export function Results({ state, myId, roomId, send }: Props) {
+  // Los puestos ganados salen de la MISMA fuente que la ceremonia
+  // (`buildCeremonySteps`), no de un segundo recorrido que calculaba otra vez
+  // "quien tiene el mejor rating de este puesto". Dos copias de esa regla
+  // pueden divergir sin que nada se queje; esta ya no puede.
+  const won = useMemo(() => {
+    const byPlayer = new Map<string, Set<string>>();
+    for (const player of state.players.values()) byPlayer.set(player.playerId, new Set());
+    for (const step of buildCeremonySteps(state)) {
+      for (const entry of step.entries) {
+        if (entry.wins) byPlayer.get(entry.playerId)?.add(step.slot);
+      }
+    }
+    return byPlayer;
+  }, [state]);
+
   const isHost = myId === state.hostId;
   const reducedMotion = useReducedMotion() ?? false;
   const hostName = state.players.get(state.hostId)?.name ?? "el anfitrión";
@@ -47,7 +41,7 @@ export function Results({ state, myId, send }: Props) {
   const [ceremonyDone, setCeremonyDone] = useState(false);
 
   if (!ceremonyDone) {
-    return <Ceremony state={state} onFinished={() => setCeremonyDone(true)} />;
+    return <Ceremony state={state} roomId={roomId} onFinished={() => setCeremonyDone(true)} />;
   }
 
   return (

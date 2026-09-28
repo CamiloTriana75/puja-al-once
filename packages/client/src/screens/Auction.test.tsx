@@ -129,7 +129,7 @@ describe("Auction -- reacciones (D8)", () => {
     );
     const [group] = screen.getAllByRole("group", { name: "Reacciones" });
     act(() => {
-      within(group!).getByRole("button", { name: "Reaccionar con 🔥" }).click();
+      within(group!).getByRole("button", { name: "Reaccionar: fuego" }).click();
     });
     expect(send).toHaveBeenCalledWith("react", { emoji: 2 }); // 🔥 es el indice 2 en REACTIONS
   });

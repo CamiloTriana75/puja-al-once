@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
 import { ConnectionBanner } from "./components/ConnectionBanner.js";
 import { Auction } from "./screens/Auction.js";
@@ -28,7 +28,7 @@ const SCREEN_VARIANTS = {
 export default function App() {
   const {
     room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, reactions, dismissReaction,
-    createRoom, joinByCode, send,
+    createRoom, joinByCode, joinPublicRoom, send,
   } = useRoom();
   const inGame = state && state.phase !== "LOBBY";
 
@@ -65,53 +65,56 @@ export default function App() {
   const screenKey = showLanding ? "landing" : !inGame ? "lobby" : state.phase === "RESULTS" ? "results" : "auction";
 
   return (
-    <main className="min-h-screen bg-deep text-white">
-      {/* Por encima de cualquier pantalla: la conexion se puede caer estando
+    <MotionConfig reducedMotion="user">
+      <main className="min-h-screen bg-deep text-white">
+        {/* Por encima de cualquier pantalla: la conexion se puede caer estando
           en Landing, Lobby, Auction o Results por igual (ver ConnectionBanner). */}
-      <ConnectionBanner status={connectionStatus} onRetry={retryNow} />
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={screenKey}
-          initial={reducedMotion ? undefined : SCREEN_VARIANTS.initial}
-          animate={SCREEN_VARIANTS.animate}
-          exit={reducedMotion ? undefined : SCREEN_VARIANTS.exit}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-        >
-          {showLanding && (
-            <Landing
-              error={startError}
-              onCreate={(name) => void createRoom(name)}
-              onJoinByCode={(name, code) => void joinByCode(name, code)}
-            />
-          )}
-          {!showLanding && !inGame && (
-            <Lobby
-              state={state}
-              error={startError}
-              onCreate={(name) => void createRoom(name)}
-              onJoinByCode={(name, code) => void joinByCode(name, code)}
-              onReady={() => send("ready", {})}
-            />
-          )}
-          {/* El error de puja NO se pinta aqui: viaja hasta BidControls y sale
+        <ConnectionBanner status={connectionStatus} onRetry={retryNow} />
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={screenKey}
+            initial={reducedMotion ? undefined : SCREEN_VARIANTS.initial}
+            animate={SCREEN_VARIANTS.animate}
+            exit={reducedMotion ? undefined : SCREEN_VARIANTS.exit}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            {showLanding && (
+              <Landing
+                error={startError}
+                onCreate={(name, visibility) => void createRoom(name, visibility)}
+                onJoinByCode={(name, code) => void joinByCode(name, code)}
+                onJoinPublicRoom={(name, roomId) => void joinPublicRoom(name, roomId)}
+              />
+            )}
+            {!showLanding && !inGame && (
+              <Lobby
+                state={state}
+                error={startError}
+                onCreate={(name) => void createRoom(name)}
+                onJoinByCode={(name, code) => void joinByCode(name, code)}
+                onReady={() => send("ready", {})}
+              />
+            )}
+            {/* El error de puja NO se pinta aqui: viaja hasta BidControls y sale
               junto al campo del importe, que es donde esta el problema. */}
-          {inGame && room && state.phase !== "RESULTS" && (
-            <Auction
-              state={state}
-              myId={room.sessionId}
-              roomId={room.roomId}
-              error={bidError}
-              errorSeq={bidErrorSeq}
-              reactions={reactions}
-              onDismissReaction={dismissReaction}
-              send={send}
-            />
-          )}
-          {inGame && room && state.phase === "RESULTS" && (
-            <Results state={state} myId={room.sessionId} send={send} />
-          )}
-        </motion.div>
-      </AnimatePresence>
-    </main>
+            {inGame && room && state.phase !== "RESULTS" && (
+              <Auction
+                state={state}
+                myId={room.sessionId}
+                roomId={room.roomId}
+                error={bidError}
+                errorSeq={bidErrorSeq}
+                reactions={reactions}
+                onDismissReaction={dismissReaction}
+                send={send}
+              />
+            )}
+            {inGame && room && state.phase === "RESULTS" && (
+              <Results state={state} myId={room.sessionId} roomId={room.roomId} send={send} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    </MotionConfig>
   );
 }
