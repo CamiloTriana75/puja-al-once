@@ -1,0 +1,17 @@
+# Sin esto, Git en Windows convierte a CRLF al hacer checkout y cada fichero
+# que se toca aparece como modificado entero ("LF will be replaced by CRLF").
+# Fijar el fin de linea en el repositorio hace que el diff ensucie lo que ha
+# cambiado de verdad, no el salto de linea de todo el fichero.
+* text=auto eol=lf
+
+# Binarios: nunca se tocan.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Lockfile: se respeta tal cual para que los installs sean reproducibles.
+pnpm-lock.yaml -text

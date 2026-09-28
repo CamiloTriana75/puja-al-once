@@ -29,3 +29,9 @@ Fecha: 2026-09-26. Origen: primera partida real del usuario con amigos (build be
 ## En pausa (hasta que el usuario diga)
 
 D6 (6 jugadores), D7 (velocidad), D8 (reacciones), D9 (sonido), ceremonia final. La partida funciona sin ellos: sin ceremonia, los ratings aparecen en la pantalla de resultados.
+
+## Reactivación — 2026-09-27
+
+El usuario pidió renovar el frontend completo, incluida la creación de salas, la experiencia de espera, la ceremonia final y las reacciones. **D8 y la ceremonia vuelven al alcance**; el modo de 6 jugadores, la velocidad rápida y el sonido siguen en pausa.
+
+La sala ya tiene el canal efímero `react -> reaction` con validación y límite de frecuencia en el servidor. El trabajo pendiente de este alcance está en la presentación, la invitación por enlace y la ceremonia con fotos exactas de temporada.

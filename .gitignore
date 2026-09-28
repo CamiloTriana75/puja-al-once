@@ -11,3 +11,15 @@ packages/*/test/*.js
 
 # Indice local de graphify (rutas absolutas, cache de extraccion)
 graphify-out/
+
+# Estado local de herramientas. Nada de esto es del proyecto: son caches y
+# worktrees que se regeneran solas y solo ensucian el repo si se subir.
+.playwright-mcp/
+.claude/worktrees/
+
+# Capturas de QA de la propia sesion (ver CREDITS.md para las fotos del juego,
+# que si son parte del dataset y van versionadas en data/photos).
+/auction-*.png
+/landing-*.png
+/lobby-*.png
+/reaction-*.png
