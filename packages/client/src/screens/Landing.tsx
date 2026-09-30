@@ -698,6 +698,7 @@ export function Landing({ error, onCreate, onJoinByCode, onJoinPublicRoom }: Pro
       <Enter error={error} onCreate={onCreate} onJoinByCode={onJoinByCode} onJoinPublicRoom={onJoinPublicRoom} formRef={enterRef} initialCode={inviteCode} />
       <footer className="border-t border-white/10 bg-ink px-4 py-5 text-center sm:px-8">
         <p className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Futbolera · Para el grupo que nunca se pone de acuerdo</p>
+        <a href="/actualizaciones.html" className="font-display mt-1 inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 transition-colors hover:text-lime">Actualizaciones</a>
       </footer>
     </div>
   );
