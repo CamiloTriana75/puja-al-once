@@ -14,11 +14,37 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:ACole.JPG"
   },
   {
+    "silhouetteId": "baggio-1994",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Roberto_Baggio_-_Lanerossi_Vicenza.jpg",
+    "author": "Unknown author Unknown author",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Roberto_Baggio_-_Lanerossi_Vicenza.jpg",
+    "title": "File:Roberto Baggio - Lanerossi Vicenza.jpg",
+    "verifiedYear": 1984,
+    "season": 1994,
+    "yearDiff": 10,
+    "width": 868,
+    "height": 1280
+  },
+  {
     "silhouetteId": "bale-2014",
     "url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Gareth_Bale_RM.jpg",
     "author": "Pablo Morquecho",
     "license": "CC BY 2.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Gareth_Bale_RM.jpg"
+  },
+  {
+    "silhouetteId": "batistuta-1998",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Gabriel_batistuta.jpg",
+    "author": "Wikimedia Commons",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Gabriel_batistuta.jpg",
+    "title": "File:Gabriel batistuta.jpg",
+    "verifiedYear": 2006,
+    "season": 1998,
+    "yearDiff": 8,
+    "width": 375,
+    "height": 500
   },
   {
     "silhouetteId": "beckenbauer-1974",
@@ -54,11 +80,69 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:David_Beckham_Nov_11_2007.jpg"
   },
   {
-    "silhouetteId": "buffon-2003",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/2/28/Gian_Luigi_Buffon_2008.jpg",
-    "author": "James Adams",
+    "silhouetteId": "benzema-2022",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/Karim_Benzema_2022_%28cropped%29.jpg",
+    "author": "Fotografías Archimadrid.es",
     "license": "CC BY 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Gian_Luigi_Buffon_2008.jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Karim_Benzema_2022_(cropped).jpg",
+    "title": "File:Karim Benzema 2022 (cropped).jpg",
+    "verifiedYear": 2022,
+    "season": 2022,
+    "yearDiff": 0,
+    "width": 313,
+    "height": 539
+  },
+  {
+    "silhouetteId": "bergomi-1982",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/Giuseppe_Bergomi.jpg",
+    "author": "Christophe95",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Giuseppe_Bergomi.jpg",
+    "title": "File:Giuseppe Bergomi.jpg",
+    "verifiedYear": 2008,
+    "season": 1982,
+    "yearDiff": 26,
+    "width": 351,
+    "height": 504
+  },
+  {
+    "silhouetteId": "best-1968",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Nederland_tegen_Noord_Ierland_George_Best_%2C_kop%2C_Bestanddeelnr_928-8290.jpg",
+    "author": "Hans Peters for Anefo",
+    "license": "CC0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Nederland_tegen_Noord_Ierland_George_Best_,_kop,_Bestanddeelnr_928-8290.jpg",
+    "title": "File:Nederland tegen Noord Ierland George Best , kop, Bestanddeelnr 928-8290.jpg",
+    "verifiedYear": 1976,
+    "season": 1968,
+    "yearDiff": 8,
+    "width": 2478,
+    "height": 3745
+  },
+  {
+    "silhouetteId": "bobby-moore-1966",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d2/Bobby_Moore_1969.jpg",
+    "author": "Eric Koch for Anefo",
+    "license": "CC BY-SA 3.0 nl",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Bobby_Moore_1969.jpg",
+    "title": "File:Bobby Moore 1969.jpg",
+    "verifiedYear": 1969,
+    "season": 1966,
+    "yearDiff": 3,
+    "width": 724,
+    "height": 1362
+  },
+  {
+    "silhouetteId": "buffon-2003",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/7/76/Gianluigi_Buffon_BGR-ITA_2012.jpg",
+    "author": "Biser Todorov (original picture), Mess (derivative work)",
+    "license": "CC BY 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Gianluigi_Buffon_BGR-ITA_2012.jpg",
+    "title": "File:Gianluigi Buffon BGR-ITA 2012.jpg",
+    "verifiedYear": 2012,
+    "season": 2003,
+    "yearDiff": 9,
+    "width": 450,
+    "height": 610
   },
   {
     "silhouetteId": "buffon-2018",
@@ -69,10 +153,16 @@
   },
   {
     "silhouetteId": "busquets-2015",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Sergio_Busquets_NE_Revolution_Inter_Miami_7.9.25-060.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/52/Sergio_Busquets_NE_Revolution_Inter_Miami_7.9.25-028.jpg",
     "author": "Bryan Berlin",
     "license": "CC BY-SA 4.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Sergio_Busquets_NE_Revolution_Inter_Miami_7.9.25-060.jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Sergio_Busquets_NE_Revolution_Inter_Miami_7.9.25-028.jpg",
+    "title": "File:Sergio Busquets NE Revolution Inter Miami 7.9.25-028.jpg",
+    "verifiedYear": 2025,
+    "season": 2015,
+    "yearDiff": 10,
+    "width": 3333,
+    "height": 5000
   },
   {
     "silhouetteId": "busquets-2023",
@@ -94,6 +184,19 @@
     "author": "Florian K",
     "license": "CC BY-SA 3.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Cafu.JPG"
+  },
+  {
+    "silhouetteId": "cancelo-2021",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/37/Joao_Cancelo_2021.jpg",
+    "author": "Ardfern",
+    "license": "CC BY-SA 4.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Joao_Cancelo_2021.jpg",
+    "title": "File:Joao Cancelo 2021.jpg",
+    "verifiedYear": 2021,
+    "season": 2021,
+    "yearDiff": 0,
+    "width": 314,
+    "height": 697
   },
   {
     "silhouetteId": "cannavaro-2006",
@@ -150,10 +253,16 @@
   },
   {
     "silhouetteId": "cristiano-2008",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Cristiano_Ronaldo%2C_2012_2.JPG",
-    "author": "goatling (Flickr)",
-    "license": "CC BY-SA 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Cristiano_Ronaldo,_2012_2.JPG"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Cristiano_Ronaldo_of_Manchester_United%2C_November_5%2C_2008.jpg",
+    "author": "Photo beople/gowestphoto/ Tsutomu Takasu]",
+    "license": "CC BY 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Cristiano_Ronaldo_of_Manchester_United,_November_5,_2008.jpg",
+    "title": "File:Cristiano Ronaldo of Manchester United, November 5, 2008.jpg",
+    "verifiedYear": 2008,
+    "season": 2008,
+    "yearDiff": 0,
+    "width": 800,
+    "height": 1200
   },
   {
     "silhouetteId": "cristiano-2023",
@@ -189,10 +298,68 @@
   },
   {
     "silhouetteId": "dani-alves-2021",
-    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Dani_Alves_nos_Juegos_Olimpicos.jpg/500px-Dani_Alves_nos_Juegos_Olimpicos.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-    "author": "Rede do Esporte (Breno Barros)",
-    "license": "CC BY 3.0 BR",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Dani_Alves_nos_Juegos_Olimpicos.jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/90/Dani_Alves_nos_Juegos_Olimpicos.jpg",
+    "author": "Breno Barros",
+    "license": "CC BY 3.0 br",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Dani_Alves_nos_Juegos_Olimpicos.jpg",
+    "title": "File:Dani Alves nos Juegos Olimpicos.jpg",
+    "verifiedYear": 2021,
+    "season": 2021,
+    "yearDiff": 0,
+    "width": 720,
+    "height": 1237
+  },
+  {
+    "silhouetteId": "de-bruyne-2020",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/36/Kevin_De_Bruyne.jpg",
+    "author": "Светлана Бекетова",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Kevin_De_Bruyne.jpg",
+    "title": "File:Kevin De Bruyne.jpg",
+    "verifiedYear": 2018,
+    "season": 2020,
+    "yearDiff": 2,
+    "width": 732,
+    "height": 1200
+  },
+  {
+    "silhouetteId": "desailly-1998",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/25th_Laureus_World_Sports_Awards_-_Red_Carpet_-_Marcel_Desailly_-_240422_192752-3_%28cropped%29.jpg",
+    "author": "Barcex",
+    "license": "CC BY-SA 4.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:25th_Laureus_World_Sports_Awards_-_Red_Carpet_-_Marcel_Desailly_-_240422_192752-3_(cropped).jpg",
+    "title": "File:25th Laureus World Sports Awards - Red Carpet - Marcel Desailly - 240422 192752-3 (cropped).jpg",
+    "verifiedYear": 2024,
+    "season": 1998,
+    "yearDiff": 26,
+    "width": 1382,
+    "height": 1814
+  },
+  {
+    "silhouetteId": "di-maria-2014",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/cc/%C3%81ngel_Di_Mar%C3%ADa.jpg",
+    "author": "José Goulão from Lisbon, Portugal",
+    "license": "CC BY-SA 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:%C3%81ngel_Di_Mar%C3%ADa.jpg",
+    "title": "File:Ángel Di María.jpg",
+    "verifiedYear": 2007,
+    "season": 2014,
+    "yearDiff": 7,
+    "width": 448,
+    "height": 794
+  },
+  {
+    "silhouetteId": "dida-2005",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Dida_06052007.jpg",
+    "author": "Roberto Vicario",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Dida_06052007.jpg",
+    "title": "File:Dida 06052007.jpg",
+    "verifiedYear": 2007,
+    "season": 2005,
+    "yearDiff": 2,
+    "width": 453,
+    "height": 680
   },
   {
     "silhouetteId": "drogba-2010",
@@ -209,11 +376,43 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:DidierDrogbaMLS2015.jpg"
   },
   {
+    "silhouetteId": "dzajic-1968",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Dragan_D%C5%BEaji%C4%87.jpg",
+    "author": "Nationaal Archief, Den Haag, Rijksfotoarchief: Fotocollectie Algemeen Nederlands Fotopersb",
+    "license": "CC BY-SA 3.0 nl",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Dragan_D%C5%BEaji%C4%87.jpg",
+    "title": "File:Dragan Džajić.jpg",
+    "verifiedYear": 1970,
+    "season": 1968,
+    "yearDiff": 2,
+    "width": 1348,
+    "height": 1844
+  },
+  {
     "silhouetteId": "essien-2007",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Essiencropped.jpg",
-    "author": "Mark Freeman",
-    "license": "CC BY 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Essiencropped.jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/28/Michael_Essien_4620.jpg",
+    "author": "Amarhgil",
+    "license": "Attribution",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Michael_Essien_4620.jpg",
+    "title": "File:Michael Essien 4620.jpg",
+    "verifiedYear": 2010,
+    "season": 2007,
+    "yearDiff": 3,
+    "width": 292,
+    "height": 400
+  },
+  {
+    "silhouetteId": "eusebio-1966",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Benfica_traint_op_bijvelden_Feijenoord%2C_Eus%C3%A9bio%2C_Bestanddeelnr_915-0216.jpg",
+    "author": "Harry Pot for Anefo",
+    "license": "CC0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Benfica_traint_op_bijvelden_Feijenoord,_Eus%C3%A9bio,_Bestanddeelnr_915-0216.jpg",
+    "title": "File:Benfica traint op bijvelden Feijenoord, Eusébio, Bestanddeelnr 915-0216.jpg",
+    "verifiedYear": 1963,
+    "season": 1966,
+    "yearDiff": 3,
+    "width": 2370,
+    "height": 3648
   },
   {
     "silhouetteId": "evra-2010",
@@ -221,6 +420,32 @@
     "author": "Ramsey Cardy / Web Summit / Sportsfile",
     "license": "CC BY 2.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Patrice_Evra_(52472689279)_(cropped).jpg"
+  },
+  {
+    "silhouetteId": "fabregas-2010",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Cesc_F%C3%A0bregas_2011-09-22_001.jpg",
+    "author": "Harald Loos / Puma SE",
+    "license": "CC BY 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Cesc_F%C3%A0bregas_2011-09-22_001.jpg",
+    "title": "File:Cesc Fàbregas 2011-09-22 001.jpg",
+    "verifiedYear": 2011,
+    "season": 2010,
+    "yearDiff": 1,
+    "width": 2162,
+    "height": 3543
+  },
+  {
+    "silhouetteId": "facchetti-1968",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Giacinto_Facchetti%2C_Italia%2C_Euro_%2768.jpg",
+    "author": "Unknown author Unknown author",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Giacinto_Facchetti,_Italia,_Euro_%2768.jpg",
+    "title": "File:Giacinto Facchetti, Italia, Euro '68.jpg",
+    "verifiedYear": 1968,
+    "season": 1968,
+    "yearDiff": 0,
+    "width": 1180,
+    "height": 1920
   },
   {
     "silhouetteId": "fernandinho-2017",
@@ -248,6 +473,32 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:L._Figo_2017_(cropped).jpg"
   },
   {
+    "silhouetteId": "garrincha-1962",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/eb/MFdSantos-Garrincha.jpg",
+    "author": "El Gráfico",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:MFdSantos-Garrincha.jpg",
+    "title": "File:MFdSantos-Garrincha.jpg",
+    "verifiedYear": 1962,
+    "season": 1962,
+    "yearDiff": 0,
+    "width": 538,
+    "height": 710
+  },
+  {
+    "silhouetteId": "gento-1960",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Francisco_Gento_1962.jpg",
+    "author": "Unknown author Unknown author",
+    "license": "CC BY-SA 3.0 nl",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Francisco_Gento_1962.jpg",
+    "title": "File:Francisco Gento 1962.jpg",
+    "verifiedYear": 1962,
+    "season": 1960,
+    "yearDiff": 2,
+    "width": 406,
+    "height": 532
+  },
+  {
     "silhouetteId": "gerrard-2006",
     "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Steven_Gerrard_2006.jpg/250px-Steven_Gerrard_2006.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "author": "Christophe95",
@@ -269,6 +520,32 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Ryan_Giggs_2015_(cropped).jpg"
   },
   {
+    "silhouetteId": "godin-2014",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/06/U03_Diego_God%C3%ADn_7530.jpg",
+    "author": "Ailura",
+    "license": "CC BY-SA 3.0 at",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:U03_Diego_God%C3%ADn_7530.jpg",
+    "title": "File:U03 Diego Godín 7530.jpg",
+    "verifiedYear": 2014,
+    "season": 2014,
+    "yearDiff": 0,
+    "width": 1120,
+    "height": 1680
+  },
+  {
+    "silhouetteId": "hagi-1994",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Gheorghe_Hagi_at_the_2012_BRD_N%C4%83stase_%C8%9Airiac_Trophy.jpg",
+    "author": "Gabinho",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Gheorghe_Hagi_at_the_2012_BRD_N%C4%83stase_%C8%9Airiac_Trophy.jpg",
+    "title": "File:Gheorghe Hagi at the 2012 BRD Năstase Țiriac Trophy.jpg",
+    "verifiedYear": 2012,
+    "season": 1994,
+    "yearDiff": 18,
+    "width": 1395,
+    "height": 2112
+  },
+  {
     "silhouetteId": "hazard-2015",
     "url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Eden_Hazard_2012.jpg",
     "author": "wonker",
@@ -277,14 +554,16 @@
   },
   {
     "silhouetteId": "hazard-2021",
-    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c3/Eden_Hazard_Real_Madrid.jpg/500px-Eden_Hazard_Real_Madrid.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-    "author": "Real Madrid",
-    "license": "CC BY 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Eden_Hazard_Real_Madrid.jpg",
-    "commonsDate": "31 October 2020",
-    "verifiedYear": 2020,
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/68/Eden_Hazard_WC2022.jpg",
+    "author": "Hossein Zohrevand",
+    "license": "CC BY 4.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Eden_Hazard_WC2022.jpg",
+    "title": "File:Eden Hazard WC2022.jpg",
+    "verifiedYear": 2022,
+    "season": 2021,
     "yearDiff": 1,
-    "curationNote": "Retrato individual tras un partido; Date de Commons 2020, diferencia de 1 año."
+    "width": 378,
+    "height": 531
   },
   {
     "silhouetteId": "henry-2004",
@@ -313,10 +592,16 @@
   },
   {
     "silhouetteId": "iniesta-2012",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Andr%C3%A9s_Iniesta_%28cropped%29.jpg",
-    "author": "Кирилл Венедиктов",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1c/2012_2013_-_08_Andr%C3%A9s_Iniesta.jpg",
+    "author": "Castroquini",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Andr%C3%A9s_Iniesta_(cropped).jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:2012_2013_-_08_Andr%C3%A9s_Iniesta.jpg",
+    "title": "File:2012 2013 - 08 Andrés Iniesta.jpg",
+    "verifiedYear": 2012,
+    "season": 2012,
+    "yearDiff": 0,
+    "width": 3240,
+    "height": 4320
   },
   {
     "silhouetteId": "iniesta-2018",
@@ -330,11 +615,30 @@
     "curationNote": "Retrato individual fechado en 2018 por el campo Date de Commons."
   },
   {
+    "silhouetteId": "jairzinho-1970",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Jairzinho_M%C3%A9xico_70.jpg",
+    "author": "Panini",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Jairzinho_M%C3%A9xico_70.jpg",
+    "title": "File:Jairzinho México 70.jpg",
+    "verifiedYear": 1970,
+    "season": 1970,
+    "yearDiff": 0,
+    "width": 919,
+    "height": 1308
+  },
+  {
     "silhouetteId": "jordi-alba-2015",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Jordi_Alba.jpg",
-    "author": "CarlosRM",
-    "license": "CC BY 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Jordi_Alba.jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Jordi_Alba_2013_Catalonia_%28cropped%29.jpg",
+    "author": "Xavier Rondón Medina",
+    "license": "CC BY-SA 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Jordi_Alba_2013_Catalonia_(cropped).jpg",
+    "title": "File:Jordi Alba 2013 Catalonia (cropped).jpg",
+    "verifiedYear": 2013,
+    "season": 2015,
+    "yearDiff": 2,
+    "width": 1081,
+    "height": 1941
   },
   {
     "silhouetteId": "jordi-alba-2023",
@@ -359,17 +663,55 @@
   },
   {
     "silhouetteId": "kante-2018",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/5/58/N%27Golo_Kant%C3%A9_%28Chelsea%29.jpg",
-    "author": "Liondartois",
-    "license": "CC BY-SA 4.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:N%27Golo_Kant%C3%A9_(Chelsea).jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/08/N%27Golo_Kant%C3%A9_at_Baku_before_2019_UEFA_Europe_League_Final.jpg",
+    "author": "Amir Hosseini",
+    "license": "CC BY 4.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:N%27Golo_Kant%C3%A9_at_Baku_before_2019_UEFA_Europe_League_Final.jpg",
+    "title": "File:N'Golo Kanté at Baku before 2019 UEFA Europe League Final.jpg",
+    "verifiedYear": 2019,
+    "season": 2018,
+    "yearDiff": 1,
+    "width": 675,
+    "height": 698
+  },
+  {
+    "silhouetteId": "keane-1999",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Roy_keane_2014.jpg",
+    "author": "Irish Defence Forces from Ireland",
+    "license": "CC BY 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Roy_keane_2014.jpg",
+    "title": "File:Roy keane 2014.jpg",
+    "verifiedYear": 2014,
+    "season": 1999,
+    "yearDiff": 15,
+    "width": 600,
+    "height": 800
+  },
+  {
+    "silhouetteId": "koeman-1990",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Ronald_Koeman_%281983%29.jpg",
+    "author": "Rob Croes for Anefo",
+    "license": "CC0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Ronald_Koeman_(1983).jpg",
+    "title": "File:Ronald Koeman (1983).jpg",
+    "verifiedYear": 1983,
+    "season": 1990,
+    "yearDiff": 7,
+    "width": 2110,
+    "height": 2813
   },
   {
     "silhouetteId": "kroos-2018",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Toni_Kroos%2C_Germany_national_football_team_%2801%29.jpg",
-    "author": "Steindy (talk) 19:29, 27 June 2011 (UTC)",
-    "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Toni_Kroos,_Germany_national_football_team_(01).jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/64/Toni_Kroos_Real_Madrid_2021.jpg",
+    "author": "https://www.youtube.com/@realmadrid",
+    "license": "CC BY 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Toni_Kroos_Real_Madrid_2021.jpg",
+    "title": "File:Toni Kroos Real Madrid 2021.jpg",
+    "verifiedYear": 2021,
+    "season": 2018,
+    "yearDiff": 3,
+    "width": 874,
+    "height": 1193
   },
   {
     "silhouetteId": "lahm-2014",
@@ -393,11 +735,37 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Robert_Lewandowski_Training_2017-03_FC_Bayern_Muenchen-3.jpg"
   },
   {
+    "silhouetteId": "lizarazu-2001",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Bixente_Lizarazu.jpg",
+    "author": "Oscar Alonso Algote",
+    "license": "CC BY-SA 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Bixente_Lizarazu.jpg",
+    "title": "File:Bixente Lizarazu.jpg",
+    "verifiedYear": 2011,
+    "season": 2001,
+    "yearDiff": 10,
+    "width": 3456,
+    "height": 5184
+  },
+  {
     "silhouetteId": "mahrez-2015",
     "url": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Riyad_Mahrez.jpg",
     "author": "Ben Sutherland",
     "license": "CC BY 2.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Riyad_Mahrez.jpg"
+  },
+  {
+    "silhouetteId": "maicon-2010",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/17/Maicon_Douglas_Sisenando_-_Inter_Mailand_%282%29.jpg",
+    "author": "Steindy ( talk ) 23:39, 28 November 2009 (UTC)",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Maicon_Douglas_Sisenando_-_Inter_Mailand_(2).jpg",
+    "title": "File:Maicon Douglas Sisenando - Inter Mailand (2).jpg",
+    "verifiedYear": 2009,
+    "season": 2010,
+    "yearDiff": 1,
+    "width": 1035,
+    "height": 1308
   },
   {
     "silhouetteId": "makelele-2004",
@@ -429,6 +797,19 @@
     "curationNote": "Retrato individual de prensa de la Russian Railways Cup; el campo Date de Commons indica 1 de agosto de 2008, diferencia de 1 año."
   },
   {
+    "silhouetteId": "mane-2019",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Sadio_Man%C3%A9_Senegal.jpg",
+    "author": "Екатерина Лаут",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Sadio_Man%C3%A9_Senegal.jpg",
+    "title": "File:Sadio Mané Senegal.jpg",
+    "verifiedYear": 2018,
+    "season": 2019,
+    "yearDiff": 1,
+    "width": 376,
+    "height": 563
+  },
+  {
     "silhouetteId": "marcelo-2017",
     "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Al_Jazira_Club_v_Real_Madrid_CF%2C_13_December_2017_-_05.jpg/500px-Al_Jazira_Club_v_Real_Madrid_CF%2C_13_December_2017_-_05.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
     "author": "Tasnim News Agency (Hadi Abyar)",
@@ -443,11 +824,43 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:RafaelMarquezAlvarez.jpg"
   },
   {
-    "silhouetteId": "messi-2015",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/6/6c/Lionel_Messi_in_2018.jpg",
-    "author": "Кирилл Венедиктов",
+    "silhouetteId": "mascherano-2014",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/51/Javier_Mascherano_-_2011.jpg",
+    "author": "Ludovic Péron",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Lionel_Messi_in_2018.jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Javier_Mascherano_-_2011.jpg",
+    "title": "File:Javier Mascherano - 2011.jpg",
+    "verifiedYear": 2011,
+    "season": 2014,
+    "yearDiff": 3,
+    "width": 384,
+    "height": 512
+  },
+  {
+    "silhouetteId": "matthaus-1990",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Lothar_Matth%C3%A4us.jpg",
+    "author": "Florian K.",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Lothar_Matth%C3%A4us.jpg",
+    "title": "File:Lothar Matthäus.jpg",
+    "verifiedYear": 1999,
+    "season": 1990,
+    "yearDiff": 9,
+    "width": 742,
+    "height": 910
+  },
+  {
+    "silhouetteId": "messi-2015",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Lionel_Messi_at_Bernabeu.jpg",
+    "author": "Addesolen",
+    "license": "CC0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Lionel_Messi_at_Bernabeu.jpg",
+    "title": "File:Lionel Messi at Bernabeu.jpg",
+    "verifiedYear": 2012,
+    "season": 2015,
+    "yearDiff": 3,
+    "width": 819,
+    "height": 1648
   },
   {
     "silhouetteId": "messi-2023",
@@ -469,6 +882,19 @@
     "author": "Bryan Berlin / WikiPortraits",
     "license": "CC BY-SA 4.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Luka_Modric_Croatia_v_Portugal_2_July_2026-025.jpg"
+  },
+  {
+    "silhouetteId": "navas-2016",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/7/73/Keylor_Navas_en_el_Real_Madrid_%28cropped%29.JPG",
+    "author": "Ruben Ortega",
+    "license": "CC BY-SA 4.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Keylor_Navas_en_el_Real_Madrid_(cropped).JPG",
+    "title": "File:Keylor Navas en el Real Madrid (cropped).JPG",
+    "verifiedYear": 2016,
+    "season": 2016,
+    "yearDiff": 0,
+    "width": 1006,
+    "height": 2531
   },
   {
     "silhouetteId": "nesta-2003",
@@ -499,6 +925,19 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Neymar_Jr._with_Al_Hilal,_3_October_2023_-_08.jpg"
   },
   {
+    "silhouetteId": "nilton-santos-1962",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/Nilton_Santos_2_%281956%29.tif",
+    "author": "Unknown Unknown",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Nilton_Santos_2_(1956).tif",
+    "title": "File:Nilton Santos 2 (1956).tif",
+    "verifiedYear": null,
+    "season": 1962,
+    "yearDiff": null,
+    "width": 1372,
+    "height": 1997
+  },
+  {
     "silhouetteId": "oblak-2020",
     "url": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Jan_Oblak_2019.jpg",
     "author": "Анна Нэсси",
@@ -511,6 +950,19 @@
     "author": "Ronnie Macdonald",
     "license": "CC BY 2.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Mesut_%C3%96zil_Arsenal_(2).jpg"
+  },
+  {
+    "silhouetteId": "passarella-1978",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Daniel_passarella_en_1985.jpg",
+    "author": "Unknown author Unknown author",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Daniel_passarella_en_1985.jpg",
+    "title": "File:Daniel passarella en 1985.jpg",
+    "verifiedYear": 1985,
+    "season": 1978,
+    "yearDiff": 7,
+    "width": 286,
+    "height": 465
   },
   {
     "silhouetteId": "pique-2012",
@@ -528,10 +980,29 @@
   },
   {
     "silhouetteId": "pirlo-2015",
-    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/20150616_-_Portugal_-_Italie_-_Gen%C3%A8ve_-_Andrea_Pirlo_%28cropped%29.jpg/250px-20150616_-_Portugal_-_Italie_-_Gen%C3%A8ve_-_Andrea_Pirlo_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/6e/20150616_-_Portugal_-_Italie_-_Gen%C3%A8ve_-_Andrea_Pirlo_%28cropped%29.jpg",
     "author": "Clément Bucco-Lechat",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:20150616_-_Portugal_-_Italie_-_Gen%C3%A8ve_-_Andrea_Pirlo_(cropped).jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:20150616_-_Portugal_-_Italie_-_Gen%C3%A8ve_-_Andrea_Pirlo_(cropped).jpg",
+    "title": "File:20150616 - Portugal - Italie - Genève - Andrea Pirlo (cropped).jpg",
+    "verifiedYear": 2015,
+    "season": 2015,
+    "yearDiff": 0,
+    "width": 349,
+    "height": 523
+  },
+  {
+    "silhouetteId": "platini-1984",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Michel_Platini_in_Wroclaw_by_Klearchos_Kapoutsis_tight_crop.jpg",
+    "author": "Klearchos Kapoutsis from Paleo Faliro, Greece",
+    "license": "CC BY 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Michel_Platini_in_Wroclaw_by_Klearchos_Kapoutsis_tight_crop.jpg",
+    "title": "File:Michel Platini in Wroclaw by Klearchos Kapoutsis tight crop.jpg",
+    "verifiedYear": 2009,
+    "season": 1984,
+    "yearDiff": 25,
+    "width": 1140,
+    "height": 1620
   },
   {
     "silhouetteId": "puyol-2009",
@@ -593,13 +1064,15 @@
   {
     "silhouetteId": "rivaldo-2008",
     "url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Rivaldo_bunyodkor_2010.jpg",
-    "author": "Nursultan12",
+    "author": "w:User:Nursultan12",
     "license": "CC BY-SA 4.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Rivaldo_bunyodkor_2010.jpg",
-    "commonsDate": "2020-April-19",
+    "title": "File:Rivaldo bunyodkor 2010.jpg",
     "verifiedYear": 2020,
+    "season": 2008,
     "yearDiff": 12,
-    "curationNote": "Retrato individual de Rivaldo con camiseta de Bunyodkor. El campo Date de Commons dice 2020-April-19 aunque el nombre del archivo dice 2010; registro la fecha de Commons y la diferencia de 12 años."
+    "width": 438,
+    "height": 386
   },
   {
     "silhouetteId": "robben-2013",
@@ -624,22 +1097,29 @@
   },
   {
     "silhouetteId": "roberto-carlos-2007",
-    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Roberto_Carlos_in_Moscow.jpg/500px-Roberto_Carlos_in_Moscow.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-    "author": "Александр Мельников",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Roberto_Carlos_in_Moscow_3_%28cropped%29.jpg",
+    "author": "Мельников Александр",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Roberto_Carlos_in_Moscow.jpg",
-    "commonsDate": "1 October 2007",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Roberto_Carlos_in_Moscow_3_(cropped).jpg",
+    "title": "File:Roberto Carlos in Moscow 3 (cropped).jpg",
     "verifiedYear": 2007,
+    "season": 2007,
     "yearDiff": 0,
-    "curationNote": "Retrato individual de prensa fechado el 1 de octubre de 2007 en Commons; elegido por su encuadre limpio y año exacto.",
-    "title": "File:Roberto Carlos in Moscow.jpg"
+    "width": 532,
+    "height": 662
   },
   {
     "silhouetteId": "robertson-2019",
     "url": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Andrew_Robertson_2019.jpg",
     "author": "Анна Джалалян",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Andrew_Robertson_2019.jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Andrew_Robertson_2019.jpg",
+    "title": "File:Andrew Robertson 2019.jpg",
+    "verifiedYear": 2019,
+    "season": 2019,
+    "yearDiff": 0,
+    "width": 761,
+    "height": 944
   },
   {
     "silhouetteId": "ronaldinho-2006",
@@ -660,7 +1140,13 @@
     "url": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Ronaldo_Naz%C3%A1rio.jpg",
     "author": "Дмитрий Садовников",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Ronaldo_Naz%C3%A1rio.jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Ronaldo_Naz%C3%A1rio.jpg",
+    "title": "File:Ronaldo Nazário.jpg",
+    "verifiedYear": 2018,
+    "season": 1997,
+    "yearDiff": 21,
+    "width": 290,
+    "height": 438
   },
   {
     "silhouetteId": "ronaldo-nazario-2009",
@@ -688,6 +1174,32 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Peter_Schmeichel_2012-01-03_001.jpg"
   },
   {
+    "silhouetteId": "scirea-1982",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/5e/1975%E2%80%9376_Juventus_FC_-_Gaetano_Scirea.jpg",
+    "author": "Unknown author Unknown author",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:1975%E2%80%9376_Juventus_FC_-_Gaetano_Scirea.jpg",
+    "title": "File:1975–76 Juventus FC - Gaetano Scirea.jpg",
+    "verifiedYear": 1975,
+    "season": 1982,
+    "yearDiff": 7,
+    "width": 562,
+    "height": 730
+  },
+  {
+    "silhouetteId": "seedorf-2003",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Clarence_Seedorf_2021.jpg",
+    "author": "Кирилл Венедиктов",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Clarence_Seedorf_2021.jpg",
+    "title": "File:Clarence Seedorf 2021.jpg",
+    "verifiedYear": 2021,
+    "season": 2003,
+    "yearDiff": 18,
+    "width": 666,
+    "height": 1000
+  },
+  {
     "silhouetteId": "sergio-ramos-2018",
     "url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Sergio_Ramos_entrenando_%28cropped%29.jpg",
     "author": "Ruben Ortega",
@@ -695,18 +1207,43 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Sergio_Ramos_entrenando_(cropped).jpg"
   },
   {
+    "silhouetteId": "son-2021",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d9/Son_Heung-min_-_2022_%2852552243725%29_%28cropped%29.jpg",
+    "author": "Republic of Korea from Seoul, Republic of Korea",
+    "license": "CC BY-SA 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Son_Heung-min_-_2022_(52552243725)_(cropped).jpg",
+    "title": "File:Son Heung-min - 2022 (52552243725) (cropped).jpg",
+    "verifiedYear": 2022,
+    "season": 2021,
+    "yearDiff": 1,
+    "width": 680,
+    "height": 1020
+  },
+  {
     "silhouetteId": "stoichkov-1994",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/8/89/Hristo_Stoichkov_50_Years_%E2%84%96_8.jpg",
-    "author": "Biser Todorov",
-    "license": "CC BY-SA 4.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Hristo_Stoichkov_50_Years_%E2%84%96_8.jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Hristo_Stoichkov_FC_Litex_Lovech_manager.JPG",
+    "author": "Litexfan",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Hristo_Stoichkov_FC_Litex_Lovech_manager.JPG",
+    "title": "File:Hristo Stoichkov FC Litex Lovech manager.JPG",
+    "verifiedYear": 2012,
+    "season": 1994,
+    "yearDiff": 18,
+    "width": 957,
+    "height": 1846
   },
   {
     "silhouetteId": "theo-hernandez-2021",
     "url": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Theo_Hern%C3%A1ndez.jpg",
     "author": "Антон Зайцев",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Theo_Hern%C3%A1ndez.jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Theo_Hern%C3%A1ndez.jpg",
+    "title": "File:Theo Hernández.jpg",
+    "verifiedYear": 2018,
+    "season": 2021,
+    "yearDiff": 3,
+    "width": 404,
+    "height": 548
   },
   {
     "silhouetteId": "thiago-silva-2013",
@@ -723,11 +1260,30 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Thiago_Silva_with_Club_World_Cup_Trophy_2022.jpg"
   },
   {
+    "silhouetteId": "thuram-1998",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Lilian_Thuram_-_001.jpg",
+    "author": "Mutari",
+    "license": "Public domain",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Lilian_Thuram_-_001.jpg",
+    "title": "File:Lilian Thuram - 001.jpg",
+    "verifiedYear": 2008,
+    "season": 1998,
+    "yearDiff": 10,
+    "width": 798,
+    "height": 1315
+  },
+  {
     "silhouetteId": "trent-2019",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/1/18/Trent_Alexander_Arnold_2016.jpg",
-    "author": "joshjdss",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/17/LFC_Parade_2019_01_Trent_Alexander-Arnold.jpg",
+    "author": "Eric The Fish from UK",
     "license": "CC BY 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Trent_Alexander_Arnold_2016.jpg"
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:LFC_Parade_2019_01_Trent_Alexander-Arnold.jpg",
+    "title": "File:LFC Parade 2019 01 Trent Alexander-Arnold.jpg",
+    "verifiedYear": 2019,
+    "season": 2019,
+    "yearDiff": 0,
+    "width": 577,
+    "height": 841
   },
   {
     "silhouetteId": "trent-2025",
@@ -737,11 +1293,43 @@
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Trent_Alexander_Arnold_2022_(2)_(cropped).jpg"
   },
   {
+    "silhouetteId": "van-basten-1989",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Marco_van_Basten_1989_crop.jpg",
+    "author": "NL-HaNA, ANEFO / neg. stroken, 1945-1989, 2.24.01.05, item number 934-4427",
+    "license": "CC0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Marco_van_Basten_1989_crop.jpg",
+    "title": "File:Marco van Basten 1989 crop.jpg",
+    "verifiedYear": 1989,
+    "season": 1989,
+    "yearDiff": 0,
+    "width": 553,
+    "height": 807
+  },
+  {
+    "silhouetteId": "van-der-sar-2008",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Edwin_van_der_Sar_side.jpg",
+    "author": "Paul Blank",
+    "license": "CC BY 2.5",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Edwin_van_der_Sar_side.jpg",
+    "title": "File:Edwin van der Sar side.jpg",
+    "verifiedYear": null,
+    "season": 2008,
+    "yearDiff": null,
+    "width": 446,
+    "height": 476
+  },
+  {
     "silhouetteId": "vandijk-2019",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/VVD_-_2025_Liverpool_Trophy_Parade_%28crop%29.jpg",
-    "author": "ShaunPG",
-    "license": "CC BY 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:VVD_-_2025_Liverpool_Trophy_Parade_(crop).jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/11/Virgil_van_Dijk_2019.jpg",
+    "author": "@cfcunofficial (Chelsea Debs) London from London, UK",
+    "license": "CC BY-SA 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Virgil_van_Dijk_2019.jpg",
+    "title": "File:Virgil van Dijk 2019.jpg",
+    "verifiedYear": 2019,
+    "season": 2019,
+    "yearDiff": 0,
+    "width": 1368,
+    "height": 3063
   },
   {
     "silhouetteId": "varane-2018",
@@ -756,6 +1344,19 @@
     "author": "Ardfern",
     "license": "CC BY-SA 4.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Rapha%C3%ABl_Varane_2022.jpg"
+  },
+  {
+    "silhouetteId": "vidic-2011",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/36/Nemanja_Vidi%C4%87_%28cropped%29.jpg",
+    "author": "Austin Osuide",
+    "license": "CC BY 2.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Nemanja_Vidi%C4%87_(cropped).jpg",
+    "title": "File:Nemanja Vidić (cropped).jpg",
+    "verifiedYear": 2006,
+    "season": 2011,
+    "yearDiff": 5,
+    "width": 1244,
+    "height": 2144
   },
   {
     "silhouetteId": "vieira-2001",
@@ -777,21 +1378,29 @@
   },
   {
     "silhouetteId": "walker-2025",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Kyle-Walker-2023.jpg",
-    "author": "Patryk Antkiewicz",
-    "license": "CC BY-SA 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Kyle-Walker-2023.jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/5b/Kyle_Walker_29112025_%282%29.jpg",
+    "author": "Timmy96",
+    "license": "CC0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Kyle_Walker_29112025_(2).jpg",
+    "title": "File:Kyle Walker 29112025 (2).jpg",
+    "verifiedYear": 2025,
+    "season": 2025,
+    "yearDiff": 0,
+    "width": 1700,
+    "height": 2647
   },
   {
     "silhouetteId": "walter-samuel-2010",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Walter_Samuel_-_Inter_Mailand_%282%29.jpg",
-    "author": "Steindy",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Walter_Samuel_-_Inter_Mailand_%281%29.jpg",
+    "author": "Steindy ( talk ) 17:05, 29 November 2009 (UTC)",
     "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Walter_Samuel_-_Inter_Mailand_(2).jpg",
-    "commonsDate": "16 August 2009",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Walter_Samuel_-_Inter_Mailand_(1).jpg",
+    "title": "File:Walter Samuel - Inter Mailand (1).jpg",
     "verifiedYear": 2009,
+    "season": 2010,
     "yearDiff": 1,
-    "curationNote": "Foto individual de Walter Samuel; el campo Date de Commons fecha el partido el 16 de agosto de 2009, diferencia de 1 año."
+    "width": 2000,
+    "height": 3000
   },
   {
     "silhouetteId": "walter-samuel-2015",
@@ -806,10 +1415,16 @@
   },
   {
     "silhouetteId": "xavi-2010",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/2/22/Xavi_Hernandez_%2831521652051%29.jpg",
-    "author": "Doha Stadium Plus Qatar from Doha, Qatar",
-    "license": "CC BY 2.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Xavi_Hernandez_(31521652051).jpg"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Xavi_Hern%C3%A1ndez_Spain_2009_%28cropped%29.jpg",
+    "author": "Steindy ( talk ) 13:11, 13 July 2010 (UTC)",
+    "license": "CC BY-SA 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Xavi_Hern%C3%A1ndez_Spain_2009_(cropped).jpg",
+    "title": "File:Xavi Hernández Spain 2009 (cropped).jpg",
+    "verifiedYear": 2009,
+    "season": 2010,
+    "yearDiff": 1,
+    "width": 278,
+    "height": 456
   },
   {
     "silhouetteId": "xavi-2014",
@@ -817,6 +1432,19 @@
     "author": "Fanny Schertzer",
     "license": "CC BY-SA 3.0",
     "sourcePage": "https://commons.wikimedia.org/wiki/File:Xavier_Hern%C3%A1ndez_-_Spain_vs._Chile,_10th_September_2013.jpg"
+  },
+  {
+    "silhouetteId": "yashin-1963",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/80/Lev_Yashin_1960b.jpg",
+    "author": "Lindeboom, Henk / Anefo",
+    "license": "CC BY-SA 3.0 nl",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Lev_Yashin_1960b.jpg",
+    "title": "File:Lev Yashin 1960b.jpg",
+    "verifiedYear": 1960,
+    "season": 1963,
+    "yearDiff": 3,
+    "width": 843,
+    "height": 1344
   },
   {
     "silhouetteId": "yaya-toure-2014",
@@ -827,15 +1455,16 @@
   },
   {
     "silhouetteId": "yaya-toure-2018",
-    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ee/Yaya_Tour%C3%A9.JPG/500px-Yaya_Tour%C3%A9.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-    "author": "Илья Хохлов",
-    "license": "CC BY-SA 3.0",
-    "sourcePage": "https://commons.wikimedia.org/wiki/File:Yaya_Tour%C3%A9.JPG",
-    "commonsDate": "8 December 2009",
-    "verifiedYear": 2009,
-    "yearDiff": 9,
-    "curationNote": "Retrato individual de entrenamiento de 2009. La foto de 2015 incluye personas pegadas al jugador y la de 2018 es una selfie con un fan; las descarto.",
-    "title": "File:Yaya Touré.JPG"
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Yaya_Tour%C3%A9_%28cropped%29.jpg",
+    "author": "Puma",
+    "license": "CC BY 3.0",
+    "sourcePage": "https://commons.wikimedia.org/wiki/File:Yaya_Tour%C3%A9_(cropped).jpg",
+    "title": "File:Yaya Touré (cropped).jpg",
+    "verifiedYear": 2013,
+    "season": 2018,
+    "yearDiff": 5,
+    "width": 1080,
+    "height": 1424
   },
   {
     "silhouetteId": "zanetti-2010",
