@@ -1,0 +1,286 @@
+/* Hoja compartida de las paginas legales y creditos. Reusa el lenguaje
+ * visual del juego (--deep/--ink/--lime) en vez de inventar identidad
+ * nueva: estas paginas son parte del sitio, no un documento aparte.
+ * Aplicadas aqui las reglas de acceso del proyecto: contraste >= 4.5:1,
+ * focus visible, cuerpo >= 16px en movil, sin dependencia del color,
+ * prefers-reduced-motion respetado.
+ */
+:root {
+  --deep: #0b0e0c;
+  --ink: #121512;
+  --lime: #c6f833;
+  --green: #16c64f;
+  --mute: #7a8179;
+  --white: #f5f6f2;
+  --danger: #ff5c5c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--deep);
+  color: var(--white);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--lime);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--white);
+}
+
+:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 3px;
+}
+
+.wrap {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+header.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--white);
+  text-decoration: none;
+}
+
+.brand mark {
+  background: var(--lime);
+  color: var(--ink);
+  padding: 0.45rem 0.6rem;
+  font-weight: 900;
+}
+
+.brand .brand-name {
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+}
+
+.brand .brand-name b {
+  display: block;
+  color: var(--lime);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  font-weight: 900;
+}
+
+.back {
+  color: var(--mute);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  padding: 0.5rem 0;
+}
+
+.back:hover {
+  color: var(--lime);
+}
+
+h1 {
+  font-size: clamp(2.1rem, 7vw, 3.2rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  margin: 2rem 0 0.25rem;
+}
+
+h1 em {
+  font-style: normal;
+  color: var(--lime);
+}
+
+.lede {
+  color: var(--mute);
+  margin: 0 0 2.25rem;
+  font-size: 1.02rem;
+}
+
+section {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ink);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.1rem;
+}
+
+section > h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.15rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+section > p {
+  margin: 0.55rem 0;
+  color: rgba(245, 246, 242, 0.82);
+}
+
+section > p:first-child {
+  margin-top: 0;
+}
+
+section > p:last-child {
+  margin-bottom: 0;
+}
+
+section ul,
+section ol {
+  margin: 0.5rem 0 0;
+  padding-left: 1.15rem;
+  color: rgba(245, 246, 242, 0.82);
+}
+
+section li {
+  margin: 0.35rem 0;
+}
+
+section li::marker {
+  color: var(--lime);
+}
+
+section address {
+  font-style: normal;
+}
+
+section strong {
+  color: var(--white);
+}
+
+.updated {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid rgba(198, 248, 51, 0.4);
+  color: var(--lime);
+  padding: 0.28rem 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Tablas de creditos: celdas alineadas, sin desbordar movil (la fuente,
+ * siempre columna aparte con desbordamiento propio), fila zebra. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 34rem;
+  font-size: 0.88rem;
+}
+
+caption {
+  text-align: left;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: var(--mute);
+  padding: 0 0 0.5rem;
+}
+
+thead th {
+  text-align: left;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--mute);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.4rem 0.6rem;
+}
+
+tbody td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+td.source {
+  min-width: 13rem;
+}
+
+.license-count {
+  color: var(--lime);
+}
+
+footer.page {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+  text-align: center;
+  color: var(--mute);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+footer.page .legal-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 1rem;
+  margin-top: 0.75rem;
+}
+
+footer.page .legal-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--mute);
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+footer.page .legal-nav a:hover,
+footer.page .legal-nav a[aria-current="true"] {
+  color: var(--lime);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import { Faq } from "../components/Faq.js";
 import heroPhoto from "../assets/hero-photo.png";
 import heroSilhouette from "../assets/hero-silhouette.png";
 import { fetchPublicRooms, type PublicRoomSummary, type RoomVisibility } from "../net/roomLookup.js";
@@ -99,6 +100,16 @@ function AuctionStage({
               key={revealed ? "revealed-player" : "hidden-player"}
               src={revealed ? heroPhoto : heroSilhouette}
               alt={revealed ? "Retrato ilustrativo de Ronaldinho en el estado revelado de la carta" : "Silueta de un jugador antes de revelar su identidad"}
+              // Esta es la imagen LCP de la portada: sin `width`/`height` el
+              // navegador no reserva su hueco y el texto da un salto al
+              // cargar (CLS), y sin `decoding`/`fetchPriority` la decodifica
+              // en el camino critico en vez de en paralelo. El tamano es el
+              // real del PNG (365x512), declarado aqui para que siga siendo
+              // verdad si el asset se cambia: el test de seo lo comprueba.
+              width={365}
+              height={512}
+              decoding="async"
+              fetchPriority="high"
               initial={reducedMotion ? false : { opacity: 0, scale: revealed ? 1.04 : 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={reducedMotion ? undefined : { opacity: 0, scale: revealed ? 0.98 : 1.02, y: -8 }}
@@ -373,7 +384,13 @@ function HookCard({ season, club, rating, featured }: { season: number; club: st
       <img
         src={heroPhoto}
         alt="Retrato ilustrativo de Ronaldinho"
+        // Este bloque esta por debajo del fold (despues del heroe y de las
+        // instructions), asi que `lazy` aqui es lo correcto: lo que no se
+        // descarga es lo que no compite por el ancho de banda con el LCP.
+        width={365}
+        height={512}
         loading="lazy"
+        decoding="async"
         className={`absolute -bottom-1 left-1/2 z-10 h-[94%] max-w-none -translate-x-1/2 object-contain object-bottom ${featured ? "" : "brightness-[.72] saturate-[.72]"}`}
       />
       <figcaption className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-ink via-ink/95 to-transparent px-4 pb-4 pt-20 sm:px-6 sm:pb-6">
@@ -695,11 +712,51 @@ export function Landing({ error, onCreate, onJoinByCode, onJoinPublicRoom }: Pro
       <Hero inviteCode={inviteCode} onCreateClick={scrollToEntry} />
       <HowToPlay />
       <Hook />
+      <Faq />
       <Enter error={error} onCreate={onCreate} onJoinByCode={onJoinByCode} onJoinPublicRoom={onJoinPublicRoom} formRef={enterRef} initialCode={inviteCode} />
-      <footer className="border-t border-white/10 bg-ink px-4 py-5 text-center sm:px-8">
-        <p className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Futbolera · Para el grupo que nunca se pone de acuerdo</p>
-        <a href="/actualizaciones.html" className="font-display mt-1 inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 transition-colors hover:text-lime">Actualizaciones</a>
-      </footer>
+      <LegalFooter />
     </div>
+  );
+}
+
+/**
+ * Pie de la portada con las paginas legales y de comunidad. Un "footer de
+ * verdad" (toda pagina publica enlaza las mismas paginas, incluidas las
+ * legales en public/legal/) -- el pie anterior solo tenia Actualizaciones,
+ * y en una aplicacion que promete en su politica de privacidad "sin
+ * cookies, sin rastreo" conviene poder llegar a esa promesa sin descifrar
+ * la URL. Cada enlace es un objetivo tactil completo (min-h-11) con focus
+ * visible: la jerarquia visual del cierre es mas importante que el peso de
+ * cada pagina concreta.
+ */
+function LegalFooter() {
+  const links = [
+    { href: "/actualizaciones.html", label: "Actualizaciones" },
+    { href: "/legal/creditos.html", label: "Créditos" },
+    { href: "/legal/terminos.html", label: "Términos" },
+    { href: "/legal/privacidad.html", label: "Privacidad" },
+    { href: "/legal/cookies.html", label: "Cookies" },
+    { href: "/legal/propiedad-intelectual.html", label: "Propiedad intelectual" },
+    { href: "/legal/contacto.html", label: "Contacto" },
+    { href: "/legal/comunidad.html", label: "Comunidad" },
+  ];
+  return (
+    <footer className="border-t border-white/10 bg-ink px-4 py-5 text-center sm:px-8">
+      <p className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Futbolera · Para el grupo que nunca se pone de acuerdo</p>
+      <nav aria-label="Páginas informativas" className="mt-2">
+        <ul className="flex flex-wrap items-center justify-center gap-x-4">
+          {links.map((link) => (
+            <li key={link.href}>
+              <a
+                href={link.href}
+                className="font-display inline-flex min-h-11 cursor-pointer items-center text-[10px] font-bold uppercase tracking-[0.2em] text-white/35 transition-colors hover:text-lime focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime"
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </footer>
   );
 }

@@ -93,6 +93,72 @@
         }
       }
     </script>
+
+    <!--
+      FAQPage: estas SEIS respuestas son copia exacta de las que pinta
+      <Faq> en la portada (fuente unica: src/data/faq.ts, y un test en
+      tools/__tests__/seo.test.ts que rompe si las dos copias dejan de
+      coincidir). El markup con la misma respuesta que la pagina es lo que
+      Google exige para que un bloque de preguntas y respuestas sea
+      candidato asnippet; responder en el primer parrafo ademas la deja
+      preparada para voz.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Cuántos jugadores caben en una partida de Futbolera?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "De 2 a 4 jugadores por partida. La sala de espera admite cuatro asientos y el arranque automático se dispara en cuanto los conectados pulsan todos Listo, así que una partida a dos es igual de válida que una a cuatro."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cuánto cuesta Futbolera?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Nada. No hay compras, ni monedas, ni suscripciones, ni anuncios: se entra, se juega la subasta y se termina. Tampoco hace falta registro ni tarjeta."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Necesito crear una cuenta para jugar?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. No hay cuentas ni contraseñas. Escribes un nombre corto, creas una sala y compartes el código de cinco letras (o la marcas como pública para que aparezca en el vestuario). Nada de eso se guarda en tu navegador."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cómo sé a quién estoy pujando?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No lo sabes, y por eso puja a ciegas. De la carta solo se ven cuatro pistas: altura, pie dominante, origen y década. La temporada y el nombre aparecen al revelarse la jugada."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Gana quien más dinero tiene al final?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Gana quien mejor complete su once. El presupuesto es el límite, pero la clasificación final puntúa las fichas que has ganado y cómo se combinan, no el gasto. El mejor fichaje sin presupuesto se queda sin obra."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Funciona en el móvil y hay que instalar algo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí, funciona en el móvil y no hay que instalar nada: se juega entero en el navegador, con la partida en vivo por conexión directa. También funciona en portátil y escritorio con el mismo enlace."
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

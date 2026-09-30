@@ -5,9 +5,9 @@ para probar una partida rapido). Cada ronda sale la foto recortada de un
 futbolista y hay que pujar por el. Gana quien mejor complete el once al final, y el
 dinero es el limite: no se pueden comprar los once iconos.
 
-El mazo son 110 cartas reales (10 por puesto de una formacion 4-3-3), cada una
-con su temporada, su valoracion y su precio de salida. El resto se descubre
-pujando.
+El mazo son 149 cartas reales (cubren los 11 puestos de una formacion 4-3-3,
+repartidas por puesto), cada una con su temporada, su valoracion y su precio de
+salida. El resto se descubre pujando.
 
 ## Como se juega
 
@@ -118,5 +118,5 @@ partidas en curso.
 
 Codigo bajo MIT (ver [`LICENSE`](LICENSE)). Las fotografias de `data/photos/` y
 las siluetas de `data/silhouettes/` son de Wikimedia Commons y conservan sus
-licencias CC BY y CC BY-SA, con la atribucion de las 110 en
+licencias CC BY y CC BY-SA, con la atribucion de las 149 en
 [`CREDITS.md`](CREDITS.md).
