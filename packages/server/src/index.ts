@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
-import { clientAddress, isAllowedOrigin, RateLimiter } from "./requestPolicy.js";
+import { clientAddress, isAllowedOrigin, RateLimiter, spaFallbackStatus } from "./requestPolicy.js";
 
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
 // AuctionRoom.ts: pnpm fija el cwd de cada paquete al ejecutar sus scripts.
@@ -235,8 +235,12 @@ const app = config({
     // tragaria /time y las rutas de imagenes.
     if (process.env.NODE_ENV === "production") {
       app.use(expressStatic(CLIENT_DIST));
-      app.get("/{*splat}", (_req, res) => {
-        res.sendFile("index.html", { root: CLIENT_DIST });
+      app.get("/{*splat}", (req, res) => {
+        // 404 de verdad para lo que parece un fichero inexistente, 200 para
+        // el resto (las salas van por ruta limpia y tienen que servir la
+        // app). Ver spaFallbackStatus: sin esto, cada errata y cada escaneo
+        // de bot se covertia en una pagina duplicada indexable.
+        res.status(spaFallbackStatus(req.path)).sendFile("index.html", { root: CLIENT_DIST });
       });
     }
   },

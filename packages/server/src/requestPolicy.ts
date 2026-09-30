@@ -95,3 +95,30 @@ export function clientAddress(
   const address = Array.isArray(fallback) ? fallback[0] : fallback;
   return address?.trim() || "unknown";
 }
+
+/**
+ * Codigo de estado con el que el comodin de la SPA (`app.get("/{*splat}")`)
+ * responde en produccion.
+ *
+ * El problema que resuelve: `express.static` ya respondio 404 de verdad a
+ * todo lo que existe, asi que lo que llega aqui NO es un fichero real. Sin
+ * esta funcion, esas rutas inexistentes se servian con 200 y el HTML del
+ * juego, y para un rastreador eso es un "soft 404": contenido duplicado
+ * indexable en rutas que no existen (una errata en un enlace, un escaneo de
+ * bot, `/legal/termino.html` sin la "s"). Google llega a tratar cada una
+ * como una pagina mas del sitio, se come el presupuesto de rastreo y nunca
+ * las ve como lo que son. Un 404 de verdad las saca del indice de una vez.
+ *
+ * El criterio es "el ultimo segmento parece un nombre de fichero": si lleva
+ * un punto, es que alguien pidio un fichero y no existe -> 404. Y todo lo
+ * demas sigue siendo 200 a proposito, porque es lo que hace funcionar el
+ * juego: las salas son rutas limpias (`/sala/ABCDE`, sin extension) y quien
+ * llega por un enlace de invitacion tiene que recibir la app, no un 404.
+ *
+ * Por eso NO se prueba "la ruta no es la raiz" como hasta ahora: /sala/CODE es
+ * justo el caso que tiene que seguir sirviendo la SPA.
+ */
+export function spaFallbackStatus(pathname: string): 200 | 404 {
+  const lastSegment = pathname.split("/").filter(Boolean).pop() ?? "";
+  return lastSegment.includes(".") ? 404 : 200;
+}

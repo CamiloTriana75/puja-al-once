@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientAddress, isAllowedOrigin, RateLimiter } from "../src/requestPolicy.js";
+import { clientAddress, isAllowedOrigin, RateLimiter, spaFallbackStatus } from "../src/requestPolicy.js";
 import { AuctionRoom } from "../src/AuctionRoom.js";
 
 describe("politica de peticiones", () => {
@@ -104,5 +104,36 @@ describe("límite del vestuario público con la consulta de la landing", () => {
       expect(limiter.allow("ip", 60, 60_000, 1_000)).toBe(true);
     }
     expect(limiter.allow("ip", 60, 60_000, 1_000)).toBe(false);
+  });
+});
+
+/**
+ * El comodin de la SPA es, para un rastreador, el punto donde se decide si
+ * una ruta inventada entra en el indice o no. Con 200 para todo, cada
+ * errata de enlace y cada escaneo de bot se convierte en una copia
+ * indexable del juego; con 404 para lo que parece fichero, Google las
+ * descarta de una y el presupuesto de rastreo se queda en las paginas que
+ * existen. Las salas (`/sala/ABCDE`) son el caso que NO puede romperse:
+ * llegan por enlace de invitacion y tienen que devolver la app.
+ */
+describe("spaFallbackStatus (soft-404)", () => {
+  it("sigue sirviendo la app en las rutas limpias de sala", () => {
+    expect(spaFallbackStatus("/sala/ABCDE")).toBe(200);
+    expect(spaFallbackStatus("/")).toBe(200);
+  });
+
+  it("devuelve 404 real cuando lo pedido parece un fichero que no existe", () => {
+    expect(spaFallbackStatus("/legal/termino.html")).toBe(404);
+    expect(spaFallbackStatus("/actualizaciones.html")).toBe(404); // existe en disco, pero lo resuelve express.static antes
+    expect(spaFallbackStatus("/wp-login.php")).toBe(404);
+    expect(spaFallbackStatus("/assets/index.js")).toBe(404);
+  });
+
+  it("no confunde una sala con extension en el codigo", () => {
+    // El codigo de sala son 5 letras: no lleva punto. Este test fija que el
+    // criterio es el del ultimo segmento, no "contiene un punto en alguna
+    // parte", para que anadir Carpetas con punto en la URL no rompa nada.
+    expect(spaFallbackStatus("/sala/ABCDE")).toBe(200);
+    expect(spaFallbackStatus("/legal")).toBe(200);
   });
 });
