@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
-import { genericSilhouette, keepLargestBlob, keepLargestSubject, toColorCutout, toSilhouette } from "../build-silhouettes.js";
+import {
+  genericSilhouette, keepLargestBlob, keepLargestSubject, subjectBounds, toColorCutout, toSilhouette,
+} from "../build-silhouettes.js";
 
 /** Un cuadrado rojo de 100x50 sobre fondo transparente. */
 async function redBlob(): Promise<Buffer> {
@@ -18,6 +20,53 @@ async function opaqueBlob(): Promise<Buffer> {
   })
     .jpeg()
     .toBuffer();
+}
+
+/**
+ * Imagen totalmente transparente con un rectangulo opaco en una posicion
+ * concreta: el caso "el recorte tiene mucho margen alrededor", que es
+ * exactamente lo que produce una foto de grupo o un encuadre abierto.
+ */
+async function blobInFrame(
+  frameWidth: number,
+  frameHeight: number,
+  boxLeft: number,
+  boxTop: number,
+  boxWidth: number,
+  boxHeight: number,
+): Promise<Buffer> {
+  const base = sharp({
+    create: { width: frameWidth, height: frameHeight, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  });
+  const composite = await base.png().toBuffer();
+  const rect = await sharp({
+    create: { width: boxWidth, height: boxHeight, channels: 4, background: { r: 255, g: 0, b: 0, alpha: 1 } },
+  })
+    .png()
+    .toBuffer();
+  return sharp(composite)
+    .composite([{ input: rect, left: boxLeft, top: boxTop }])
+    .png()
+    .toBuffer();
+}
+
+/** Caja envolvente de los pixeles opacos de un PNG, para poder afirmar sobre el recorte. */
+async function opaqueBounds(png: Buffer): Promise<{ width: number; height: number }> {
+  const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let minX = info.width;
+  let minY = info.height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      if (data[(y * info.width + x) * info.channels + info.channels - 1]! < 128) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  return { width: maxX - minX + 1, height: maxY - minY + 1 };
 }
 
 describe("toSilhouette", () => {
@@ -65,6 +114,79 @@ describe("toSilhouette", () => {
     }
     // Confirma el comportamiento: sin segmentacion previa, todo queda opaco.
     expect(opaque).toBe(total);
+  });
+});
+
+describe("subjectBounds", () => {
+  /** Mascara de 3x3 con el pixel central opaco. */
+  const middle = new Uint8Array([0, 0, 0, 0, 255, 0, 0, 0, 0]);
+
+  it("devuelve la caja exacta de los pixeles opacos", () => {
+    expect(subjectBounds(middle, 3, 3)).toEqual({ left: 1, top: 1, width: 1, height: 1 });
+  });
+
+  it("devuelve null si no hay ni un pixel opaco, para poder distinguirlo de 'llena todo'", () => {
+    expect(subjectBounds(new Uint8Array(9), 3, 3)).toBeNull();
+  });
+
+  it("ignora los pixeles por debajo del cutoff igual que el resto del pipeline", () => {
+    // 127 esta por debajo de ALPHA_CUTOFF: la caja debe seguir siendo la del
+    // pixel a 255, no la de los cuatro pixeles.
+    const mask = new Uint8Array([127, 127, 127, 127, 255, 127, 127, 127, 127]);
+    expect(subjectBounds(mask, 3, 3)).toEqual({ left: 1, top: 1, width: 1, height: 1 });
+  });
+});
+
+describe("recorte del margen transparente", () => {
+  it("recorta el marco vacio: la caja del sujeto pasa a ser toda la imagen", async () => {
+    // Sujeto de 100x300 dentro de un marco de 400x800. Sin recorte, la
+    // silueta mediria 256x512 (el marco entero aplanado a alto 512) y el
+    // sujeto se quedaria en el 37% del ancho y el 37% del alto: exactamente
+    // el defecto de keane-1999, que se renderiza como una figurita en la
+    // esquina porque el CSS la escala al 112% de la carta.
+    const out = await toSilhouette(await blobInFrame(400, 800, 50, 200, 100, 300));
+    const meta = await sharp(out).metadata();
+
+    expect(meta.height).toBe(512);
+    // 100x300 a alto 512 deja un ancho de ~171, no los 256 del marco sin recortar.
+    expect(meta.width).toBe(171);
+    // Y el sujeto ahora ocupa el alto entero de la imagen.
+    const box = await opaqueBounds(out);
+    expect(box.height).toBe(512);
+  });
+
+  it("el recorte no cambia una imagen que ya venia ajustada", async () => {
+    // Regresion: si la caja del sujeto es la imagen entera, recortar es un
+    // no-op y el ancho tiene que seguir siendo el de antes (100x50 -> 1024x512).
+    const out = await toSilhouette(await redBlob());
+    const meta = await sharp(out).metadata();
+    expect(meta.width).toBe(1024);
+    expect(meta.height).toBe(512);
+  });
+
+  it("la foto en color conserva el MISMO recorte que la silueta del reveal", async () => {
+    // El reveal cruza las dos imagenes una encima de otra: si el recorte
+    // difiriera, el borde "bailaria" en vez de sustituirse limpio. Se comparan
+    // geometria Y mascara alfa, no solo el tamano.
+    const input = await blobInFrame(400, 800, 50, 200, 100, 300);
+    const silhouette = await toSilhouette(input);
+    const photo = await toColorCutout(input);
+
+    const sMeta = await sharp(silhouette).metadata();
+    const pMeta = await sharp(photo).metadata();
+    expect(pMeta.width).toBe(sMeta.width);
+    expect(pMeta.height).toBe(sMeta.height);
+
+    const sRaw = await sharp(silhouette).raw().toBuffer();
+    const pRaw = await sharp(photo).raw().toBuffer();
+    const width = sMeta.width!;
+    const height = sMeta.height!;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4 + 3;
+        expect(pRaw[i]).toBe(sRaw[i]);
+      }
+    }
   });
 });
 

@@ -35,23 +35,94 @@ interface NormalizedCutout {
   height: number;
 }
 
+interface SubjectBounds {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 /**
- * Redimensiona el recorte a la altura estandar de la carta (Ruling A: NO
- * recorta el fondo, eso ya lo hizo removeBackground()+keepLargestSubject()
- * antes de llegar aqui -- solo normaliza tamano y encuadre).
+ * Caja envolvente de los pixeles opacos de una mascara.
+ *
+ * Devuelve null cuando no hay ni un pixel opaco, para que quien llame pueda
+ * distinguir "no hay sujeto" de "el sujeto ocupa todo".
+ */
+export function subjectBounds(
+  alpha: Uint8Array,
+  width: number,
+  height: number,
+  cutoff: number = ALPHA_CUTOFF,
+): SubjectBounds | null {
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    for (let x = 0; x < width; x++) {
+      if (alpha[row + x]! < cutoff) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0) return null;
+  return { left: minX, top: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+}
+
+/**
+ * Normaliza el recorte a la altura estandar de la carta (Ruling A: NO
+ * elimina el fondo, eso ya lo hizo removeBackground()+keepLargestSubject()
+ * antes de llegar aqui).
+ *
+ * Hace dos cosas, en este orden:
+ *
+ * 1. RECORTA EL MARGEN TRANSPARENTE a la caja del sujeto (subjectBounds).
+ * 2. Ajusta el resultado a HEIGHT de alto.
+ *
+ * El recorte es lo que hace que la carta se lea bien, y la razon esta en el
+ * CSS, no aqui: packages/client/src/components/AuctionCard.tsx monta la
+ * imagen con `h-[112%] w-auto object-contain object-bottom` anclada arriba
+ * (`-top-6 right-[6%]`), es decir, la escala al 112% de la altura de la carta
+ * y la ancla abajo para que la figura "rompa" el borde superior. El diseno
+ * asume que el sujeto LLENA el PNG. Sin este recorte, el margen transparente
+ * se escala con el y el jugador ve una figurita perdida en una esquina --
+ * keane-1999 ocupaba el 44% del alto y se renderizaba al 49% de la carta,
+ * al lado de bobby-moore-1966 al 95%, que si la rompe.
+ *
+ * Sin relleno alrededor del recorte: por definicion, fuera de la caja del
+ * sujeto ya no hay nada opaco, asi que el kernel de resize de sharp no tiene
+ * de donde "chuparse" transparencia. Lo unico que se pierde es el borde mas
+ * extremo del sujeto, redondeado por el propio resize, despreciable.
  *
  * Punto de union entre toSilhouette() y toColorCutout(): las dos llaman a
- * esta misma funcion, con los mismos parametros de resize, sobre el mismo
- * buffer de entrada (`cleaned.png` en main()). Es lo que garantiza que la
- * silueta negra y la foto en color de un mismo jugador salgan con identico
- * ancho, alto y encuadre -- si alguna de las dos normalizara por su cuenta,
- * un cambio futuro en una sin la otra las desalinearia en silencio y la
- * foto ya no encajaria exactamente donde estaba la silueta en el reveal.
+ * esta misma funcion, con los mismos parametros, sobre el mismo buffer de
+ * entrada (`cleaned.png` en main()). Es lo que garantiza que la silueta
+ * negra y la foto en color de un mismo jugador salgan con identico ancho,
+ * alto y encuadre -- si alguna de las dos normalizara por su cuenta, un
+ * cambio futuro en una sin la otra las desalinearia en silencio y la foto ya
+ * no encajaria exactamente donde estaba la silueta en el reveal.
  */
 async function normalizeCutout(input: Buffer): Promise<NormalizedCutout> {
-  const resized = sharp(input).resize({ height: HEIGHT, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } });
-  const { data, info } = await resized.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  return { data, width: info.width, height: info.height };
+  // Solo el canal alfa, en crudo: leer los cuatro canales de una foto de
+  // varios megapixeles para luego Tirar tres de cada cuatro seria tirar.
+  const { data: alpha, info } = await sharp(input)
+    .ensureAlpha()
+    .extractChannel(3)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const bounds = subjectBounds(alpha, info.width, info.height);
+  // Sin sujeto no hay nada que recortar: se normaliza el recorte tal cual.
+  // En el pipeline real esto no llega a ocurrir porque main() ya trata la
+  // mascara vacia como fallo de segmentacion (ver Ruling T7-J).
+  const framed = bounds ? await sharp(input).extract(bounds).toBuffer() : input;
+
+  const resized = sharp(framed).resize({ height: HEIGHT, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } });
+  const { data, info: out } = await resized.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { data, width: out.width, height: out.height };
 }
 
 /**
@@ -276,6 +347,9 @@ function sleep(ms: number): Promise<void> {
 /** Backoff creciente entre reintentos: 2s, 5s, 15s (tres reintentos tras el intento inicial). */
 const RETRY_DELAYS_MS = [2000, 5000, 15000];
 
+/** Evita que una inferencia ONNX defectuosa bloquee todo un lote de cartas. */
+const SEGMENTATION_TIMEOUT_MS = 45_000;
+
 /** Pausa entre descargas sucesivas para no disparar el rate limit de Wikimedia. */
 const DOWNLOAD_DELAY_MS = 1000;
 
@@ -292,7 +366,10 @@ const DOWNLOAD_DELAY_MS = 1000;
 async function fetchWithRetry(url: string, label: string): Promise<Response> {
   let response: Response | undefined;
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
-    response = await fetch(url, { headers: { "User-Agent": "fut-subasta/0.1 (proyecto personal)" } });
+    response = await fetch(url, {
+      headers: { "User-Agent": "fut-subasta/0.1 (proyecto personal)" },
+      signal: AbortSignal.timeout(20_000),
+    });
     if (response.ok) return response;
 
     const retryable = response.status === 429 || response.status >= 500;
@@ -308,6 +385,20 @@ async function fetchWithRetry(url: string, label: string): Promise<Response> {
     await sleep(Math.max(retryAfter * 1000, RETRY_DELAYS_MS[attempt]!));
   }
   return response!;
+}
+
+async function removeBackgroundWithTimeout(input: Buffer): Promise<Buffer> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      removeBackground(input),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`segmentacion ONNX supero ${SEGMENTATION_TIMEOUT_MS} ms`)), SEGMENTATION_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 /**
@@ -368,7 +459,7 @@ async function main(): Promise<void> {
           throw new Error(`HTTP ${response.status} en ${source.url}`);
         }
         const raw = Buffer.from(await response.arrayBuffer());
-        const segmented = await removeBackground(raw);
+        const segmented = await removeBackgroundWithTimeout(raw);
         // Ruling D: descarta manchas de ruido y personas secundarias antes
         // de aplanar a negro, quedandose solo con el blob mas grande.
         const cleaned = await keepLargestSubject(segmented);

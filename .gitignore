@@ -23,3 +23,7 @@ graphify-out/
 /landing-*.png
 /lobby-*.png
 /reaction-*.png
+
+# Hojas de contactos para revisar las siluetas a ojo (scripts/contact-sheet.ts).
+# Artefacto de revision local, se regenera solo.
+/contact-sheets/
