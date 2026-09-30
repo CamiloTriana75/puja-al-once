@@ -44,6 +44,10 @@ async function playFullMatch() {
       hooks.onRevealTimeout();
       await room.waitForNextPatch();
     }
+    if (room.state.phase === "TRANSFER_MARKET") {
+      for (const client of clients) client.send("market:continue", {});
+      await room.waitForNextPatch();
+    }
   }
   return { room, clients, hooks };
 }
@@ -93,6 +97,10 @@ describe("rematch (D5)", () => {
         hooks.onBidTimeout();
         await room.waitForNextPatch();
         hooks.onRevealTimeout();
+        await room.waitForNextPatch();
+      }
+      if (room.state.phase === "TRANSFER_MARKET") {
+        for (const client of clients) client.send("market:continue", {});
         await room.waitForNextPatch();
       }
     }
@@ -150,6 +158,10 @@ describe("rematch (D5)", () => {
         hooks.onBidTimeout();
         await room.waitForNextPatch();
         hooks.onRevealTimeout();
+        await room.waitForNextPatch();
+      }
+      if (room.state.phase === "TRANSFER_MARKET") {
+        for (const client of clients) client.send("market:continue", {});
         await room.waitForNextPatch();
       }
     }

@@ -66,6 +66,9 @@ export function projectState(
   schema.passes.clear();
   for (const playerId of Object.keys(game.passes)) schema.passes.set(playerId, true);
 
+  schema.marketReady.clear();
+  for (const playerId of Object.keys(game.marketReady ?? {})) schema.marketReady.set(playerId, true);
+
   // Barre del Schema a quien ya no esta en el estado puro (se fue durante el
   // lobby). Sin esto quedan filas fantasma: el Schema solo sabe anadir.
   const currentPlayerIds = new Set(game.players.map((p) => p.playerId));
@@ -106,7 +109,7 @@ export function projectState(
   // apuntaria a la SIGUIENTE. Proyectarla aqui haria dos destrozos a la vez:
   // borraria de pantalla la carta que se esta revelando, y adelantaria la
   // silueta del proximo candidato antes de tiempo. No se toca.
-  if (game.phase === "REVEAL") return;
+  if (game.phase === "REVEAL" || game.phase === "TRANSFER_MARKET") return;
 
   const cardId = game.phase === "LOBBY" ? null : currentCardId(game);
   if (cardId === null) {

@@ -1,4 +1,4 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ElementType, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Auction } from "./Auction.js";
@@ -221,5 +221,71 @@ describe("Auction -- reacciones (D8)", () => {
     // onAnimationComplete (no anima de verdad) -- confirma que esta rama NO
     // usa el fallback de setTimeout, a diferencia de la de REVEAL arriba.
     expect(onDismissReaction).not.toHaveBeenCalled();
+  });
+});
+
+describe("Auction -- mercado de transferencias", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ json: () => Promise.resolve({ now: Date.now() }) })));
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("permite confirmar la pausa sin mostrar controles de puja", () => {
+    const send = vi.fn();
+    render(
+      <Auction
+        state={baseState({ phase: "TRANSFER_MARKET", currentSlot: "CAM", marketReady: new Map() })}
+        myId="a"
+        roomId="room-1"
+        error={null}
+        errorSeq={0}
+        reactions={[]}
+        onDismissReaction={vi.fn()}
+        send={send}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Mercado de transferencias" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeInTheDocument();
+    expect(screen.queryByText(/Abre la puja/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(send).toHaveBeenCalledWith("market:continue", {});
+  });
+
+  it("envia un intercambio con un jugador por cada lado", () => {
+    const send = vi.fn();
+    render(
+      <Auction
+        state={baseState({
+          phase: "TRANSFER_MARKET",
+          currentSlot: "CAM",
+          marketReady: new Map(),
+          players: new Map([
+            ["a", player({ playerId: "a", name: "Ana", squad: new Map([["CB1", "card-a"]]) })],
+            ["b", player({ playerId: "b", name: "Bea", squad: new Map([["CB1", "card-b"]]) })],
+          ]),
+        })}
+        myId="a"
+        roomId="room-1"
+        error={null}
+        errorSeq={0}
+        reactions={[]}
+        onDismissReaction={vi.fn()}
+        send={send}
+        tradeOffers={[]}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Tu jugador"), { target: { value: "CB1:card-a" } });
+    fireEvent.change(screen.getByLabelText("Jugador a recibir"), { target: { value: "b:CB1:card-b" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar oferta" }));
+
+    expect(send).toHaveBeenCalledWith("trade:create", expect.objectContaining({
+      recipientId: "b",
+      offeredCardIds: ["card-a"],
+      requestedCardIds: ["card-b"],
+    }));
   });
 });

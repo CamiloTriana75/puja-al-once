@@ -2,11 +2,11 @@ import { Client, Room, type AuthContext } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
-  applyBid, applyOutcome, canBid, cardsBySlot, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
+  acceptTradeOffer, applyBid, applyOutcome, canBid, cardsBySlot, createTradeOffer, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
   parseDataset, playersEligible, playersEligibleToPass, playersNeedingSlot, resolveAuction, resolvePass,
   resolveSkipVote, scoreMatch,
   SLOTS, toPrivate, toPublic,
-  type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot,
+  type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot, type TradeOffer,
 } from "@fut/shared";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -50,6 +50,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     skipVotes: {},
     restrictedBidders: null,
     passes: {},
+    marketReady: {},
     players: [],
   };
 
@@ -80,6 +81,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
   /** Reloj de cierre de la subasta vigente. Nunca hay dos vivos a la vez. */
   private timer: Delayed | undefined;
+  private tradeOffers = new Map<string, TradeOffer>();
 
   /**
    * Ultimo timestamp (Date.now()) en que cada `sessionId` mando una reaccion
@@ -166,6 +168,10 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.onMessage("react", (client, message: { emoji?: unknown }) => {
       this.onReact(client, message?.emoji);
     });
+    this.onMessage("market:continue", (client) => this.onMarketContinue(client));
+    this.onMessage("trade:create", (client, message: unknown) => this.onTradeCreate(client, message));
+    this.onMessage("trade:accept", (client, message: unknown) => this.onTradeAccept(client, message));
+    this.onMessage("trade:cancel", (client, message: unknown) => this.onTradeCancel(client, message));
     this.sync();
   }
 
@@ -397,6 +403,105 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.game.endsAt = Date.now() + this.rules.openWindowMs;
     this.armTimer(this.rules.openWindowMs);
     this.sync();
+  }
+
+  private enterTransferMarket(): void {
+    this.timer?.clear();
+    this.game.phase = "TRANSFER_MARKET";
+    this.game.remainingCards = [];
+    this.game.currentBid = 0;
+    this.game.currentBidderId = null;
+    this.game.openingBid = 0;
+    this.game.bidHistory = [];
+    this.game.endsAt = 0;
+    this.game.marketReady = {};
+    this.tradeOffers.clear();
+    this.sync();
+  }
+
+  private onMarketContinue(client: Client): void {
+    if (this.game.phase !== "TRANSFER_MARKET") return;
+    const player = this.game.players.find((candidate) => candidate.playerId === client.sessionId);
+    if (!player?.connected) return;
+
+    this.game.marketReady = { ...(this.game.marketReady ?? {}), [client.sessionId]: true };
+    this.sync();
+
+    const connectedPlayers = this.game.players.filter((candidate) => candidate.connected);
+    if (connectedPlayers.every((candidate) => this.game.marketReady?.[candidate.playerId] === true)) {
+      this.game.marketReady = {};
+      this.startRound(8);
+    }
+  }
+
+  private onTradeCreate(client: Client, message: unknown): void {
+    if (this.game.phase !== "TRANSFER_MARKET" || !message || typeof message !== "object") return;
+    const payload = message as Record<string, unknown>;
+    const input = {
+      offerId: typeof payload.offerId === "string" ? payload.offerId : "",
+      proposerId: client.sessionId,
+      recipientId: typeof payload.recipientId === "string" ? payload.recipientId : "",
+      offeredCardIds: Array.isArray(payload.offeredCardIds) && payload.offeredCardIds.every((id) => typeof id === "string")
+        ? payload.offeredCardIds as string[] : [],
+      requestedCardIds: Array.isArray(payload.requestedCardIds) && payload.requestedCardIds.every((id) => typeof id === "string")
+        ? payload.requestedCardIds as string[] : [],
+      proposerPays: typeof payload.proposerPays === "number" ? payload.proposerPays : Number.NaN,
+    };
+    const result = createTradeOffer(this.game.players, input, [...this.tradeOffers.values()]);
+    if (!result.ok || this.tradeOffers.has(input.offerId)) {
+      client.send("trade:rejected", { reason: result.ok ? "OFFER_ID_IN_USE" : result.error });
+      return;
+    }
+
+    this.tradeOffers.set(input.offerId, result.value);
+    this.sendTradeUpdate(result.value);
+  }
+
+  private onTradeAccept(client: Client, message: unknown): void {
+    if (this.game.phase !== "TRANSFER_MARKET" || !message || typeof message !== "object") return;
+    const offerId = (message as Record<string, unknown>).offerId;
+    const offer = typeof offerId === "string" ? this.tradeOffers.get(offerId) : undefined;
+    if (!offer) {
+      client.send("trade:rejected", { reason: "OFFER_NOT_FOUND" });
+      return;
+    }
+    if (offer.recipientId !== client.sessionId) {
+      client.send("trade:rejected", { reason: "NOT_RECIPIENT" });
+      return;
+    }
+
+    const result = acceptTradeOffer(this.game.players, offer);
+    if (!result.ok) {
+      client.send("trade:rejected", { reason: result.error });
+      return;
+    }
+
+    this.game.players = result.value;
+    const accepted = { ...offer, status: "ACCEPTED" as const };
+    this.tradeOffers.set(offer.offerId, accepted);
+    this.sendTradeUpdate(accepted);
+    this.sync();
+  }
+
+  private onTradeCancel(client: Client, message: unknown): void {
+    if (this.game.phase !== "TRANSFER_MARKET" || !message || typeof message !== "object") return;
+    const offerId = (message as Record<string, unknown>).offerId;
+    const offer = typeof offerId === "string" ? this.tradeOffers.get(offerId) : undefined;
+    if (!offer) return;
+    if (offer.proposerId !== client.sessionId && offer.recipientId !== client.sessionId) {
+      client.send("trade:rejected", { reason: "NOT_PARTICIPANT" });
+      return;
+    }
+    const cancelled = { ...offer, status: "CANCELLED" as const };
+    this.tradeOffers.set(offer.offerId, cancelled);
+    this.sendTradeUpdate(cancelled);
+  }
+
+  private sendTradeUpdate(offer: TradeOffer): void {
+    for (const playerId of [offer.proposerId, offer.recipientId]) {
+      const client = this.clients.find((candidate) => candidate.sessionId === playerId);
+      client?.send("trade:updated", offer);
+    }
   }
 
   private onBid(client: Client, amount: unknown): void {
@@ -663,6 +768,11 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     const next = this.game.slotIndex + 1;
     if (next >= SLOTS.length) {
       this.finish();
+      return;
+    }
+
+    if (next === 8) {
+      this.enterTransferMarket();
       return;
     }
 

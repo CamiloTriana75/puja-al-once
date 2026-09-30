@@ -59,7 +59,7 @@ const NATION_CONTINENT: Record<string, Continent> = {
   ARG: "SA", BRA: "SA", URU: "SA", COL: "SA", CHI: "SA", PER: "SA", ECU: "SA", PAR: "SA", VEN: "SA", BOL: "SA",
   ESP: "EU", FRA: "EU", ITA: "EU", GER: "EU", ENG: "EU", POR: "EU", NED: "EU", BEL: "EU", CRO: "EU", SRB: "EU",
   POL: "EU", SWE: "EU", NOR: "EU", DEN: "EU", SUI: "EU", AUT: "EU", CZE: "EU", UKR: "EU", RUS: "EU", SCO: "EU",
-  WAL: "EU", IRL: "EU", GRE: "EU", TUR: "EU", ROU: "EU", BUL: "EU", HUN: "EU", SVK: "EU", SVN: "EU", BIH: "EU",
+  WAL: "EU", IRL: "EU", NIR: "EU", GRE: "EU", TUR: "EU", ROU: "EU", BUL: "EU", HUN: "EU", SVK: "EU", SVN: "EU", BIH: "EU",
   MEX: "NA", USA: "NA", CRC: "NA", CAN: "NA", HON: "NA", JAM: "NA", PAN: "NA",
   CMR: "AF", SEN: "AF", NGA: "AF", CIV: "AF", GHA: "AF", MAR: "AF", ALG: "AF", EGY: "AF", TUN: "AF", RSA: "AF", MLI: "AF", GUI: "AF",
   JPN: "AS", KOR: "AS", KSA: "AS", IRN: "AS", QAT: "AS", CHN: "AS", AUS: "AS", UZB: "AS",

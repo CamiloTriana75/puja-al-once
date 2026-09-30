@@ -37,6 +37,8 @@ describe("invariante de plantilla completa", () => {
         hooks.onSkipTimeout();
       } else if (room.state.phase === "REVEAL") {
         hooks.onRevealTimeout();
+      } else if (room.state.phase === "TRANSFER_MARKET") {
+        for (const client of clients) client.send("market:continue", {});
       }
       await room.waitForNextPatch();
     }
@@ -204,6 +206,8 @@ describe("invariante bajo reconexion a mitad de ronda", () => {
         hooks.onSkipTimeout();
       } else if (room.state.phase === "REVEAL") {
         hooks.onRevealTimeout();
+      } else if (room.state.phase === "TRANSFER_MARKET") {
+        for (const client of clients) client.send("market:continue", {});
       }
       await room.waitForNextPatch();
     }

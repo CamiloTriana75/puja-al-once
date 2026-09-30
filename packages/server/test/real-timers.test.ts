@@ -93,6 +93,10 @@ describe("D1 -- ventana de apertura con reloj real, sin ningun hook manual", () 
         // REVEAL y el servidor la rechazaria (WRONG_PHASE).
         await waitUntil(() => room.state.phase !== "REVEAL", 3_000, `a que la partida avance tras la carta ${resolved}`);
       }
+      if (room.state.phase === "TRANSFER_MARKET") {
+        for (const client of clients) client.send("market:continue", {});
+        await waitUntil(() => room.state.phase !== "TRANSFER_MARKET", 3_000, "a que cierre el mercado");
+      }
     }
 
     await waitUntil(() => room.state.phase === "RESULTS", 5_000, "a que la partida llegue a RESULTS");

@@ -10,7 +10,7 @@ import { RevealBar } from "../components/RevealBar.js";
 import { RoundSummary } from "../components/RoundSummary.js";
 import { useServerClock } from "../net/useServerClock.js";
 import type { IncomingReaction } from "../net/useRoom.js";
-import type { ClientState } from "../net/types.js";
+import type { ClientState, TradeOfferView } from "../net/types.js";
 
 /** Mismo orden que packages/shared/src/types.ts -- el cliente nunca importa shared (ver SquadGrid.tsx, mismo patron de constante duplicada). */
 const SLOTS = ["GK", "LB", "CB1", "CB2", "RB", "CDM", "CM", "CAM", "LW", "ST", "RW"] as const;
@@ -28,14 +28,20 @@ interface Props {
   reactions: IncomingReaction[];
   /** Retira una reaccion ya expirada de la lista de useRoom -- se le pasa a <Reactions onExpire> via el mapeo de abajo. */
   onDismissReaction: (id: string) => void;
+  tradeOffers?: TradeOfferView[];
   send: (type: string, payload?: unknown) => void;
 }
 
-export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDismissReaction, send }: Props) {
+export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDismissReaction, tradeOffers = [], send }: Props) {
   const remaining = useServerClock(state.endsAt);
   const reducedMotion = useReducedMotion() ?? false;
   const me = state.players.get(myId);
   const card = state.currentCard;
+  const inTransferMarket = state.phase === "TRANSFER_MARKET";
+  const marketConfirmed = state.marketReady?.get(myId) === true;
+  const [offeredSelection, setOfferedSelection] = useState("");
+  const [requestedSelection, setRequestedSelection] = useState("");
+  const [payment, setPayment] = useState("0");
 
   const alreadySigned = me?.squad.has(state.currentSlot) ?? false;
   const restricted = state.restrictedBidders.length > 0 && !state.restrictedBidders.includes(myId);
@@ -93,6 +99,21 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
     const senderName = state.players.get(r.playerId)?.name ?? "Jugador";
     return [{ id: r.id, emoji, senderName }];
   });
+
+  const ownPlayers = me ? [...me.squad.entries()] : [];
+  const otherPlayers = [...state.players.values()].filter((player) => player.playerId !== myId);
+  const sendTradeOffer = () => {
+    const [offeredSlot, offeredCardId] = offeredSelection.split(":");
+    const [recipientId, requestedSlot, requestedCardId] = requestedSelection.split(":");
+    if (!offeredSlot || !offeredCardId || !recipientId || !requestedSlot || !requestedCardId) return;
+    send("trade:create", {
+      offerId: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${myId}`,
+      recipientId,
+      offeredCardIds: [offeredCardId],
+      requestedCardIds: [requestedCardId],
+      proposerPays: Math.max(0, Number(payment) || 0),
+    });
+  };
   // partida.md, seccion Reacciones: "durante el reveal, que ya gasta dos
   // [elementos del presupuesto de movimiento], las reacciones se muestran
   // sin subida" -- mismo criterio que RevealBar/AuctionCard ya aplican para
@@ -130,7 +151,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
     // pb-28 en movil: dead space para que la barra fija de puja (mas abajo)
     // no tape el ultimo bloque de contenido; sm: vuelve a flujo normal.
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-4 pb-28 sm:pb-6 md:p-6">
-      {card && <AuctionCard card={card} price={state.currentBid || state.minimumBid} roomId={roomId} />}
+      {!inTransferMarket && card && <AuctionCard card={card} price={state.currentBid || state.minimumBid} roomId={roomId} />}
 
       {/*
         D8/partida.md: "en movil, la fila va justo encima de los controles de
@@ -146,7 +167,87 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
           onExpire={onDismissReaction} onSend={(emoji) => send("react", { emoji: REACTIONS.indexOf(emoji) })} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+      {inTransferMarket && (
+        <section className="panel flex flex-col gap-6 bg-ink p-6" aria-labelledby="transfer-market-title">
+          <div>
+            <p className="font-body text-sm font-semibold uppercase tracking-[0.2em] text-green">Pausa de mercado</p>
+            <h1 id="transfer-market-title" className="mt-2 font-display text-4xl font-black uppercase tracking-wide text-white">
+              Mercado de transferencias
+            </h1>
+            <p className="mt-3 max-w-2xl font-body text-base text-mute">
+              Intercambia jugadores con otro participante antes de completar el ataque. Cada operación debe incluir un jugador por cada lado; el dinero es opcional.
+            </p>
+          </div>
+
+          <ul className="flex flex-col gap-2" aria-label="Confirmaciones del mercado">
+            {[...state.players.values()].map((player) => (
+              <li key={player.playerId} className="flex items-center justify-between border border-white/10 px-4 py-3">
+                <span className="font-display text-lg font-bold uppercase text-white">{player.name}</span>
+                <span className="font-body text-sm font-semibold uppercase tracking-wide text-mute">
+                  {state.marketReady?.get(player.playerId) ? "Listo para continuar" : "En el mercado"}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="grid gap-4 border-t border-white/10 pt-5 md:grid-cols-3">
+            <label className="flex flex-col gap-2 font-body text-sm text-mute">
+              Tu jugador
+              <select value={offeredSelection} onChange={(event) => setOfferedSelection(event.target.value)} className="h-11 bg-deep px-3 text-white">
+                <option value="">Selecciona</option>
+                {ownPlayers.map(([slot, cardId]) => <option key={`${slot}:${cardId}`} value={`${slot}:${cardId}`}>{slot} · {cardId}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 font-body text-sm text-mute">
+              Jugador a recibir
+              <select value={requestedSelection} onChange={(event) => setRequestedSelection(event.target.value)} className="h-11 bg-deep px-3 text-white">
+                <option value="">Selecciona</option>
+                {otherPlayers.flatMap((player) => [...player.squad.entries()].map(([slot, cardId]) => (
+                  <option key={`${player.playerId}:${slot}:${cardId}`} value={`${player.playerId}:${slot}:${cardId}`}>{player.name} · {slot} · {cardId}</option>
+                )))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-2 font-body text-sm text-mute">
+              Dinero adicional
+              <input type="number" min="0" step="10" value={payment} onChange={(event) => setPayment(event.target.value)} className="h-11 bg-deep px-3 text-white" />
+            </label>
+          </div>
+
+          <button type="button" onClick={sendTradeOffer} className="h-11 w-fit cursor-pointer border-2 border-lime px-5 font-display text-sm font-bold uppercase text-lime transition-colors hover:bg-lime hover:text-ink">
+            Enviar oferta
+          </button>
+
+          {tradeOffers.length > 0 && (
+            <ul className="flex flex-col gap-2" aria-label="Ofertas del mercado">
+              {tradeOffers.map((offer) => {
+                const isRecipient = offer.recipientId === myId;
+                const isProposer = offer.proposerId === myId;
+                return (
+                  <li key={offer.offerId} className="flex flex-wrap items-center justify-between gap-3 border border-white/10 px-4 py-3 font-body text-sm text-white">
+                    <span>{offer.offeredCardIds.join(", ")} por {offer.requestedCardIds.join(", ")} {offer.proposerPays > 0 ? `+ ${offer.proposerPays} M` : ""}</span>
+                    <span className="flex gap-2">
+                      {isRecipient && offer.status === "OPEN" && <button type="button" onClick={() => send("trade:accept", { offerId: offer.offerId })} className="border border-lime px-3 py-1 font-semibold text-lime">Aceptar</button>}
+                      {(isRecipient || isProposer) && offer.status === "OPEN" && <button type="button" onClick={() => send("trade:cancel", { offerId: offer.offerId })} className="border border-white/30 px-3 py-1 font-semibold text-white">Cancelar</button>}
+                      {offer.status !== "OPEN" && <span className="text-mute">{offer.status}</span>}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <button
+            type="button"
+            disabled={marketConfirmed}
+            onClick={() => send("market:continue", {})}
+            className="h-12 w-fit cursor-pointer bg-lime px-6 font-display text-lg font-black uppercase text-ink transition-colors hover:bg-white disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-mute"
+          >
+            {marketConfirmed ? "Confirmado" : "Continuar"}
+          </button>
+        </section>
+      )}
+
+      <div className={`grid gap-6 lg:grid-cols-[1fr_20rem] ${inTransferMarket ? "hidden" : ""}`}>
         <div className="flex flex-col gap-6">
           {/* Durante REVEAL las pistas ya no sirven -- la respuesta esta delante. */}
           {card && (state.phase === "REVEAL"

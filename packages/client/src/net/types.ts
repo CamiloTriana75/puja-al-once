@@ -86,6 +86,16 @@ export interface BidView {
   amount: number;
 }
 
+export interface TradeOfferView {
+  offerId: string;
+  proposerId: string;
+  recipientId: string;
+  offeredCardIds: string[];
+  requestedCardIds: string[];
+  proposerPays: number;
+  status: "OPEN" | "ACCEPTED" | "CANCELLED" | "EXPIRED";
+}
+
 export interface ClientState {
   /**
    * Codigo de sala, legible en voz alta -- lo contrario del `publicId` de
@@ -96,7 +106,7 @@ export interface ClientState {
   visibility?: "private" | "public";
   /** playerId de quien creo la sala. Migra al siguiente conectado si se va antes de empezar. */
   hostId: string;
-  phase: "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "RESULTS";
+  phase: "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "TRANSFER_MARKET" | "RESULTS";
   slotIndex: number;
   currentSlot: string;
   currentCard?: CardView;
@@ -112,6 +122,8 @@ export interface ClientState {
   restrictedBidders: string[];
   /** playerId -> true de quien ha pasado la carta actual (D2). Se vacia al abrir cada carta o al llegar una puja. */
   passes: Map<string, boolean>;
+  /** playerId -> true de quien ha confirmado continuar tras el mercado. */
+  marketReady?: Map<string, boolean>;
   players: Map<string, PlayerView>;
   revealedCards: Map<string, RevealedCardView>;
   standings: StandingView[];

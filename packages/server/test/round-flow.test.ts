@@ -237,6 +237,89 @@ describe("voto de salto", () => {
   });
 });
 
+describe("mercado de transferencias", () => {
+  it("pausa la partida despues de CAM y antes de abrir LW", async () => {
+    const { room, clients, hooks } = await startedRoom();
+
+    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
+      for (const client of clients) {
+        client.send("bid", { amount: room.state.minimumBid });
+        await room.waitForNextPatch();
+        hooks.onBidTimeout();
+        await room.waitForNextPatch();
+        hooks.onRevealTimeout();
+        await room.waitForNextPatch();
+      }
+    }
+
+    expect(room.state.slotIndex).toBe(7);
+    expect(room.state.phase).toBe("TRANSFER_MARKET");
+    expect(room.state.currentSlot).toBe("CAM");
+
+    clients[0]!.send("market:continue", {});
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("TRANSFER_MARKET");
+    expect(room.state.marketReady.get(clients[0]!.sessionId)).toBe(true);
+
+    for (const client of clients.slice(1)) {
+      client.send("market:continue", {});
+      await room.waitForNextPatch();
+    }
+
+    expect(room.state.phase).toBe("BIDDING");
+    expect(room.state.slotIndex).toBe(8);
+    expect(room.state.currentSlot).toBe("LW");
+  });
+
+  it("crea una oferta privada y la acepta de forma atomica", async () => {
+    const { room, clients } = await startedRoom();
+
+    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
+      for (const client of clients) {
+        client.send("bid", { amount: room.state.minimumBid });
+        await room.waitForNextPatch();
+        (room as unknown as RoomInternals).onBidTimeout();
+        await room.waitForNextPatch();
+        (room as unknown as RoomInternals).onRevealTimeout();
+        await room.waitForNextPatch();
+      }
+    }
+    for (const client of clients.slice(0, 3)) {
+      client.send("market:continue", {});
+      await room.waitForNextPatch();
+    }
+
+    const proposer = room.state.players.get(clients[0]!.sessionId)!;
+    const recipient = room.state.players.get(clients[1]!.sessionId)!;
+    const offeredCardId = proposer.squad.get("GK")!;
+    const requestedCardId = recipient.squad.get("GK")!;
+    const receivedOffer = new Promise<{ offerId: string }>((resolve, reject) => {
+      clients[1]!.onMessage("trade:updated", resolve);
+      clients[0]!.onMessage("trade:rejected", reject);
+      clients[1]!.onMessage("trade:rejected", reject);
+    });
+
+    clients[0]!.send("trade:create", {
+      offerId: "offer-1",
+      recipientId: clients[1]!.sessionId,
+      offeredCardIds: [offeredCardId],
+      requestedCardIds: [requestedCardId],
+      proposerPays: 50,
+    });
+    await expect(receivedOffer).resolves.toMatchObject({ offerId: "offer-1", status: "OPEN" });
+
+    clients[1]!.send("trade:accept", { offerId: "offer-1" });
+    await room.waitForNextPatch();
+
+    expect(room.state.players.get(clients[0]!.sessionId)?.squad.get("GK")).toBe(requestedCardId);
+    expect(room.state.players.get(clients[1]!.sessionId)?.squad.get("GK")).toBe(offeredCardId);
+
+    clients[3]!.send("market:continue", {});
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("BIDDING");
+  }, 30_000);
+});
+
 describe("reveal y avance", () => {
   it("el reveal publica los campos privados de la carta adjudicada", async () => {
     const { room, clients, hooks } = await startedRoom();

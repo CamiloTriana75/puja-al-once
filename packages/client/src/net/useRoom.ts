@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { isConsentedLeave } from "./connectionStatus.js";
 import { WS_URL } from "./endpoints.js";
 import { describeRoomLookupError, fetchPublicRooms, lookupRoomByCode, type RoomVisibility } from "./roomLookup.js";
-import type { ClientState } from "./types.js";
+import type { ClientState, TradeOfferView } from "./types.js";
 
 /**
  * Estado de la conexion con el servidor, visible a TODA la aplicacion (no
@@ -116,6 +116,7 @@ export interface Connection {
    * expirar.
    */
   reactions: IncomingReaction[];
+  tradeOffers: TradeOfferView[];
   /** Retira una reaccion de `reactions` por `id` -- lo llama `Reactions.onExpire` cuando su burbuja ya termino de animarse. */
   dismissReaction: (id: string) => void;
   /** Crea una sala nueva. Nunca coincide con una existente -- a diferencia de `joinOrCreate`, `create` no busca hueco en otra sala antes. */
@@ -141,6 +142,7 @@ export function useRoom(): Connection {
   const [bidError, setBidError] = useState<string | null>(null);
   const [bidErrorSeq, setBidErrorSeq] = useState(0);
   const [reactions, setReactions] = useState<IncomingReaction[]>([]);
+  const [tradeOffers, setTradeOffers] = useState<TradeOfferView[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connected");
 
   // Token de reconexion de la sala VIVA -- se actualiza en cada attach() (el
@@ -194,6 +196,7 @@ export function useRoom(): Connection {
     retryCountRef.current = 0;
     clearRetryTimeout();
     setReactions([]);
+    setTradeOffers([]);
     setConnectionStatus("connected");
 
     // onStateChange dispara en cada patch: React vuelve a pintar con el objeto vivo.
@@ -201,7 +204,10 @@ export function useRoom(): Connection {
       setState({ ...next } as ClientState);
       // Las burbujas son efímeras de la partida actual. No deben reaparecer
       // al terminar la ceremonia ni al jugar la revancha en la misma sala.
-      if (next.phase === "RESULTS" || next.phase === "LOBBY") setReactions([]);
+      if (next.phase === "RESULTS" || next.phase === "LOBBY") {
+        setReactions([]);
+        setTradeOffers([]);
+      }
       // Confirmacion de exito -- derivada del propio estado del servidor,
       // nunca escrita por el cliente: si ahora soy yo quien va ganando la
       // puja, el ultimo envio se acepto, y cualquier rechazo anterior ya
@@ -212,6 +218,9 @@ export function useRoom(): Connection {
     joined.onMessage("bid:rejected", (msg: { reason: string }) => {
       setBidError(msg.reason);
       setBidErrorSeq((n) => n + 1);
+    });
+    joined.onMessage("trade:updated", (offer: TradeOfferView) => {
+      setTradeOffers((previous) => [...previous.filter((item) => item.offerId !== offer.offerId), offer]);
     });
     joined.onMessage("error", (msg: { message: string }) => setStartError(msg.message));
     // D8: cada reaccion se acumula con un id propio del cliente (el mensaje
@@ -411,6 +420,6 @@ export function useRoom(): Connection {
 
   return {
     room, state, connectionStatus, retryNow,
-    startError, bidError, bidErrorSeq, reactions, dismissReaction, createRoom, joinByCode, joinPublicRoom, send, leave,
+    startError, bidError, bidErrorSeq, reactions, tradeOffers, dismissReaction, createRoom, joinByCode, joinPublicRoom, send, leave,
   };
 }

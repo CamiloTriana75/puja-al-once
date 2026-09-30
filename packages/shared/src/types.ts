@@ -8,7 +8,7 @@ export type Slot = (typeof SLOTS)[number];
 export type Foot = "L" | "R" | "B";
 export type Continent = "EU" | "SA" | "NA" | "AF" | "AS" | "OC";
 
-export type Phase = "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "RESULTS";
+export type Phase = "LOBBY" | "SETUP" | "BIDDING" | "SKIP_VOTE" | "REVEAL" | "TRANSFER_MARKET" | "RESULTS";
 
 /** Fuente de azar inyectable. Devuelve [0, 1). */
 export type Rng = () => number;
@@ -141,6 +141,7 @@ export interface AuctionState {
    * `pass.ts` para como se usa.
    */
   passes: Record<string, true>;
+  marketReady?: Record<string, true>;
   players: PlayerState[];
 }
 
