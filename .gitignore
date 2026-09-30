@@ -12,10 +12,16 @@ packages/*/test/*.js
 # Indice local de graphify (rutas absolutas, cache de extraccion)
 graphify-out/
 
-# Estado local de herramientas. Nada de esto es del proyecto: son caches y
-# worktrees que se regeneran solas y solo ensucian el repo si se subir.
+# Estado local de herramientas. Nada de esto es del proyecto: son caches,
+# worktrees y skills del agente que se regeneran solas y solo ensucian el repo
+# si se suben. .claude/ entera queda fuera del remoto (los ficheros siguen en
+# el disco de quien los tenga, solo dejan de versionarse).
 .playwright-mcp/
-.claude/worktrees/
+.claude/
+.mcp.json
+.playwright/
+.cursor/
+.vscode/
 
 # Capturas de QA de la propia sesion (ver CREDITS.md para las fotos del juego,
 # que si son parte del dataset y van versionadas en data/photos).
