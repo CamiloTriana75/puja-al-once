@@ -12,6 +12,19 @@ import { useServerClock } from "../net/useServerClock.js";
 import type { IncomingReaction } from "../net/useRoom.js";
 import type { ClientState, TradeOfferView } from "../net/types.js";
 
+/**
+ * Los estados de oferta viajan como codigo en ingles (`TradeOfferView.status`).
+ * Pintarlos en crudo -- como hacia antes -- hacia que un traspaso ACEPTADO
+ * apareciera como "ACCEPTED" en gris apagado, indistinguible de un cancelado a
+ * primera vista: justo lo contrario de lo que pedia el jugador, que el cambio
+ * de plantillas y de saldo se note.
+ */
+const TRADE_STATUS_LABELS: Record<Exclude<TradeOfferView["status"], "OPEN">, string> = {
+  ACCEPTED: "Hecho",
+  CANCELLED: "Cancelado",
+  EXPIRED: "Caducada",
+};
+
 /** Mismo orden que packages/shared/src/types.ts -- el cliente nunca importa shared (ver SquadGrid.tsx, mismo patron de constante duplicada). */
 const SLOTS = ["GK", "LB", "CB1", "CB2", "RB", "CDM", "CM", "CAM", "LW", "ST", "RW"] as const;
 
@@ -102,6 +115,26 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
 
   const ownPlayers = me ? [...me.squad.entries()] : [];
   const otherPlayers = [...state.players.values()].filter((player) => player.playerId !== myId);
+
+  /**
+   * Nombre legible de una carta para el mercado. Cuando el mercado se abre ya
+   * estan reveladas todas las cartas jugadas -- entra al cerrar la defensa
+   * (ver `AuctionRoom.TRANSFER_MARKET_SLOT_INDEX`) y hasta ahi ninguna se
+   * descarta sin enseñar nombre y temporada -- asi que `revealedCards` las tiene
+   * todas y con eso sale el nombre de verdad.
+   *
+   * El cardId crudo se queda como unico respaldo, para que una carta que se
+   *escapara al mapa (no deberia: todo lo que esta en un squad se revelo antes)
+   * siga siendo identificable en vez de desaparecer del selector. La diferencia
+   * importa mas de lo que parece: una oferta leida como "facchetti-1968 por
+   * c1b-1975" no dice nada de quien se lleva quien, que es justo lo que el
+   * mercado esta para decidir.
+   */
+  const cardLabel = (cardId: string): string => {
+    const card = state.revealedCards.get(cardId);
+    return card ? `${card.name} (${card.season})` : cardId;
+  };
+
   const sendTradeOffer = () => {
     const [offeredSlot, offeredCardId] = offeredSelection.split(":");
     const [recipientId, requestedSlot, requestedCardId] = requestedSelection.split(":");
@@ -174,17 +207,31 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
             <h1 id="transfer-market-title" className="mt-2 font-display text-4xl font-black uppercase tracking-wide text-white">
               Mercado de transferencias
             </h1>
-            <p className="mt-3 max-w-2xl font-body text-base text-mute">
-              Intercambia jugadores con otro participante antes de completar el ataque. Cada operación debe incluir un jugador por cada lado; el dinero es opcional.
-            </p>
-          </div>
+<p className="mt-3 max-w-2xl font-body text-base text-mute">
+            Intercambia jugadores con otro participante antes de completar el ataque. Cada operación debe incluir un jugador por cada lado; el dinero es opcional.
+          </p>
+          <p className="mt-2 max-w-2xl font-body text-sm text-mute">
+            La defensa ya está cerrada. Es el momento de reajustar el equipo: el mercado es público, todas las ofertas y sus resultados los ve todo el mundo, y el saldo de cada uno está a la vista.
+          </p>
+        </div>
 
           <ul className="flex flex-col gap-2" aria-label="Confirmaciones del mercado">
             {[...state.players.values()].map((player) => (
-              <li key={player.playerId} className="flex items-center justify-between border border-white/10 px-4 py-3">
+              <li key={player.playerId} className="flex flex-wrap items-center justify-between gap-2 border border-white/10 px-4 py-3">
                 <span className="font-display text-lg font-bold uppercase text-white">{player.name}</span>
-                <span className="font-body text-sm font-semibold uppercase tracking-wide text-mute">
-                  {state.marketReady?.get(player.playerId) ? "Listo para continuar" : "En el mercado"}
+                <span className="flex items-baseline gap-3">
+                  {/*
+                    El saldo de cada uno a la vista durante el mercado: el
+                    `budget` de todos ya viaja en el estado (project.ts), asi
+                    que aqui no hay nada que revelar por API -- solo decide
+                    donde se enseña. Es justo cuando importa, porque el dinero
+                    que se gaste en un traspaso se ve desaparecer y el del
+                    contrario aparecer.
+                  */}
+                  <span className="tnum font-display text-xl font-black text-green">{player.budget} M</span>
+                  <span className="font-body text-sm font-semibold uppercase tracking-wide text-mute">
+                    {state.marketReady?.get(player.playerId) ? "Listo para continuar" : "En el mercado"}
+                  </span>
                 </span>
               </li>
             ))}
@@ -195,7 +242,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
               Tu jugador
               <select value={offeredSelection} onChange={(event) => setOfferedSelection(event.target.value)} className="h-11 bg-deep px-3 text-white">
                 <option value="">Selecciona</option>
-                {ownPlayers.map(([slot, cardId]) => <option key={`${slot}:${cardId}`} value={`${slot}:${cardId}`}>{slot} · {cardId}</option>)}
+                {ownPlayers.map(([slot, cardId]) => <option key={`${slot}:${cardId}`} value={`${slot}:${cardId}`}>{slot} · {cardLabel(cardId)}</option>)}
               </select>
             </label>
             <label className="flex flex-col gap-2 font-body text-sm text-mute">
@@ -203,7 +250,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
               <select value={requestedSelection} onChange={(event) => setRequestedSelection(event.target.value)} className="h-11 bg-deep px-3 text-white">
                 <option value="">Selecciona</option>
                 {otherPlayers.flatMap((player) => [...player.squad.entries()].map(([slot, cardId]) => (
-                  <option key={`${player.playerId}:${slot}:${cardId}`} value={`${player.playerId}:${slot}:${cardId}`}>{player.name} · {slot} · {cardId}</option>
+                  <option key={`${player.playerId}:${slot}:${cardId}`} value={`${player.playerId}:${slot}:${cardId}`}>{player.name} · {slot} · {cardLabel(cardId)}</option>
                 )))}
               </select>
             </label>
@@ -219,20 +266,65 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
 
           {tradeOffers.length > 0 && (
             <ul className="flex flex-col gap-2" aria-label="Ofertas del mercado">
-              {tradeOffers.map((offer) => {
-                const isRecipient = offer.recipientId === myId;
-                const isProposer = offer.proposerId === myId;
-                return (
-                  <li key={offer.offerId} className="flex flex-wrap items-center justify-between gap-3 border border-white/10 px-4 py-3 font-body text-sm text-white">
-                    <span>{offer.offeredCardIds.join(", ")} por {offer.requestedCardIds.join(", ")} {offer.proposerPays > 0 ? `+ ${offer.proposerPays} M` : ""}</span>
-                    <span className="flex gap-2">
-                      {isRecipient && offer.status === "OPEN" && <button type="button" onClick={() => send("trade:accept", { offerId: offer.offerId })} className="border border-lime px-3 py-1 font-semibold text-lime">Aceptar</button>}
-                      {(isRecipient || isProposer) && offer.status === "OPEN" && <button type="button" onClick={() => send("trade:cancel", { offerId: offer.offerId })} className="border border-white/30 px-3 py-1 font-semibold text-white">Cancelar</button>}
-                      {offer.status !== "OPEN" && <span className="text-mute">{offer.status}</span>}
-                    </span>
-                  </li>
-                );
-              })}
+              {/*
+                Los aceptados primero, y por encima el resto. Un traspaso ya
+                hecho es informacion que se pierde de vista si la lista queda
+                solo en orden de llegada -- y es la que interesa: lo que se
+                negocia todavia se puede deshacer con "Cancelar".
+              */}
+              {(() => {
+                const accepted = tradeOffers.filter((offer) => offer.status === "ACCEPTED");
+                const rest = tradeOffers.filter((offer) => offer.status !== "ACCEPTED");
+                return [...accepted, ...rest].map((offer) => {
+                  const isRecipient = offer.recipientId === myId;
+                  const isProposer = offer.proposerId === myId;
+                  const proposer = state.players.get(offer.proposerId)?.name ?? "Jugador";
+                  const recipient = state.players.get(offer.recipientId)?.name ?? "Jugador";
+                  const mine = isRecipient || isProposer;
+
+                  return (
+                    <li
+                      key={offer.offerId}
+                      className={`flex flex-wrap items-center justify-between gap-3 border-2 px-4 py-3 font-body text-sm ${
+                        offer.status === "ACCEPTED"
+                          ? "border-lime bg-lime/10 text-white"
+                          : offer.status === "OPEN"
+                            ? isRecipient
+                              ? "border-lime/60 bg-ink text-white"
+                              : "border-white/10 bg-ink text-white"
+                            : "border-white/5 bg-ink text-mute"
+                      }`}
+                    >
+                      <span className="flex flex-col gap-1">
+                        {offer.status === "ACCEPTED" && (
+                          <span className="font-display text-lg font-black uppercase tracking-wide text-lime">
+                            Traspaso hecho: {proposer} ↔ {recipient}
+                          </span>
+                        )}
+                        {offer.status === "OPEN" && isRecipient && (
+                          <span className="font-display text-sm font-black uppercase tracking-wide text-lime">
+                            Te han hecho una oferta
+                          </span>
+                        )}
+                        <span className="text-mute">
+                          {proposer} da {offer.offeredCardIds.map(cardLabel).join(", ")} por {offer.requestedCardIds.map(cardLabel).join(", ")} de {recipient}
+                          {offer.proposerPays > 0 ? ` · ${proposer} paga ${offer.proposerPays} M` : ""}
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-2">
+                        {isRecipient && offer.status === "OPEN" && <button type="button" onClick={() => send("trade:accept", { offerId: offer.offerId })} className="border border-lime px-3 py-1 font-semibold text-lime">Aceptar</button>}
+                        {(isRecipient || isProposer) && offer.status === "OPEN" && <button type="button" onClick={() => send("trade:cancel", { offerId: offer.offerId })} className="border border-white/30 px-3 py-1 font-semibold text-white">Cancelar</button>}
+                        {offer.status !== "OPEN" && (
+                          <span className={offer.status === "ACCEPTED" ? "font-display text-sm font-black uppercase tracking-wide text-lime" : "text-mute"}>
+                            {TRADE_STATUS_LABELS[offer.status]}
+                          </span>
+                        )}
+                        {!mine && offer.status === "OPEN" && <span className="text-mute">En negociación</span>}
+                      </span>
+                    </li>
+                  );
+                });
+              })()}
             </ul>
           )}
 
@@ -393,7 +485,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
                 )}
 
                 <p className="bg-ink px-3 py-2 font-body text-sm text-mute">
-                  Hace falta unanimidad para saltarla. Si alguien vota que la quiere, después de la votación solo esa persona podrá pujar por ella.
+                  Hace falta la unanimidad de quienes aún no tienen este puesto. Si alguien vota que la quiere, después de la votación solo esa persona podrá pujar por ella.
                 </p>
 
                 {/* Quien ha votado y quien falta (design-system/pages/partida.md). */}

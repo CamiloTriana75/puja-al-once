@@ -30,11 +30,22 @@ function state(overrides: Partial<AuctionState> = {}): AuctionState {
 }
 
 describe("playersEligibleToPass", () => {
-  it("son todos los conectados cuando no hay fase restringida, tengan o no ya el hueco", () => {
+  it("son los conectados que aun necesitan el hueco", () => {
     const s = state({
       players: [player("p1", { squad: { GK: "cx" } }), player("p2", { connected: false }), player("p3"), player("p4")],
     });
-    expect(playersEligibleToPass(s)).toEqual(["p1", "p3", "p4"]);
+    // p1 ya ficho y p2 se cayo: ninguno de los dos puede pasar, igual que
+    // ningun otro puede hacerlo (AuctionRoom.onPass usa esta misma lista como
+    // quórum de `allPassed`).
+    expect(playersEligibleToPass(s)).toEqual(["p3", "p4"]);
+  });
+
+  it("el caso del aviso: uno ya lo tiene y los otros dos pasan, resuelve unanime", () => {
+    const s = state({
+      players: [player("p1", { squad: { GK: "cx" } }), player("p2"), player("p3")],
+      passes: { p2: true, p3: true },
+    });
+    expect(playersEligibleToPass(s)).toEqual(["p2", "p3"]);
   });
 
   it("en fase restringida, solo quien ademas esta en la lista", () => {
@@ -83,15 +94,16 @@ describe("resolvePass", () => {
     expect(resolvePass(s, DEFAULT_RULES, rngFirst)).toEqual({ kind: "DISCARDED", cardId: "c1" });
   });
 
-  it("el pase de quien ya ficho el hueco cuenta para la unanimidad -- sin margen, el sorteo lo sigue excluyendo", () => {
+  it("quien ya ficho el hueco ni cuenta en la unanimidad ni puede salir en el sorteo sin margen", () => {
     const s = state({
       remainingCards: ["c1", "c2", "c3"],
       players: [player("p1", { squad: { GK: "cx" } }), player("p2"), player("p3"), player("p4")],
-      passes: { p1: true, p2: true, p3: true, p4: true },
+      passes: { p2: true, p3: true, p4: true },
     });
-    // playersEligibleToPass(s) === ["p1","p2","p3","p4"], las 4 pasan: unanime.
+    // playersEligibleToPass(s) === ["p2","p3","p4"]: los tres que aun lo
+    // necesitan han pasado, que ya es unanime (p1 no molesta para nada).
     // remainingCards.length (3) === playersNeedingSlot(s).length (3): sin margen.
-    // p1 ya tiene el hueco -- no puede ganar el sorteo aunque haya pasado.
+    // p1 ya tiene el hueco -- no puede ganar el sorteo aunque hubiera pasado.
     expect(resolvePass(s, DEFAULT_RULES, rngFirst)).toMatchObject({ kind: "FORCED", playerId: "p2" });
   });
 });

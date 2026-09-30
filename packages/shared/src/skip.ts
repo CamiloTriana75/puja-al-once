@@ -7,22 +7,6 @@ export function playersNeedingSlot(state: AuctionState): PlayerState[] {
 }
 
 /**
- * Todos los jugadores conectados de la sala, tengan o no ya el hueco en
- * juego. A diferencia de `playersNeedingSlot`, esta lista decide QUIEN
- * VOTA/PASA (ver `resolveSkipVote` y `playersEligibleToPass` en `pass.ts`),
- * nunca a quien le toca de verdad la carta -- eso sigue siendo terreno
- * exclusivo de `playersNeedingSlot`: el margen de `skipAllowed`, quien puede
- * pujar (`canBid`) y quien puede ganar un sorteo forzado (`resolveAuction`,
- * `resolvePass`) no cambian con esta funcion. El usuario pidio explicitamente
- * que el voto de saltar cuente para toda la sala, no solo para quien todavia
- * ficha este puesto: alguien que ya tiene su GK sigue viendo la carta en
- * juego y le puede interesar la decision igual.
- */
-export function playersEligible(state: AuctionState): PlayerState[] {
-  return state.players.filter((p) => p.connected);
-}
-
-/**
  * Solo se puede saltar mientras sobren cartas. Cuando quedan tantas como
  * jugadores por fichar, cada carta tiene que acabar en un equipo: saltar
  * dejaria a alguien con el hueco vacio, asi que se prohibe.
@@ -36,25 +20,33 @@ export type SkipOutcome =
   | { kind: "RESUMED"; restrictedBidders: string[] };
 
 /**
- * El salto exige unanimidad de TODOS los jugadores conectados
- * (`playersEligible`), no solo de quien todavia necesita el hueco -- el voto
- * es de sala entera. Si falla, la subasta se reanuda pero solo pueden pujar
- * quienes ademas necesitan el hueco Y votaron explicitamente en contra:
- * votaste que la querias, pujala. Un jugador que ya ficho este puesto puede
- * votar (su opinion cuenta para la unanimidad) pero nunca puede acabar en
- * `restrictedBidders` ni pujar por una carta que no le hace falta -- de ahi
- * el filtro extra contra `playersNeedingSlot` al construir el desenlace.
- * Abstenerse no bloquea el salto ni habilita a pujar, asi que una sala entera
- * ausente termina en descarte y la ronda avanza.
+ * Quien decide el salto: exactamente los mismos jugadores de
+ * `playersNeedingSlot`, ni uno mas. Quien ya ficho este puesto no vota y no
+ * bloquea, porque tampoco puede pujar por la carta (`canBid` exige el hueco
+ * libre): si su voto contara, unanimidad seria inalcanzable desde la propia
+ * interfaz -- la UI oculta los botones a quien ya ficho
+ * (`Auction.tsx`, `canVoteSkip = !alreadySigned`) y solo lista como voteantes a
+ * los de `playersNeedingSlot`, asi que la sala se quedaria esperando un voto
+ * que nadie puede emitir hasta que se agota `rules.skipVoteMs`.
+ *
+ * Si falla la unanimidad, la subasta se reanuda pero solo pueden pujar quienes
+ * ademas necesitan el hueco Y votaron explicitamente en contra: votaste que la
+ * querias, pujala. Abstenerse no bloquea el salto ni habilita a pujar, asi que
+ * una sala entera ausente termina en descarte y la ronda avanza.
+ *
+ * El caso de cero jugadores necesita el hueco devuelve `SKIPPED`: la carta no
+ * le interesa a nadie y descartarla es lo unico sensato. `every` sobre un
+ * array vacio daria `true` por accidente y dejaria `SKIPPED`取决ido del
+ * guard de arriba, no de la regla.
  */
 export function resolveSkipVote(state: AuctionState): SkipOutcome {
-  const eligible = playersEligible(state).map((p) => p.playerId);
-  const unanimous = eligible.length > 0 && eligible.every((id) => state.skipVotes[id] === true);
-  if (unanimous) return { kind: "SKIPPED" };
+  const voters = playersNeedingSlot(state).map((p) => p.playerId);
+  if (voters.length === 0) return { kind: "SKIPPED" };
 
-  const needing = new Set(playersNeedingSlot(state).map((p) => p.playerId));
+  if (voters.every((id) => state.skipVotes[id] === true)) return { kind: "SKIPPED" };
+
   return {
     kind: "RESUMED",
-    restrictedBidders: eligible.filter((id) => state.skipVotes[id] === false && needing.has(id)),
+    restrictedBidders: voters.filter((id) => state.skipVotes[id] === false),
   };
 }

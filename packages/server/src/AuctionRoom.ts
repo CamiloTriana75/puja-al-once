@@ -3,7 +3,7 @@ import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
   acceptTradeOffer, applyBid, applyOutcome, canBid, cardsBySlot, createTradeOffer, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
-  parseDataset, playersEligible, playersEligibleToPass, playersNeedingSlot, resolveAuction, resolvePass,
+  parseDataset, playersEligibleToPass, playersNeedingSlot, resolveAuction, resolvePass,
   resolveSkipVote, scoreMatch,
   SLOTS, toPrivate, toPublic,
   type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot, type TradeOffer,
@@ -23,6 +23,21 @@ import { clientAddress, isAllowedOrigin, RateLimiter } from "./requestPolicy.js"
 const DATASET_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../../../data/players.json");
 const DEFAULT_DATASET: CardSource[] = parseDataset(JSON.parse(readFileSync(DATASET_PATH, "utf8")));
 const matchmakeLimiter = new RateLimiter();
+
+/**
+ * Indice de `SLOTS` al que se abre el mercado de traspasos: en cuanto termina
+ * la DEFENSA y antes de empezar el CDM (`advance()` lo entra al cerrar el
+ * hueco 4 = RB, y `onMarketContinue` arranca la ronda 5 = CDM).
+ *
+ * Antes vivia en el hueco 8, o sea en mitad del ataque (tras CAM, antes de
+ * LW): es decir los defensa ya estaban cerrados y nadie habia formado
+ * todavia su mediocampo al pasar por caja. El numero va escrito en los dos
+ * lados del mismo cruce -- el que abre el mercado y el que reanuda la partida
+ * -- y ambos tienen que decir el mismo, asi que salen de aqui los dos en vez
+ * de repetir un 8 magico: si se cambia uno y no el otro, el mercado cerraria
+ * y `startRound` saltaria a un hueco que no es el siguiente.
+ */
+const TRANSFER_MARKET_SLOT_INDEX = 5;
 
 export interface AuctionRoomOptions {
   /** La privacidad es explícita; todas las creaciones conservan el valor privado por defecto. */
@@ -431,7 +446,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     const connectedPlayers = this.game.players.filter((candidate) => candidate.connected);
     if (connectedPlayers.every((candidate) => this.game.marketReady?.[candidate.playerId] === true)) {
       this.game.marketReady = {};
-      this.startRound(8);
+      this.startRound(TRANSFER_MARKET_SLOT_INDEX);
     }
   }
 
@@ -498,11 +513,24 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.sendTradeUpdate(cancelled);
   }
 
+  /**
+   * Emite la oferta a TODA la sala, no solo a las dos partes.
+   *
+   * Antes se limitaba a proponente y receptor, y era coherente con un mercado
+   * "por lo bajo"; pero el presupuesto y la plantilla de cada uno ya viajan
+   * enteros a todos (ver `projectState`), asi que ocultar en que se estaba
+   * negociando no daba ninguna privacidad y si hacia que un traspaso aceptado
+   * no le llegara a los demas: el unico que veia el cambio de plantilla y de
+   * saldo era el comprador y el vendedor, y la sala se enteraba al leer el once
+   * final. Con este difusion, la oferta aparece en la lista de todos mientras
+   * esta abierta y el resultado -- aceptado o cancelado -- es publico.
+   *
+   * Los botones siguen filtrados por cliente: `Auction.tsx` solo pinta "Aceptar"
+   * al receptor y "Cancelar" a las dos partes, asi queBroadcast la oferta no
+   * habilita a nadie a actuar sobre la de otro.
+   */
   private sendTradeUpdate(offer: TradeOffer): void {
-    for (const playerId of [offer.proposerId, offer.recipientId]) {
-      const client = this.clients.find((candidate) => candidate.sessionId === playerId);
-      client?.send("trade:updated", offer);
-    }
+    for (const client of this.clients) client.send("trade:updated", offer);
   }
 
   private onBid(client: Client, amount: unknown): void {
@@ -539,11 +567,13 @@ export class AuctionRoom extends Room<AuctionRoomState> {
   /**
    * D2: "pass" sustituye a "cerrar sin pujar". A diferencia de aquel (que
    * cualquier UNO de los que necesitaban el hueco podia disparar de golpe),
-   * pasar es colectivo -- solo resuelve cuando TODOS los elegibles
-   * (`playersEligibleToPass`, el mismo filtro que autoriza a enviar este
-   * mensaje) han pasado la carta actual. Si no son todos, se limita a
-   * anotar el pase y esperar: al resto, o pujan, o pasan, o se agota la
-   * ventana y sigue el camino de siempre (onBidTimeout).
+   * pasar es colectivo -- solo resuelve cuando TODOS los que aun necesitan el
+   * hueco (`playersEligibleToPass`, el mismo filtro que autoriza a enviar este
+   * mensaje) han pasado la carta actual. Quien ya lo ficho no pasa ni cuenta:
+   * ver `playersEligibleToPass` en `@fut/shared`, que lo exige por la misma
+   * razon que acota el voto de saltar. Si no son todos, se limita a anotar el
+   * pase y esperar: al resto, o pujan, o pasan, o se agota la ventana y sigue
+   * el camino de siempre (onBidTimeout).
    */
   private onPass(client: Client): void {
     if (this.game.phase !== "BIDDING" || this.game.currentBid !== 0) return;
@@ -594,22 +624,22 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
   private onVoteSkip(client: Client, skip: boolean): void {
     if (this.game.phase !== "SKIP_VOTE") return;
-    // Cuenta el voto de CUALQUIER jugador conectado, no solo de quien
-    // todavia necesita el hueco en juego: el usuario pidio explicitamente
-    // que la votacion de saltar sea de sala entera. resolveSkipVote exige
-    // unanimidad de este mismo conjunto (`playersEligible`) y ya filtra por
-    // separado a quien puede acabar en `restrictedBidders` (solo quien
-    // necesita el hueco), asi que el voto de alguien que ya ficho este
-    // puesto cuenta para la unanimidad pero nunca lo mete a pujar. Sigue
+    // Solo cuentan los votos de quien todavia necesita el hueco en juego, que
+    // es el mismo conjunto que exige `resolveSkipVote` para la unanimidad y el
+    // mismo que la UI da por votante (Auction.tsx: `canVoteSkip = !alreadySigned`
+    // y la lista de "esperando", que son los de `playersNeedingSlot`). Contar
+    // tambien a quien ya ficho este puesto hacia la unanimidad inalcanzable --
+    // su voto no se puede emitir desde la interfaz -- y la carta se quedaba
+    // esperando los `skipVoteMs` enteros para acabar descartada igual. Sigue
     // excluido quien esta desconectado o con un reingreso aparcado (mismo
-    // caso, ver onReconnected): su voto no debe quedar escrito en
-    // skipVotes ni viajar al Schema.
-    if (!playersEligible(this.game).some((p) => p.playerId === client.sessionId)) return;
+    // caso, ver onReconnected): su voto no debe quedar escrito en skipVotes ni
+    // viajar al Schema.
+    if (!playersNeedingSlot(this.game).some((p) => p.playerId === client.sessionId)) return;
     this.game.skipVotes = { ...this.game.skipVotes, [client.sessionId]: skip };
     this.sync();
 
-    // Si ya votaron todos los que podian, no hace falta agotar los 10 s.
-    const pending = playersEligible(this.game).filter(
+    // Si ya votaron todos los que faltaban, no hace falta agotar los 10 s.
+    const pending = playersNeedingSlot(this.game).filter(
       (p) => this.game.skipVotes[p.playerId] === undefined,
     );
     if (pending.length === 0) this.onSkipTimeout();
@@ -772,7 +802,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       return;
     }
 
-    if (next === 8) {
+    if (next === TRANSFER_MARKET_SLOT_INDEX) {
       this.enterTransferMarket();
       return;
     }

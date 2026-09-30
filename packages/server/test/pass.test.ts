@@ -10,7 +10,7 @@ beforeAll(async () => { colyseus = await boot(appConfig); });
 afterAll(async () => { await colyseus.shutdown(); });
 beforeEach(async () => { await colyseus.cleanup(); });
 
-interface Hooks { onBidTimeout(): void }
+interface Hooks { onBidTimeout(): void; onRevealTimeout(): void }
 
 async function startedRoom(rng?: Rng) {
   const room = await colyseus.createRoom("auction", rng ? { rng } : {});
@@ -54,6 +54,35 @@ describe("pass (D2)", () => {
     expect(revealed?.ownerId).toBe("");
     expect(revealed?.price).toBe(0);
     expect(room.state.remainingCount).toBe(4);
+  });
+
+  it("el pase de quien ya ficho no bloquea: los demas resuelven al instante", async () => {
+    // El mismo caso que se quedo colgado con el voto de salto: Ana se
+    // adjudica la primera carta y ya no necesita GK, asi que su interfaz no
+    // le deja pasar (Auction.tsx: `canPass` exige el hueco). Antes el quórum
+    // de `pass` contaba tambien con ella y la carta se quedaba esperando.
+    const { room, clients, hooks } = await startedRoom();
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
+    await room.waitForNextPatch();
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    hooks.onRevealTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.players.get(clients[0]!.sessionId)?.squad.get("GK")).toBeTruthy();
+    expect(room.state.remainingCount).toBe(4);
+
+    for (const [i, client] of clients.slice(1).entries()) {
+      client.send("pass", {});
+      await room.waitForNextPatch();
+      // Solo los dos primeros dejan la carta viva; el tercero la resuelve.
+      if (i < 2) expect(room.state.phase).toBe("BIDDING");
+    }
+
+    // El descarte ocurre sin llamar a onBidTimeout ni onRevealTimeout.
+    expect(room.state.phase).toBe("REVEAL");
+    expect(room.state.remainingCount).toBe(3);
+    expect([...room.state.revealedCards.values()].at(-1)?.ownerId).toBe("");
+    expect(room.state.passes.get(clients[0]!.sessionId)).toBeUndefined();
   });
 
   it("cuando pasan todos y no queda margen, se sortea entre los elegibles", async () => {

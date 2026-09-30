@@ -119,12 +119,17 @@ describe("voto de salto", () => {
     expect(room.state.phase).not.toBe("SKIP_VOTE");
   });
 
-  it("el voto de quien ya ficho el hueco cuenta para la unanimidad", async () => {
+  it("el voto de quien ya ficho el hueco NO cuenta: los que faltan resuelven al instante", async () => {
     // Ana ficha GK adjudicandose la primera carta; a partir de aqui ya no
-    // "necesita" el hueco en juego (GK), pero sigue conectada y su voto en
-    // la votacion de salto de la SEGUNDA carta de GK tiene que contar igual
-    // que el de Bea, Cid y Dan -- el usuario pidio explicitamente que el
-    // voto de saltar sea de sala entera, no solo de quien aun ficha.
+    // "necesita" el hueco en juego (GK). En la votacion de salto de la
+    // SEGUNDA carta de GK la deciden solo Bea, Cid y Dan.
+    //
+    // Este es el caso que reporto el jugador: los tres que faltan votan
+    // saltar y la carta seguia sin saltarse. Era porque la unanimidad exigia
+    // tambien el voto de Ana, que la interfaz no le deja emitir (Auction.tsx:
+    // `canVoteSkip = !alreadySigned`), asi que la votacion
+    // se quedaba colgada hasta que se agotaban los 10 s del reloj y el
+    // descarte llegaba igualmente, por el camino largo.
     const { room, clients, hooks } = await startedRoom();
     clients[0]!.send("bid", { amount: room.state.minimumBid });
     await room.waitForNextPatch();
@@ -136,26 +141,44 @@ describe("voto de salto", () => {
     // 4 cartas restantes, 3 jugadores por fichar (Bea/Cid/Dan): margen 4>3.
     expect(room.state.remainingCount).toBe(4);
 
-    // Sin el voto de Ana (que ya ficho GK) la votacion no es unanime: se
-    // reanuda restringida en vez de saltar.
     hooks.onBidTimeout();
     await room.waitForNextPatch();
     expect(room.state.phase).toBe("SKIP_VOTE");
+
+    // Los tres que todavia necesitan GK votan saltar. No hace falta el cuarto
+    // voto: sin llamar a onSkipTimeout, el descarte tiene que haber ocurrido ya
+    // al ultimo `waitForNextPatch`.
     clients[1]!.send("voteSkip", { skip: true });
     clients[2]!.send("voteSkip", { skip: true });
     clients[3]!.send("voteSkip", { skip: true });
     await room.waitForNextPatch();
-    // Los tres que todavia necesitan GK ya votaron saltar, pero Ana (que ya
-    // lo ficho) no ha votado todavia: no hay auto-resuelto ni descarte aun.
-    expect(room.state.phase).toBe("SKIP_VOTE");
-    expect(room.state.remainingCount).toBe(4);
 
-    // El voto de Ana completa la unanimidad de TODOS los conectados y
-    // dispara el auto-resuelto sin esperar a que venza el reloj de 10 s.
-    clients[0]!.send("voteSkip", { skip: true });
-    await room.waitForNextPatch();
     expect(room.state.phase).toBe("REVEAL");
     expect(room.state.remainingCount).toBe(3);
+    expect([...room.state.revealedCards.values()].at(-1)?.ownerId).toBe("");
+  });
+
+  it("el voto de quien ya ficho no se guarda: el servidor ni lo cuenta ni lo escribe", async () => {
+    // `onVoteSkip` solo admite votos de quien necesita el hueco, asi que el
+    // mensaje de Ana se descarta en la puerta. Con el voto de Ana escrito en
+    // `skipVotes` viaja al Schema y sale pintado en la lista de la votacion,
+    // donde el jugador ve un "esperando" que el mismo no puede resolver.
+    const { room, clients, hooks } = await startedRoom();
+    clients[0]!.send("bid", { amount: room.state.minimumBid });
+    await room.waitForNextPatch();
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    hooks.onRevealTimeout();
+    await room.waitForNextPatch();
+
+    hooks.onBidTimeout();
+    await room.waitForNextPatch();
+    expect(room.state.phase).toBe("SKIP_VOTE");
+
+    clients[0]!.send("voteSkip", { skip: true });
+    await room.waitForNextPatch();
+    expect(room.state.skipVotes.get(clients[0]!.sessionId)).toBeUndefined();
+    expect(room.state.phase).toBe("SKIP_VOTE");
   });
 
   it("resuelve el voto de salto cuando votan saltar todos los conectados", async () => {
@@ -238,10 +261,13 @@ describe("voto de salto", () => {
 });
 
 describe("mercado de transferencias", () => {
-  it("pausa la partida despues de CAM y antes de abrir LW", async () => {
+  it("pausa la partida al terminar la defensa y antes de abrir el CDM", async () => {
     const { room, clients, hooks } = await startedRoom();
 
-    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
+    // SLOTS = GK, LB, CB1, CB2, RB, CDM, ...: las 5 rondas de la defensa (0-4)
+    // se juegan enteras y al cerrar RB entra el mercado. Antes se colgaba tras
+    // CAM (hueco 8), ya en mitad del ataque.
+    for (let slotIndex = 0; slotIndex <= 4; slotIndex++) {
       for (const client of clients) {
         client.send("bid", { amount: room.state.minimumBid });
         await room.waitForNextPatch();
@@ -252,9 +278,9 @@ describe("mercado de transferencias", () => {
       }
     }
 
-    expect(room.state.slotIndex).toBe(7);
+    expect(room.state.slotIndex).toBe(4);
     expect(room.state.phase).toBe("TRANSFER_MARKET");
-    expect(room.state.currentSlot).toBe("CAM");
+    expect(room.state.currentSlot).toBe("RB");
 
     clients[0]!.send("market:continue", {});
     await room.waitForNextPatch();
@@ -267,14 +293,14 @@ describe("mercado de transferencias", () => {
     }
 
     expect(room.state.phase).toBe("BIDDING");
-    expect(room.state.slotIndex).toBe(8);
-    expect(room.state.currentSlot).toBe("LW");
+    expect(room.state.slotIndex).toBe(5);
+    expect(room.state.currentSlot).toBe("CDM");
   });
 
-  it("crea una oferta privada y la acepta de forma atomica", async () => {
+  it("crea una oferta visible para toda la sala y la acepta de forma atomica", async () => {
     const { room, clients } = await startedRoom();
 
-    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
+    for (let slotIndex = 0; slotIndex <= 4; slotIndex++) {
       for (const client of clients) {
         client.send("bid", { amount: room.state.minimumBid });
         await room.waitForNextPatch();
@@ -298,6 +324,12 @@ describe("mercado de transferencias", () => {
       clients[0]!.onMessage("trade:rejected", reject);
       clients[1]!.onMessage("trade:rejected", reject);
     });
+    // El tercero no es parte de la oferta y no puede aceptarla ni rechazarla,
+    // pero tiene que VERLA: el mercado es publico y la UI lo pinta en la lista
+    // de confirmaciones para que todo el mundo sepa que se esta negociando.
+    const watcher = new Promise<{ offerId: string; status: string }>((resolve) => {
+      clients[3]!.onMessage("trade:updated", resolve);
+    });
 
     clients[0]!.send("trade:create", {
       offerId: "offer-1",
@@ -307,8 +339,13 @@ describe("mercado de transferencias", () => {
       proposerPays: 50,
     });
     await expect(receivedOffer).resolves.toMatchObject({ offerId: "offer-1", status: "OPEN" });
+    await expect(watcher).resolves.toMatchObject({ offerId: "offer-1", status: "OPEN" });
 
+    const acceptedByWatcher = new Promise<{ offerId: string; status: string }>((resolve) => {
+      clients[3]!.onMessage("trade:updated", resolve);
+    });
     clients[1]!.send("trade:accept", { offerId: "offer-1" });
+    await expect(acceptedByWatcher).resolves.toMatchObject({ offerId: "offer-1", status: "ACCEPTED" });
     await room.waitForNextPatch();
 
     expect(room.state.players.get(clients[0]!.sessionId)?.squad.get("GK")).toBe(requestedCardId);

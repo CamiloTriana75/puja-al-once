@@ -288,4 +288,82 @@ describe("Auction -- mercado de transferencias", () => {
       requestedCardIds: ["card-b"],
     }));
   });
+
+  it("un traspaso aceptado se ve claro, con nombres y no con cardIds", () => {
+    // Lo que se quejaba el jugador: el resultado de un traspaso pasaba
+    // inadvertido. Antes salia "facchetti-1968 por c1b-1975" en gris, con el
+    // codigo en ingles "ACCEPTED" al lado, indistinguible de una cancelacion.
+    render(
+      <Auction
+        state={baseState({
+          phase: "TRANSFER_MARKET",
+          currentSlot: "RB",
+          marketReady: new Map(),
+          revealedCards: new Map([
+            ["card-a", { cardId: "card-a", slot: "CB1", silhouetteId: "s1", name: "Royer", season: 1974, club: "Anderlecht", league: "B1", nation: "BEL", rating: 91, ownerId: "a", price: 60 }],
+            ["card-b", { cardId: "card-b", slot: "CB1", silhouetteId: "s2", name: "Suarez", season: 1975, club: "Ajax", league: "Eredivisie", nation: "NED", rating: 90, ownerId: "b", price: 60 }],
+          ]),
+        })}
+        myId="c"
+        roomId="room-1"
+        error={null}
+        errorSeq={0}
+        reactions={[]}
+        onDismissReaction={vi.fn()}
+        send={vi.fn()}
+        tradeOffers={[
+          {
+            offerId: "o1",
+            proposerId: "a",
+            recipientId: "b",
+            offeredCardIds: ["card-a"],
+            requestedCardIds: ["card-b"],
+            proposerPays: 50,
+            status: "ACCEPTED",
+          },
+        ]}
+      />,
+    );
+
+    // El titular, en castellano y con los dos nombres.
+    expect(screen.getByText(/Traspaso hecho: Ana/)).toBeInTheDocument();
+    expect(screen.getByText(/Royer \(1974\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Suarez \(1975\)/)).toBeInTheDocument();
+    expect(screen.getByText(/paga 50 M/)).toBeInTheDocument();
+    // El codigo en ingles que se pintaba crudo, y la lista de ids.
+    expect(screen.queryByText("ACCEPTED")).not.toBeInTheDocument();
+    expect(screen.queryByText(/card-a/)).not.toBeInTheDocument();
+    // Y los dos saldos a la vista, que es la otra mitad del aviso: uno por
+    // jugador, en la lista de confirmaciones del mercado.
+    expect(screen.getAllByText("1000 M")).toHaveLength(2);
+  });
+
+  it("avisa al receptor de una oferta abierta y no le enseña botones a los demas", () => {
+    render(
+      <Auction
+        state={baseState({ phase: "TRANSFER_MARKET", currentSlot: "RB", marketReady: new Map() })}
+        myId="b"
+        roomId="room-1"
+        error={null}
+        errorSeq={0}
+        reactions={[]}
+        onDismissReaction={vi.fn()}
+        send={vi.fn()}
+        tradeOffers={[
+          {
+            offerId: "o1",
+            proposerId: "a",
+            recipientId: "b",
+            offeredCardIds: ["card-a"],
+            requestedCardIds: ["card-b"],
+            proposerPays: 0,
+            status: "OPEN",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Te han hecho una oferta")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Aceptar" })).toBeInTheDocument();
+  });
 });
