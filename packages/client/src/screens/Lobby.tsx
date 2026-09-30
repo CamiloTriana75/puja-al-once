@@ -8,6 +8,10 @@ interface Props {
   onCreate: (name: string) => void;
   onJoinByCode: (name: string, code: string) => void;
   onReady: () => void;
+  /** Mi propio sessionId (room.sessionId): para no ofrecer "expulsar" sobre mi fila. */
+  myId: string;
+  /** Expulsa a un jugador de la sala de espera (mensaje "kick" al servidor). */
+  onKick: (playerId: string) => void;
 }
 
 /**
@@ -170,7 +174,7 @@ function RoomCodePanel({ code, visibility }: { code: string; visibility: "privat
 }
 
 /** Elegir entre crear sala o unirse con un codigo, antes de pedir el nombre. */
-function EntryForm({ error, onCreate, onJoinByCode }: Omit<Props, "state" | "onReady">) {
+function EntryForm({ error, onCreate, onJoinByCode }: Pick<Props, "error" | "onCreate" | "onJoinByCode">) {
   const [mode, setMode] = useState<"create" | "join">("create");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -300,6 +304,17 @@ function ReadyCounter({ readyCount, connectedCount }: { readyCount: number; conn
   );
 }
 
+/** Icono de salida (expulsar), trazo 2 sobre 24x24 -- MASTER.md S7: SVG de Lucide, nunca emoji. */
+function KickIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
 /**
  * Una fila del roster -- reescrita para que el estado "listo" sea imposible
  * de no ver (el encargo explicito de esta tarea): antes era una etiqueta
@@ -315,7 +330,7 @@ function ReadyCounter({ readyCount, connectedCount }: { readyCount: number; conn
  * jugador "confirmandose", segundo de los dos elementos animados de esta
  * vista.
  */
-function PlayerRow({ player, isHost }: { player: PlayerView; isHost: boolean }) {
+function PlayerRow({ player, isHost, canKick, onKick }: { player: PlayerView; isHost: boolean; canKick: boolean; onKick: (playerId: string) => void }) {
   const reducedMotion = useReducedMotion();
 
   let stateBlock: React.ReactNode;
@@ -366,12 +381,29 @@ function PlayerRow({ player, isHost }: { player: PlayerView; isHost: boolean }) 
         {player.name}
         {isHost && <span className="ml-2 text-sm font-semibold normal-case text-lime">(anfitrión)</span>}
       </span>
+      {/* Expulsar: solo lo ve quien ES el anfitrion (canKick, no "esta fila
+          es la del anfitrion" -- el boton va en las filas ajenas) y nunca
+          sobre la propia. El servidor valida ambas condiciones de nuevo
+          (solo se expulsa en LOBBY y solo desde hostId): esto es solo la
+          puerta visual. Boton de icono a tamano completo (h-11, objetivo
+          tactil entero) con aria-label legible que menciona al jugador. */}
+      {canKick && (
+        <button
+          type="button"
+          onClick={() => onKick(player.playerId)}
+          className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center border-2 border-white/20 text-mute transition-colors duration-200 hover:border-danger hover:bg-danger hover:text-white"
+          aria-label={`Expulsar a ${player.name} de la sala`}
+          title={`Expulsar a ${player.name}`}
+        >
+          <KickIcon />
+        </button>
+      )}
       {stateBlock}
     </motion.li>
   );
 }
 
-export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) {
+export function Lobby({ state, error, onCreate, onJoinByCode, onReady, myId, onKick }: Props) {
   const [ready, setReady] = useState(false);
   const reducedMotion = useReducedMotion() ?? false;
 
@@ -411,7 +443,13 @@ export function Lobby({ state, error, onCreate, onJoinByCode, onReady }: Props) 
       <ul className="flex flex-col gap-px bg-white/10">
         <AnimatePresence initial={false}>
           {players.map((player) => (
-            <PlayerRow key={player.playerId} player={player} isHost={player.playerId === state.hostId} />
+            <PlayerRow
+              key={player.playerId}
+              player={player}
+              isHost={player.playerId === state.hostId}
+              canKick={myId === state.hostId && player.playerId !== myId}
+              onKick={onKick}
+            />
           ))}
         </AnimatePresence>
         {/* Los huecos libres se dibujan como huecos, nunca se omiten

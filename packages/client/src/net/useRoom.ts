@@ -223,6 +223,17 @@ export function useRoom(): Connection {
       setTradeOffers((previous) => [...previous.filter((item) => item.offerId !== offer.offerId), offer]);
     });
     joined.onMessage("error", (msg: { message: string }) => setStartError(msg.message));
+    // "kicked": el anfitrion te expulso del lobby. El servidor cierra el
+    // socket justo despues con code 4000 (salida consentida, ver
+    // connectionStatus.ts), asi que no hace falta un `leave()` aqui. Se
+    // sueltan room y state para volver a la portada con el aviso puesto: el
+    // mensaje se recibe ANTES que el cierre, asi que el error llega a
+    // Landing antes que el onLeave.
+    joined.onMessage("kicked", () => {
+      setRoom(null);
+      setState(null);
+      setStartError("Te expulsaron de la sala de espera.");
+    });
     // D8: cada reaccion se acumula con un id propio del cliente (el mensaje
     // del servidor no trae ninguno -- ver AuctionRoom.onReact, es
     // deliberadamente `{ playerId, emoji }` a secas). Auction.tsx la pasa

@@ -90,6 +90,8 @@ export default function App() {
               <Lobby
                 state={state}
                 error={startError}
+                myId={room?.sessionId ?? ""}
+                onKick={(playerId) => send("kick", { playerId })}
                 onCreate={(name) => void createRoom(name)}
                 onJoinByCode={(name, code) => void joinByCode(name, code)}
                 onReady={() => send("ready", {})}

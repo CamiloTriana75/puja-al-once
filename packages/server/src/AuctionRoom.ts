@@ -172,6 +172,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     this.onMessage("trade:create", (client, message: unknown) => this.onTradeCreate(client, message));
     this.onMessage("trade:accept", (client, message: unknown) => this.onTradeAccept(client, message));
     this.onMessage("trade:cancel", (client, message: unknown) => this.onTradeCancel(client, message));
+    this.onMessage("kick", (client, message: unknown) => this.onKick(client, message));
     this.sync();
   }
 
@@ -851,6 +852,45 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     if (this.game.phase !== "RESULTS") return;
     if (client.sessionId !== this.state.hostId) return;
     this.rematch();
+  }
+
+  /**
+   * El anfitrion expulsa a un jugador de la sala de espera. Solo en LOBBY
+   * (a mitad de partida no hay "expulsar": quien se va sostiene turnos y
+   * cartas ya repartidas, eso se arregla cerrando la sala y abriendo otra
+   * -- ver la pagina de Comunidad enlazada en el footer), solo desde el
+   * asiento del host, y nunca a si mismo.
+   *
+   * Quien sale se va con la misma forma que si hubiera cerrado la pestana
+   * del lobby: se le quita de `game.players` antes de soltar el socket, y
+   * `onLeave` entra despues por la rama de LOBBY como un no-op de limpieza.
+   * No hay ventana de reconexion: un expulsado no debe volver a entrar sin
+   * que el anfitrion se lo proponga. El cierre usa un close code de salida
+   * deliberada (4000, "consented") para que el cliente no lo interprete
+   * como caida y no ofrezca reconectar.
+   */
+  private onKick(client: Client, message: unknown): void {
+    if (this.game.phase !== "LOBBY") return;
+    if (client.sessionId !== this.state.hostId) return;
+    const playerId = (message as { playerId?: unknown } | null)?.playerId;
+    if (typeof playerId !== "string" || playerId === "") return;
+    if (playerId === client.sessionId) return;
+    if (!this.game.players.some((p) => p.playerId === playerId)) return;
+
+    const kicked = this.clients.find((candidate) => candidate.sessionId === playerId);
+    if (!kicked) return;
+
+    // Primero el aviso, luego el cierre: el socket de la victima recibe
+    // "kicked" antes de cerrarse, y `useRoom` pinta el "te expulsaron"
+    // antes de que `onLeave` (consented) devuelva el control a la portada.
+    kicked.send("kicked", { reason: "KICKED" });
+
+    this.game.players = this.game.players.filter((p) => p.playerId !== playerId);
+    this.ready.delete(playerId);
+    this.pendingRejoins.delete(playerId);
+    this.sync();
+
+    kicked.leave(4000);
   }
 
   /**
