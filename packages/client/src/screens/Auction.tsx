@@ -386,7 +386,7 @@ function SkipVote({
   );
 }
 
-/** Ventana de traspasos entre el mediocampo y el ataque (AuctionRoom.TRANSFER_MARKET_SLOT_INDEX). */
+/** Ventanas de traspasos: tras la defensa (slotIndex 4) y tras el mediocampo (slotIndex 7), ver AuctionRoom.TRANSFER_MARKET_SLOT_INDEXES. */
 function TransferMarket({
   state,
   myId,
@@ -400,6 +400,8 @@ function TransferMarket({
 }) {
   const me = state.players.get(myId);
   const marketConfirmed = state.marketReady?.get(myId) === true;
+  // El mercado deja slotIndex en el ultimo hueco cerrado: 4 = RB (tras la defensa).
+  const afterDefence = state.slotIndex <= 4;
   const [offeredSelection, setOfferedSelection] = useState("");
   const [requestedSelection, setRequestedSelection] = useState("");
   const [payment, setPayment] = useState("0");
@@ -448,7 +450,7 @@ function TransferMarket({
         <div className="max-w-2xl">
           <h1 className="font-headline text-[clamp(2rem,4.4vw,3.4rem)] font-bold leading-[1.02] tracking-[-0.05em]">Mercado de transferencias</h1>
           <p className="mt-3 font-copy text-[1.12rem] leading-[1.55] text-white/90">
-            La defensa y el mediocampo ya están cerrados: reajusta tu once antes del ataque. Cada operación cambia un jugador por otro y el dinero es opcional. Todo el mercado ve las ofertas y los saldos.
+            {afterDefence ? "Mercado 1 de 2. La defensa ya está cerrada: reajusta tu once antes del mediocampo." : "Mercado 2 de 2. El mediocampo ya está cerrado: reajusta tu once antes del ataque."} Cada operación cambia un jugador por otro y el dinero es opcional. Todo el mercado ve las ofertas y los saldos.
           </p>
         </div>
         <button

@@ -25,19 +25,17 @@ const DEFAULT_DATASET: CardSource[] = parseDataset(JSON.parse(readFileSync(DATAS
 const matchmakeLimiter = new RateLimiter();
 
 /**
- * Indice de `SLOTS` al que se abre el mercado de traspasos: en cuanto termina
- * el MEDIOCAMPO (CDM, CM y CAM) y antes de empezar el extremo izquierdo
- * (`advance()` lo entra al cerrar el hueco 7 = CAM, y `onMarketContinue`
- * arranca la ronda 8 = LW). Asi cada uno llega al mercado con la defensa y el
- * mediocampo ya formados y solo le queda el ataque por subastar.
+ * Indices de `SLOTS` ANTES de los que se abre un mercado de traspasos. Hay dos
+ * por partida:
+ *  - 5 (CDM): al cerrar la DEFENSA (el hueco 4 = RB), antes del mediocampo.
+ *  - 8 (LW): al cerrar el MEDIOCAMPO (el hueco 7 = CAM), antes del ataque.
  *
- * El numero va escrito en los dos lados del mismo cruce -- el que abre el
- * mercado y el que reanuda la partida -- y ambos tienen que decir el mismo,
- * asi que salen de aqui los dos en vez de repetir un 8 magico: si se cambia
- * uno y no el otro, el mercado cerraria y `startRound` saltaria a un hueco
- * que no es el siguiente.
+ * `advance()` entra al mercado cuando el siguiente hueco esta en este
+ * conjunto, y `onMarketContinue` reanuda la partida en `slotIndex + 1`: el
+ * mercado deja `slotIndex` en el ultimo hueco cerrado, asi que el cruce se
+ * decide en un solo sitio y no puede desincronizarse entre abrir y reanudar.
  */
-const TRANSFER_MARKET_SLOT_INDEX = 8;
+const TRANSFER_MARKET_SLOT_INDEXES: ReadonlySet<number> = new Set([5, 8]);
 
 export interface AuctionRoomOptions {
   /** La privacidad es explícita; todas las creaciones conservan el valor privado por defecto. */
@@ -446,7 +444,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     const connectedPlayers = this.game.players.filter((candidate) => candidate.connected);
     if (connectedPlayers.every((candidate) => this.game.marketReady?.[candidate.playerId] === true)) {
       this.game.marketReady = {};
-      this.startRound(TRANSFER_MARKET_SLOT_INDEX);
+      this.startRound(this.game.slotIndex + 1);
     }
   }
 
@@ -805,7 +803,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       return;
     }
 
-    if (next === TRANSFER_MARKET_SLOT_INDEX) {
+    if (TRANSFER_MARKET_SLOT_INDEXES.has(next)) {
       this.enterTransferMarket();
       return;
     }

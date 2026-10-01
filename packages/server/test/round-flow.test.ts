@@ -261,13 +261,14 @@ describe("voto de salto", () => {
 });
 
 describe("mercado de transferencias", () => {
-  it("pausa la partida al terminar el mediocampo y antes de abrir el extremo izquierdo", async () => {
-    const { room, clients, hooks } = await startedRoom();
-
-    // SLOTS = GK, LB, CB1, CB2, RB, CDM, CM, CAM, LW, ...: las 8 rondas de la
-    // defensa y el mediocampo (0-7) se juegan enteras y al cerrar CAM entra el
-    // mercado, justo antes del extremo izquierdo.
-    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
+  // Cierra `count` huecos seguidos: cada cliente gana una carta por hueco.
+  async function playSlots(
+    room: Awaited<ReturnType<typeof startedRoom>>["room"],
+    clients: Awaited<ReturnType<typeof startedRoom>>["clients"],
+    hooks: Awaited<ReturnType<typeof startedRoom>>["hooks"],
+    count: number,
+  ) {
+    for (let slot = 0; slot < count; slot++) {
       for (const client of clients) {
         client.send("bid", { amount: room.state.minimumBid });
         await room.waitForNextPatch();
@@ -277,30 +278,56 @@ describe("mercado de transferencias", () => {
         await room.waitForNextPatch();
       }
     }
+  }
 
-    expect(room.state.slotIndex).toBe(7);
+  async function confirmMarket(
+    room: Awaited<ReturnType<typeof startedRoom>>["room"],
+    clients: Awaited<ReturnType<typeof startedRoom>>["clients"],
+  ) {
+    for (const client of clients) {
+      client.send("market:continue", {});
+      await room.waitForNextPatch();
+    }
+  }
+
+  it("hay dos mercados por partida: al cerrar la defensa y al cerrar el mediocampo", async () => {
+    const { room, clients, hooks } = await startedRoom();
+
+    // SLOTS = GK, LB, CB1, CB2, RB, CDM, CM, CAM, LW, ...
+    // Primer mercado: tras RB (hueco 4), antes de abrir el CDM.
+    await playSlots(room, clients, hooks, 5);
     expect(room.state.phase).toBe("TRANSFER_MARKET");
-    expect(room.state.currentSlot).toBe("CAM");
+    expect(room.state.slotIndex).toBe(4);
+    expect(room.state.currentSlot).toBe("RB");
 
     clients[0]!.send("market:continue", {});
     await room.waitForNextPatch();
     expect(room.state.phase).toBe("TRANSFER_MARKET");
     expect(room.state.marketReady.get(clients[0]!.sessionId)).toBe(true);
 
-    for (const client of clients.slice(1)) {
-      client.send("market:continue", {});
-      await room.waitForNextPatch();
-    }
+    await confirmMarket(room, clients.slice(1));
+    expect(room.state.phase).toBe("BIDDING");
+    expect(room.state.slotIndex).toBe(5);
+    expect(room.state.currentSlot).toBe("CDM");
 
+    // Segundo mercado: tras CAM (hueco 7), antes de abrir el extremo izquierdo.
+    await playSlots(room, clients, hooks, 3);
+    expect(room.state.phase).toBe("TRANSFER_MARKET");
+    expect(room.state.slotIndex).toBe(7);
+    expect(room.state.currentSlot).toBe("CAM");
+    // El segundo mercado empieza limpio: nadie llega ya confirmado.
+    expect(room.state.marketReady.size).toBe(0);
+
+    await confirmMarket(room, clients);
     expect(room.state.phase).toBe("BIDDING");
     expect(room.state.slotIndex).toBe(8);
     expect(room.state.currentSlot).toBe("LW");
-  }, 60_000);
+  }, 90_000);
 
   it("crea una oferta visible para toda la sala y la acepta de forma atomica", async () => {
     const { room, clients } = await startedRoom();
 
-    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
+    for (let slotIndex = 0; slotIndex <= 4; slotIndex++) {
       for (const client of clients) {
         client.send("bid", { amount: room.state.minimumBid });
         await room.waitForNextPatch();
