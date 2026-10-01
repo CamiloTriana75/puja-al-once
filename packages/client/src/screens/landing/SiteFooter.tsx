@@ -1,4 +1,5 @@
-import { ArrowUp, MessageSquarePlus } from "lucide-react";
+import { ArrowUp, Heart, MessageSquarePlus } from "lucide-react";
+import { DONATE_URL } from "../../config/donate.js";
 import { openFeedback } from "../../net/feedback.js";
 import { Wordmark } from "../../components/Brand.js";
 import { CONTAINER } from "./ui.js";
@@ -65,6 +66,17 @@ export function SiteFooter({ onTop }: { onTop: () => void }) {
                     <MessageSquarePlus className="size-4" aria-hidden="true" />
                     Enviar comentarios
                   </button>
+                </li>
+              )}
+              {group.title === "Comunidad" && DONATE_URL && (
+                <li>
+                  <a
+                    href="#apoyar"
+                    className="inline-flex min-h-11 items-center gap-2 font-copy text-[1.05rem] text-white/80 transition-colors hover:text-white"
+                  >
+                    <Heart className="size-4" aria-hidden="true" />
+                    Apoyar el proyecto
+                  </a>
                 </li>
               )}
             </ul>

@@ -17,6 +17,7 @@ import { Numbers } from "./landing/Numbers.js";
 import { RoundLoop } from "./landing/RoundLoop.js";
 import { Seasons } from "./landing/Seasons.js";
 import { SiteFooter } from "./landing/SiteFooter.js";
+import { Support } from "./landing/Support.js";
 import { CONTAINER, EASE_OUT, PillButton, SectionTitle } from "./landing/ui.js";
 
 interface Props {
@@ -540,6 +541,7 @@ export function Landing({ error, onCreate, onJoinByCode, onJoinPublicRoom }: Pro
           </PhoneFrame>
         }
       />
+      <Support />
       <Faq />
       <EnterSection
         error={error}

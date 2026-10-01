@@ -1,0 +1,21 @@
+/**
+ * Enlace de donaciones (PayPal). Se fija al compilar con VITE_DONATE_URL: sin
+ * el, el apartado de apoyo y su enlace del pie no se pintan, asi que nunca sale
+ * un boton muerto ni una cuenta inventada.
+ *
+ * Solo se acepta HTTPS hacia PayPal (paypal.me y paypal.com): si la variable
+ * trae otra cosa, se ignora en vez de enlazar a un sitio que no es.
+ */
+const PAYPAL_HOSTS = new Set(["paypal.me", "www.paypal.me", "paypal.com", "www.paypal.com"]);
+
+export function parseDonateUrl(raw: unknown): string | null {
+  if (typeof raw !== "string" || raw.trim() === "") return null;
+  try {
+    const url = new URL(raw.trim());
+    return url.protocol === "https:" && PAYPAL_HOSTS.has(url.hostname) ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+export const DONATE_URL: string | null = parseDonateUrl(import.meta.env.VITE_DONATE_URL);

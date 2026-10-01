@@ -54,3 +54,13 @@ services:
       # para reabrir. Las partidas en curso no se cortan.
       - key: MAINTENANCE_MODE
         value: "0"
+      # Enlace de PayPal para el apartado "Apoya el proyecto" de la portada
+      # (https://www.paypal.me/tu-usuario). Se incrusta al compilar el cliente:
+      # tras cambiarlo hay que redesplegar. Vacio = el apartado no se muestra.
+      - key: VITE_DONATE_URL
+        sync: false
+      # Ponlo a "1" SOLO cuando el trafico pase por Cloudflare (dominio propio con
+      # proxy activado): el servidor usa entonces CF-Connecting-IP como IP del
+      # jugador para los limites. Ver docs/PRODUCCION.md.
+      - key: TRUST_CLOUDFLARE
+        value: "0"

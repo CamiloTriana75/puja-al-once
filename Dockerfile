@@ -70,6 +70,10 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS client-build
 COPY packages/shared/src packages/shared/src
 COPY packages/client packages/client
+# Enlace de donaciones (opcional): Vite lo incrusta al compilar. Render pasa las
+# variables del servicio como build args; sin el, el apartado de apoyo no se pinta.
+ARG VITE_DONATE_URL
+ENV VITE_DONATE_URL=$VITE_DONATE_URL
 RUN pnpm --filter @fut/client build
 
 # --- Etapa "server-build": compila shared + server con tsc -----------------
