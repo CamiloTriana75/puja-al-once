@@ -1,5 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { Check, Copy, Crown, Globe, Hourglass, Lock, Share2, UserMinus, UserPlus, WifiOff } from "lucide-react";
 import { useEffect, useState } from "react";
+import { GameHeader } from "../components/game/GameHeader.js";
 import type { ClientState, PlayerView } from "../net/types.js";
 
 interface Props {
@@ -14,24 +16,15 @@ interface Props {
   onKick: (playerId: string) => void;
 }
 
-/**
- * Fijo a la regla real del servidor: `AuctionRoom.maxClients = 4` (Task B3
- * -- "de 2 a 6 jugadores" -- quedo cancelada el 2026-09-08; la beta se
- * queda en 4). Vive aqui y no se deriva de nada del Schema porque el
- * Schema no expone maxClients -- si algun dia vuelve a subir, este es el
- * unico sitio que hay que tocar en el cliente.
- */
+/** Fijo a la regla real del servidor: `AuctionRoom.maxClients = 4`. */
 const MAX_PLAYERS = 4;
 /** AuctionRoom.allConnectedPlayersReady() exige minimo 2 conectados. */
 const MIN_PLAYERS_TO_START = 2;
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 /**
- * Que falta exactamente para poder arrancar -- design-system/pages/sala-espera.md:
- * "Una frase que diga exactamente que bloquea el arranque... Nunca un boton
- * deshabilitado sin explicacion." Espejo en el cliente de
- * AuctionRoom.allConnectedPlayersReady(): connectedPlayers.length >= 2 y
- * todos los conectados con `ready`. Los desconectados NUNCA bloquean --
- * igual que el servidor, que solo evalua sobre `p.connected`.
+ * Que falta exactamente para arrancar: espejo de allConnectedPlayersReady().
+ * Los desconectados nunca bloquean, igual que en el servidor.
  */
 function startBlockReason(players: PlayerView[]): string | null {
   const connected = players.filter((p) => p.connected);
@@ -46,57 +39,12 @@ function startBlockReason(players: PlayerView[]): string | null {
   return null;
 }
 
-/** Icono de copiar, trazo 2 sobre viewBox 24x24 -- MASTER.md S7: SVG de Lucide, nunca emojis. */
-function CopyIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <rect x="9" y="9" width="13" height="13" rx="2" />
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-    </svg>
-  );
+function initials(name: string): string {
+  return name.trim().split(/\s+/).map((part) => part[0] ?? "").slice(0, 2).join("").toUpperCase() || "?";
 }
 
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-function ShareIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <circle cx="18" cy="5" r="3" />
-      <circle cx="6" cy="12" r="3" />
-      <circle cx="18" cy="19" r="3" />
-      <path d="m8.7 10.7 6.6-4.4M8.7 13.3l6.6 4.4" />
-    </svg>
-  );
-}
-
-/** Icono de hueco libre (usuario en trazo discontinuo), trazo 2 sobre 24x24 -- MASTER.md S7: SVG, nunca emoji. */
-function EmptySeatIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" strokeDasharray="3 3" className="h-5 w-5 shrink-0" aria-hidden="true">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-/** Icono de reloj (esperando/reconectando), trazo 2 sobre 24x24 -- MASTER.md S7: SVG, nunca emoji. Distingue "esperando" de "listo" tambien por forma, no solo por color/texto. */
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 3" />
-    </svg>
-  );
-}
-
-/** Codigo de sala en grande, con boton de copiar. Vive en su propio panel para que no se confunda con el resto de la lista de espera. */
-function RoomCodePanel({ code, visibility }: { code: string; visibility: "private" | "public" }) {
+/** El billete de la sala: el código en fichas grandes, para dictarlo por la llamada. */
+function RoomTicket({ code, visibility }: { code: string; visibility: "private" | "public" }) {
   const [feedback, setFeedback] = useState<"code" | "invite" | "fallback" | null>(null);
 
   useEffect(() => {
@@ -118,7 +66,7 @@ function RoomCodePanel({ code, visibility }: { code: string; visibility: "privat
     const url = new URL(`/sala/${code}`, window.location.origin).toString();
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Subasta Futbolera", text: "¡Únete a mi sala!", url });
+        await navigator.share({ title: "Futbolera", text: "¡Únete a mi sala!", url });
         setFeedback("invite");
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
@@ -126,7 +74,6 @@ function RoomCodePanel({ code, visibility }: { code: string; visibility: "privat
       }
       return;
     }
-
     try {
       await navigator.clipboard.writeText(url);
       setFeedback("invite");
@@ -136,362 +83,243 @@ function RoomCodePanel({ code, visibility }: { code: string; visibility: "privat
   };
 
   return (
-    <div className="panel flex flex-wrap items-center justify-between gap-3 bg-ink p-4">
-      <div>
-        <p className="font-display text-xs font-bold uppercase tracking-[0.12em] text-mute">Código de la sala</p>
-        <p className="tnum font-display text-[clamp(2rem,8vw,3rem)] font-black tracking-[0.08em] text-lime">{code}</p>
-        <p className={`mt-1 font-body text-xs font-semibold ${visibility === "public" ? "text-lime" : "text-mute"}`}>
-          {visibility === "public" ? "Pública · aparece en el vestuario" : "Privada · comparte el código"}
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
+    <section aria-labelledby="ticket-title" className="rounded-[2rem] bg-white p-6 shadow-[0_30px_60px_-40px_rgba(12,36,28,.55)] ring-1 ring-line sm:p-8">
+      <h2 id="ticket-title" className="font-copy text-[1.05rem] text-slate">Código de la sala</h2>
+      <p className="mt-3 flex gap-2" aria-label={`Código ${code.split("").join(" ")}`}>
+        {code.split("").map((char, index) => (
+          <span
+            key={`${char}-${index}`}
+            aria-hidden="true"
+            className="grid h-[clamp(3.4rem,6vw,4.4rem)] flex-1 place-items-center rounded-2xl bg-forest font-headline text-[clamp(1.7rem,3.2vw,2.4rem)] font-bold text-gold"
+          >
+            {char}
+          </span>
+        ))}
+      </p>
+      <p className="mt-4 flex items-center gap-2 font-copy text-[1rem] text-slate">
+        {visibility === "public" ? <Globe className="h-4 w-4 text-pitch" aria-hidden="true" /> : <Lock className="h-4 w-4 text-pitch" aria-hidden="true" />}
+        {visibility === "public" ? "Pública: aparece en el vestuario mientras haya sitio." : "Privada: solo entra quien tenga el código."}
+      </p>
+      <div className="mt-6 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => void copyCode()}
-          className="flex h-11 w-11 cursor-pointer items-center justify-center border-2 border-white/20 text-white transition-colors duration-200 hover:border-lime hover:text-lime sm:w-auto sm:gap-2 sm:px-3"
+          className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-canvas font-copy text-[1rem] font-semibold text-forest ring-1 ring-line transition-colors duration-200 hover:ring-forest"
           aria-label="Copiar código de sala"
-          title="Copiar código"
         >
-          {feedback === "code" ? <CheckIcon /> : <CopyIcon />}
-          <span className="hidden font-body text-sm font-semibold sm:inline">Copiar</span>
+          {feedback === "code" ? <Check className="h-5 w-5 text-pitch" aria-hidden="true" /> : <Copy className="h-5 w-5" aria-hidden="true" />}
+          Copiar
         </button>
         <button
           type="button"
           onClick={() => void shareInvite()}
-          className="flex h-11 w-11 cursor-pointer items-center justify-center border-2 border-lime bg-lime text-ink transition-colors duration-200 hover:border-white hover:bg-white sm:w-auto sm:gap-2 sm:px-3"
+          className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-pitch font-copy text-[1rem] font-semibold text-white transition-colors duration-200 hover:bg-[#106E3D]"
           aria-label="Compartir invitación a la sala"
-          title="Compartir invitación"
         >
-          <ShareIcon />
-          <span className="hidden font-body text-sm font-bold sm:inline">Invitar</span>
+          <Share2 className="h-5 w-5" aria-hidden="true" />
+          Invitar
         </button>
       </div>
-      <p aria-live="polite" className="min-h-4 w-full font-body text-xs text-mute">
-        {feedback === "code" ? "Código copiado" : feedback === "invite" ? "Invitación lista para compartir" : feedback === "fallback" ? "Comparte el código visible con tu grupo" : ""}
+      <p aria-live="polite" className="mt-3 min-h-6 font-copy text-[0.95rem] text-pitch">
+        {feedback === "code" ? "Código copiado." : feedback === "invite" ? "Enlace listo para compartir." : feedback === "fallback" ? "Dicta el código por la llamada." : ""}
       </p>
-    </div>
+    </section>
   );
 }
 
-/** Elegir entre crear sala o unirse con un codigo, antes de pedir el nombre. */
-function EntryForm({ error, onCreate, onJoinByCode }: Pick<Props, "error" | "onCreate" | "onJoinByCode">) {
-  const [mode, setMode] = useState<"create" | "join">("create");
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!name.trim()) return;
-    if (mode === "create") onCreate(name.trim());
-    else if (code.trim()) onJoinByCode(name.trim(), code.trim());
-  };
+/** El marcador de listos: lo que más importa mientras se espera. */
+function ReadyBoard({ players }: { players: PlayerView[] }) {
+  const reducedMotion = useReducedMotion() ?? false;
+  const connected = players.filter((p) => p.connected);
+  const ready = connected.filter((p) => p.ready);
+  const allReady = connected.length >= MIN_PLAYERS_TO_START && ready.length === connected.length;
 
   return (
-    <form className="mx-auto mt-24 flex max-w-md flex-col gap-4 p-6" onSubmit={submit}>
-      <h1 className="font-display text-[clamp(3rem,10vw,6rem)] font-black uppercase leading-[0.85] tracking-tighter">
-        <span className="text-lime">Subasta</span>
-        <br />
-        <span className="text-white">Futbolera</span>
-      </h1>
-
-      <div role="tablist" aria-label="Cómo quieres entrar" className="grid grid-cols-2 gap-px bg-white/10">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "create"}
-          onClick={() => setMode("create")}
-          className={`h-12 cursor-pointer font-display text-lg font-bold uppercase tracking-wide transition-colors duration-200 ${
-            mode === "create" ? "bg-lime text-ink" : "bg-ink text-mute hover:text-white"
-          }`}
+    <section aria-label="Jugadores listos" className="on-dark rounded-[2rem] bg-forest p-6 text-white sm:p-8">
+      <div className="flex items-end gap-4">
+        <motion.p
+          key={ready.length}
+          initial={reducedMotion ? false : { y: 10, opacity: 0.3 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, ease: EASE }}
+          aria-hidden="true"
+          className={`tnum font-headline text-[clamp(3.4rem,6vw,4.8rem)] font-bold leading-none tracking-[-0.06em] ${allReady ? "text-gold" : "text-white"}`}
         >
-          Crear sala
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "join"}
-          onClick={() => setMode("join")}
-          className={`h-12 cursor-pointer font-display text-lg font-bold uppercase tracking-wide transition-colors duration-200 ${
-            mode === "join" ? "bg-lime text-ink" : "bg-ink text-mute hover:text-white"
-          }`}
-        >
-          Unirse con código
-        </button>
+          {ready.length}/{connected.length}
+        </motion.p>
+        <p className="pb-2 font-copy text-[1.1rem] leading-snug text-white/85">{allReady ? "Todos listos: arranca" : "listos para empezar"}</p>
       </div>
-
-      <label className="sr-only" htmlFor="player-name">
-        Tu nombre
-      </label>
-      <input
-        id="player-name"
-        className="h-12 border-2 border-white/20 bg-ink px-3 font-display text-xl font-bold text-white placeholder:text-mute"
-        placeholder="Tu nombre"
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        autoFocus
-      />
-
-      {mode === "join" && (
-        <>
-          <label className="sr-only" htmlFor="room-code">
-            Código de la sala
-          </label>
-          <input
-            id="room-code"
-            className="tnum h-12 border-2 border-white/20 bg-ink px-3 font-display text-xl font-bold uppercase tracking-[0.2em] text-white placeholder:text-mute placeholder:tracking-normal"
-            placeholder="Código de 5 letras"
-            value={code}
-            onChange={(event) => setCode(event.target.value.toUpperCase())}
-            maxLength={6}
-          />
-        </>
-      )}
-
-      {error && <p className="font-body text-sm font-semibold text-danger">{error}</p>}
-
-      <button
-        type="submit"
-        className="h-12 cursor-pointer bg-lime font-display text-xl font-black uppercase tracking-wide text-ink transition-colors duration-200 hover:bg-white"
-      >
-        {mode === "create" ? "Crear sala" : "Entrar"}
-      </button>
-    </form>
-  );
-}
-
-/**
- * Contador enorme "N de M listos" -- el requisito explicito del encargo:
- * "quien ya pulso Listo tiene que ser imposible de no ver". Vive encima de
- * la lista, a la misma escala tipografica que la cifra heroica de
- * MASTER.md S3 (la del precio en la subasta), porque es el dato mas
- * importante de esta pantalla mientras se espera.
- *
- * Cuenta sobre CONECTADOS (mismo universo que startBlockReason /
- * AuctionRoom.allConnectedPlayersReady): un jugador desconectado no cuenta
- * como "falta por estar listo", ya esta descontado del denominador.
- *
- * Uno de los DOS elementos animados de esta vista (MASTER.md S5): al subir
- * el numero de listos, un destello lima breve + una subida de 6px marca el
- * cambio -- igual de discreto que "puja aceptada" en la tabla de movimiento
- * de partida. Sin movimiento reducido, el numero simplemente cambia.
- */
-function ReadyCounter({ readyCount, connectedCount }: { readyCount: number; connectedCount: number }) {
-  const allReady = connectedCount > 0 && readyCount === connectedCount;
-  return (
-    <div className={`panel flex items-center gap-4 px-6 py-5 ${allReady ? "bg-lime" : "bg-ink"}`}>
-      <motion.p
-        key={readyCount}
-        initial={{ opacity: 0.4, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className={`tnum font-display text-[clamp(3rem,11vw,4.5rem)] font-black leading-none ${allReady ? "text-ink" : "text-lime"}`}
-        aria-hidden="true"
-      >
-        {readyCount}/{connectedCount}
-      </motion.p>
-      <div>
-        <p className={`font-display text-2xl font-black uppercase leading-none tracking-tight ${allReady ? "text-ink" : "text-white"}`}>
-          {allReady ? "Todos listos" : "Listos para empezar"}
-        </p>
-        {/* aria-live: el numero de arriba es aria-hidden porque este texto ya lo dice completo para lectores de pantalla. */}
-        <p aria-live="polite" className={`font-body text-sm font-semibold ${allReady ? "text-ink/70" : "text-mute"}`}>
-          {connectedCount === 0
-            ? "Esperando jugadores…"
-            : `${readyCount} de ${connectedCount} jugador${connectedCount === 1 ? "" : "es"} conectado${connectedCount === 1 ? "" : "s"} ${readyCount === 1 ? "ha" : "han"} pulsado listo.`}
-        </p>
+      <div aria-hidden="true" className="mt-5 flex gap-1.5">
+        {connected.map((player) => (
+          <span key={player.playerId} className={`h-2 flex-1 rounded-full transition-colors duration-300 ${player.ready ? "bg-gold" : "bg-white/15"}`} />
+        ))}
       </div>
-    </div>
+      <p aria-live="polite" className="sr-only">
+        {`${ready.length} de ${connected.length} jugador${connected.length === 1 ? "" : "es"} conectado${connected.length === 1 ? "" : "s"} ${ready.length === 1 ? "ha" : "han"} pulsado listo.`}
+      </p>
+    </section>
   );
 }
 
-/** Icono de salida (expulsar), trazo 2 sobre 24x24 -- MASTER.md S7: SVG de Lucide, nunca emoji. */
-function KickIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <path d="m16 17 5-5-5-5" />
-      <path d="M21 12H9" />
-    </svg>
-  );
-}
-
-/**
- * Una fila del roster -- reescrita para que el estado "listo" sea imposible
- * de no ver (el encargo explicito de esta tarea): antes era una etiqueta
- * pequena a la derecha del nombre, ahora el bloque ENTERO de la fila cambia
- * a lima solido con icono + texto grande cuando el jugador esta listo, del
- * mismo peso visual que la etiqueta "GANANDO" de la subasta pero a escala
- * de fila completa, no de chip.
- *
- * `layout` (Framer) anima la reordenacion si el array de jugadores cambia
- * de orden entre renders (no ocurre hoy -- el servidor no reordena -- pero
- * cubre el caso sin coste); la transicion real que se ve es el color/icono
- * de fondo cruzando de --ink a --lime cuando `ready` pasa a true: el
- * jugador "confirmandose", segundo de los dos elementos animados de esta
- * vista.
- */
-function PlayerRow({ player, isHost, canKick, onKick }: { player: PlayerView; isHost: boolean; canKick: boolean; onKick: (playerId: string) => void }) {
-  const reducedMotion = useReducedMotion();
-
-  let stateBlock: React.ReactNode;
+function SeatState({ player }: { player: PlayerView }) {
   if (player.rejoinPending) {
-    stateBlock = (
-      <span className="flex h-11 shrink-0 items-center gap-2 border-2 border-white/20 px-4 font-display text-sm font-black uppercase tracking-wide text-mute">
-        <ClockIcon />
+    return (
+      <span className="flex w-fit items-center gap-1.5 rounded-full bg-canvas px-3 py-1 font-copy text-[0.92rem] font-semibold text-slate ring-1 ring-line">
+        <Hourglass className="h-4 w-4" aria-hidden="true" />
         Reconectando
       </span>
     );
-  } else if (!player.connected) {
-    stateBlock = (
-      <span className="flex h-11 shrink-0 items-center gap-2 border-2 border-danger/60 px-4 font-display text-sm font-black uppercase tracking-wide text-danger">
+  }
+  if (!player.connected) {
+    return (
+      <span className="flex w-fit items-center gap-1.5 rounded-full bg-alert/10 px-3 py-1 font-copy text-[0.92rem] font-semibold text-alert">
+        <WifiOff className="h-4 w-4" aria-hidden="true" />
         Desconectado
       </span>
     );
-  } else if (player.ready) {
-    stateBlock = (
-      <motion.span
-        layout="position"
-        initial={reducedMotion ? false : { scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="flex h-11 shrink-0 items-center gap-2 bg-lime px-4 font-display text-sm font-black uppercase tracking-wide text-ink"
-      >
-        <CheckIcon />
+  }
+  if (player.ready) {
+    return (
+      <span className="flex w-fit items-center gap-1.5 rounded-full bg-pitch px-3 py-1 font-copy text-[0.92rem] font-semibold text-white">
+        <Check className="h-4 w-4" aria-hidden="true" />
         Listo
-      </motion.span>
-    );
-  } else {
-    stateBlock = (
-      <span className="flex h-11 shrink-0 items-center gap-2 border-2 border-white/20 px-4 font-display text-sm font-black uppercase tracking-wide text-mute">
-        <ClockIcon />
-        Esperando
       </span>
     );
   }
+  return (
+    <span className="flex w-fit items-center gap-1.5 rounded-full bg-canvas px-3 py-1 font-copy text-[0.92rem] font-semibold text-slate ring-1 ring-line">
+      <Hourglass className="h-4 w-4" aria-hidden="true" />
+      Esperando
+    </span>
+  );
+}
 
+function Seat({ player, isHost, isMe, canKick, onKick }: { player: PlayerView; isHost: boolean; isMe: boolean; canKick: boolean; onKick: (playerId: string) => void }) {
+  const reducedMotion = useReducedMotion();
   return (
     <motion.li
       layout
-      initial={reducedMotion ? false : { opacity: 0, x: -16 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${player.ready ? "bg-lime/10" : "bg-ink"}`}
+      initial={reducedMotion ? false : { opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: EASE }}
+      className={`relative flex min-h-36 flex-col justify-between gap-4 rounded-[1.5rem] p-5 transition-[background-color,box-shadow] duration-300 ${
+        player.ready && player.connected ? "bg-white shadow-[0_22px_40px_-28px_rgba(21,131,74,.9)] ring-2 ring-pitch" : "bg-white ring-1 ring-line"
+      }`}
     >
-      <span className="font-display text-xl font-bold uppercase text-white">
-        {player.name}
-        {isHost && <span className="ml-2 text-sm font-semibold normal-case text-lime">(anfitrión)</span>}
-      </span>
-      {/* Expulsar: solo lo ve quien ES el anfitrion (canKick, no "esta fila
-          es la del anfitrion" -- el boton va en las filas ajenas) y nunca
-          sobre la propia. El servidor valida ambas condiciones de nuevo
-          (solo se expulsa en LOBBY y solo desde hostId): esto es solo la
-          puerta visual. Boton de icono a tamano completo (h-11, objetivo
-          tactil entero) con aria-label legible que menciona al jugador. */}
-      {canKick && (
-        <button
-          type="button"
-          onClick={() => onKick(player.playerId)}
-          className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center border-2 border-white/20 text-mute transition-colors duration-200 hover:border-danger hover:bg-danger hover:text-white"
-          aria-label={`Expulsar a ${player.name} de la sala`}
-          title={`Expulsar a ${player.name}`}
-        >
-          <KickIcon />
-        </button>
-      )}
-      {stateBlock}
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className={`grid h-12 w-12 shrink-0 place-items-center rounded-full font-headline text-[1rem] font-bold ${isMe ? "bg-gold text-forest" : "bg-forest text-white"}`}>
+          {initials(player.name)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-copy text-[1.15rem] font-semibold text-forest">
+            {player.name}
+            {isMe && <span className="ml-1.5 font-normal text-slate">(tú)</span>}
+          </p>
+          {isHost && (
+            <p className="mt-0.5 flex items-center gap-1 font-copy text-[0.92rem] text-gold-ink">
+              <Crown className="h-4 w-4" aria-hidden="true" />
+              Anfitrión
+            </p>
+          )}
+        </div>
+        {/* Solo el anfitrion lo ve, y nunca sobre su propia fila. El servidor lo vuelve a validar. */}
+        {canKick && (
+          <button
+            type="button"
+            onClick={() => onKick(player.playerId)}
+            className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-full text-slate transition-colors duration-200 hover:bg-alert/10 hover:text-alert"
+            aria-label={`Expulsar a ${player.name} de la sala`}
+            title={`Expulsar a ${player.name}`}
+          >
+            <UserMinus className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+      <SeatState player={player} />
     </motion.li>
   );
 }
 
-export function Lobby({ state, error, onCreate, onJoinByCode, onReady, myId, onKick }: Props) {
+export function Lobby({ state, error, onReady, myId, onKick }: Props) {
   const [ready, setReady] = useState(false);
   const reducedMotion = useReducedMotion() ?? false;
 
-  // "ready" es optimista: se marca al pulsar, antes de que el servidor
-  // conteste. Si el servidor rechaza el arranque (p.ej. el mazo no alcanza
-  // para el hueco -- ver AuctionRoom.tryStartRound, que hace
-  // broadcast("error", ...) y limpia su propio `ready` para poder
-  // reintentar), sin este efecto el boton se queda inutilizable para
-  // siempre del lado del cliente aunque el servidor ya haya vuelto a
-  // aceptar "ready".
+  // "ready" es optimista. Si el servidor rechaza el arranque (por ejemplo, el
+  // mazo no alcanza), limpia su `ready` y manda error: el boton vuelve a valer.
   useEffect(() => {
     if (error) setReady(false);
   }, [error]);
 
-  if (!state) {
-    return <EntryForm error={error} onCreate={onCreate} onJoinByCode={onJoinByCode} />;
-  }
+  // La portada (Landing) cubre el caso sin sala.
+  if (!state) return null;
 
   const players = [...state.players.values()];
+  // El servidor manda: un jugador que vuelve a entrar ya listo no ve el botón activo.
+  const iAmReady = ready || (state.players.get(myId)?.ready ?? false);
   const emptySeats = Math.max(0, MAX_PLAYERS - players.length);
   const blockReason = startBlockReason(players);
-  const connectedPlayers = players.filter((p) => p.connected);
-  const readyPlayers = connectedPlayers.filter((p) => p.ready);
 
   return (
-    <div className="mx-auto mt-24 flex max-w-md flex-col gap-4 p-6">
-      <RoomCodePanel code={state.roomCode} visibility={state.visibility ?? "private"} />
+    <div className="min-h-screen bg-canvas text-forest">
+      <GameHeader roomCode={state.roomCode} visibility={state.visibility}>
+        <p className="truncate text-center font-copy text-[1rem] font-semibold text-forest">Sala de espera</p>
+      </GameHeader>
 
-      {/* El requisito explicito de este encargo: "quien ya pulso Listo
-          tiene que ser imposible de no ver". El contador va ANTES de la
-          lista, a la misma escala que la cifra heroica de MASTER.md S3. */}
-      <ReadyCounter readyCount={readyPlayers.length} connectedCount={connectedPlayers.length} />
+      <div className="mx-auto grid w-full max-w-[76rem] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,25rem)_minmax(0,1fr)] lg:gap-10 lg:px-8 lg:py-12">
+        <div className="flex flex-col gap-6">
+          <RoomTicket code={state.roomCode} visibility={state.visibility ?? "private"} />
+          <ReadyBoard players={players} />
+        </div>
 
-      <h2 className="font-display text-3xl font-black uppercase tracking-wide text-white">
-        Sala ({players.length}/{MAX_PLAYERS})
-      </h2>
-      <ul className="flex flex-col gap-px bg-white/10">
-        <AnimatePresence initial={false}>
-          {players.map((player) => (
-            <PlayerRow
-              key={player.playerId}
-              player={player}
-              isHost={player.playerId === state.hostId}
-              canKick={myId === state.hostId && player.playerId !== myId}
-              onKick={onKick}
-            />
-          ))}
-        </AnimatePresence>
-        {/* Los huecos libres se dibujan como huecos, nunca se omiten
-            (design-system/pages/sala-espera.md): ver "2 de 4" en abstracto
-            informa menos que ver dos sitios vacios de verdad. */}
-        {Array.from({ length: emptySeats }, (_, index) => (
-          // bg-ink, no transparente: MASTER.md S2 -- "--mute solo sobre
-          // --ink" es una regla dura del proyecto (ya hubo que arreglar
-          // cinco sitios donde se colo sobre el fondo de pagina). Un fondo
-          // transparente aqui dejaria el texto mute directamente sobre
-          // --deep (el fondo de <main>), que es justo ese patron.
-          <li
-            key={`empty-${index}`}
-            className="flex items-center gap-2 border border-dashed border-white/20 bg-ink px-4 py-3"
-          >
-            <EmptySeatIcon />
-            <span className="font-display text-sm font-bold uppercase tracking-wide text-mute">
-              Hueco libre
-            </span>
-          </li>
-        ))}
-      </ul>
+        <div className="flex flex-col gap-6">
+          <div>
+            <h1 className="font-headline text-[clamp(1.9rem,3.6vw,2.8rem)] font-bold leading-[1.05] tracking-[-0.05em]">
+              El vestuario <span className="tnum text-slate">{players.length}/{MAX_PLAYERS}</span>
+            </h1>
+            <p className="mt-2 font-copy text-[1.1rem] text-slate">La partida arranca sola cuando todos los conectados pulsan Listo.</p>
+          </div>
 
-      {/* Nunca un boton deshabilitado sin explicacion: la frase dice
-          exactamente que falta, o confirma que ya se puede. */}
-      <p className="bg-ink px-3 py-2 font-body text-sm font-semibold text-white">
-        {blockReason ?? "Ya podéis empezar en cuanto pulséis listo."}
-      </p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            <AnimatePresence initial={false}>
+              {players.map((player) => (
+                <Seat
+                  key={player.playerId}
+                  player={player}
+                  isHost={player.playerId === state.hostId}
+                  isMe={player.playerId === myId}
+                  canKick={myId === state.hostId && player.playerId !== myId}
+                  onKick={onKick}
+                />
+              ))}
+            </AnimatePresence>
+            {/* Los huecos libres se dibujan: ver dos sitios vacíos informa más que "2 de 4". */}
+            {Array.from({ length: emptySeats }, (_, index) => (
+              <li key={`empty-${index}`} className="flex min-h-36 flex-col items-center justify-center gap-2 rounded-[1.5rem] border-2 border-dashed border-line text-slate">
+                <UserPlus className="h-6 w-6" aria-hidden="true" />
+                <span className="font-copy text-[1rem]">Hueco libre</span>
+              </li>
+            ))}
+          </ul>
 
-      {error && <p className="font-body text-sm font-semibold text-danger">{error}</p>}
-      <motion.button
-        whileTap={reducedMotion || ready ? undefined : { scale: 0.97 }}
-        transition={{ duration: 0.1 }}
-        className="h-12 cursor-pointer bg-lime font-display text-xl font-black uppercase tracking-wide text-ink transition-colors duration-200 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-        disabled={ready}
-        onClick={() => {
-          setReady(true);
-          onReady();
-        }}
-      >
-        {ready ? "Esperando al resto…" : "Listo"}
-      </motion.button>
+          <div className="flex flex-col gap-3 rounded-[1.75rem] bg-white p-5 ring-1 ring-line sm:flex-row sm:items-center sm:p-6">
+            <p className="flex-1 font-copy text-[1.05rem] text-forest">{blockReason ?? "Todos listos: arrancando la partida."}</p>
+            <motion.button
+              whileTap={reducedMotion || iAmReady ? undefined : { scale: 0.97 }}
+              transition={{ duration: 0.1 }}
+              className="flex h-14 min-w-[12rem] cursor-pointer items-center justify-center gap-2 rounded-full bg-pitch px-8 font-copy text-[1.1rem] font-semibold text-white transition-colors duration-200 hover:bg-[#106E3D] disabled:cursor-not-allowed disabled:bg-line disabled:text-slate"
+              disabled={iAmReady}
+              onClick={() => {
+                setReady(true);
+                onReady();
+              }}
+            >
+              {iAmReady ? <Hourglass className="h-5 w-5" aria-hidden="true" /> : <Check className="h-5 w-5" aria-hidden="true" />}
+              {iAmReady ? "Esperando al resto…" : "Estoy listo"}
+            </motion.button>
+          </div>
+          {error && <p role="alert" className="rounded-2xl bg-alert/10 px-4 py-3 font-copy text-[1rem] font-medium text-alert">{error}</p>}
+        </div>
+      </div>
     </div>
   );
 }
