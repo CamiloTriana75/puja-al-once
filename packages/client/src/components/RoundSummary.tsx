@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { SLOT_LABEL } from "./game/slots.js";
 
 const TOTAL_SLOTS = 11;
@@ -27,10 +27,15 @@ export function RoundSummary({
   players: RoundSummaryPlayer[];
   onDismiss: () => void;
 }) {
+  // El cierre automatico se arma UNA vez. Con `onDismiss` en las dependencias el
+  // temporizador se reiniciaba en cada render del padre (la cuenta atras repinta
+  // cada 100 ms) y el parte nunca se cerraba solo: se quedaba tapando la pantalla.
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
   useEffect(() => {
-    const id = window.setTimeout(onDismiss, AUTO_DISMISS_MS);
+    const id = window.setTimeout(() => dismissRef.current(), AUTO_DISMISS_MS);
     return () => window.clearTimeout(id);
-  }, [onDismiss]);
+  }, []);
 
   return (
     <div className="round-summary-in fixed inset-0 z-40 flex items-center justify-center bg-forest/45 p-4 backdrop-blur-[2px]" onClick={onDismiss}>

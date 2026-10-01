@@ -50,10 +50,20 @@ function hasDuplicates(cardIds: string[]): boolean {
   return new Set(cardIds).size !== cardIds.length;
 }
 
+/**
+ * Posicion de juego de un hueco: los dos centrales son la misma (cambiar el
+ * CB1 de uno por el CB2 de otro es un cambio de central por central; con los
+ * nombres de hueco en crudo ese cambio, el mas natural de la defensa, se
+ * rechazaba).
+ */
+function positionOf(slot: keyof PlayerState["squad"]): string {
+  return slot === "CB1" || slot === "CB2" ? "CB" : slot;
+}
+
 function positionsMatch(offered: OwnedCard[], requested: OwnedCard[]): boolean {
-  const offeredSlots = offered.map(({ slot }) => slot).sort();
-  const requestedSlots = requested.map(({ slot }) => slot).sort();
-  return offeredSlots.every((slot, index) => slot === requestedSlots[index]);
+  const offeredPositions = offered.map(({ slot }) => positionOf(slot)).sort();
+  const requestedPositions = requested.map(({ slot }) => positionOf(slot)).sort();
+  return offeredPositions.every((position, index) => position === requestedPositions[index]);
 }
 
 function validateCards(
@@ -117,9 +127,16 @@ export function acceptTradeOffer(
   const recipient = nextPlayers.find((player) => player.playerId === offer.recipientId);
   if (!proposer || !recipient) return err("OFFER_STALE");
 
-  validation.value.offered.forEach(({ slot }, index) => {
-    proposer.squad[slot] = offer.requestedCardIds[index];
-    recipient.squad[slot] = offer.offeredCardIds[index];
+  // Cada carta ofrecida se empareja con una pedida de su misma posicion (no por
+  // orden de la lista) y cae en el hueco que dejo libre la otra.
+  const unmatched = [...validation.value.requested];
+  validation.value.offered.forEach((given) => {
+    const index = unmatched.findIndex((candidate) => positionOf(candidate.slot) === positionOf(given.slot));
+    const taken = unmatched.splice(index, 1)[0]!;
+    const givenCardId = given.player.squad[given.slot]!;
+    const takenCardId = taken.player.squad[taken.slot]!;
+    proposer.squad[given.slot] = takenCardId;
+    recipient.squad[taken.slot] = givenCardId;
   });
   proposer.budget -= offer.proposerPays;
   recipient.budget += offer.proposerPays;

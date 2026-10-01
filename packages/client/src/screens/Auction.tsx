@@ -49,6 +49,7 @@ interface Props {
   reactions: IncomingReaction[];
   onDismissReaction: (id: string) => void;
   tradeOffers?: TradeOfferView[];
+  tradeRejection?: { reason: string; seq: number } | null;
   send: (type: string, payload?: unknown) => void;
 }
 
@@ -56,7 +57,7 @@ function Notice({ children }: { children: React.ReactNode }) {
   return <p className="rounded-2xl bg-pitch-soft px-4 py-3 font-copy text-[1rem] text-forest">{children}</p>;
 }
 
-export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDismissReaction, tradeOffers = [], send }: Props) {
+export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDismissReaction, tradeOffers = [], tradeRejection = null, send }: Props) {
   const remaining = useServerClock(state.endsAt);
   const reducedMotion = useReducedMotion() ?? false;
   const me = state.players.get(myId);
@@ -178,7 +179,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
       </GameHeader>
 
       {inTransferMarket ? (
-        <TransferMarket state={state} myId={myId} tradeOffers={tradeOffers} send={send} />
+        <TransferMarket state={state} myId={myId} tradeOffers={tradeOffers} tradeRejection={tradeRejection} send={send} />
       ) : (
         <div className="mx-auto grid w-full max-w-[90rem] grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)_minmax(0,17rem)] lg:gap-8 lg:px-8 lg:py-8">
           <section aria-label="La carta en juego" className="mx-auto flex w-full max-w-[22rem] flex-col gap-3 lg:order-1 lg:max-w-none">
@@ -298,7 +299,7 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
         />
       )}
 
-      {showSummary && (
+      {showSummary && !inTransferMarket && (
         <RoundSummary
           nextSlot={SLOT_ORDER[state.slotIndex] ?? state.currentSlot}
           players={[...state.players.values()].map((p) => ({
@@ -386,16 +387,32 @@ function SkipVote({
   );
 }
 
+/** Lo que el servidor contesta (trade:rejected) dicho para quien juega. */
+const TRADE_REJECTION_TEXT: Record<string, string> = {
+  PLAYERS_MUST_MATCH_POSITIONS: "Solo puedes cambiar jugadores de la misma posición.",
+  INSUFFICIENT_BUDGET: "No te llega el saldo para ese dinero adicional (cuentan también tus otras ofertas abiertas).",
+  INVALID_PAYMENT: "El dinero adicional tiene que ser un número entero de millones, de 0 en adelante.",
+  OFFERED_PLAYER_NOT_OWNED: "Ese jugador ya no es tuyo.",
+  REQUESTED_PLAYER_NOT_OWNED: "Ese jugador ya no está en la plantilla del rival.",
+  OFFER_STALE: "La oferta ya no vale: algún jugador cambió de manos o falta saldo.",
+  OFFER_NOT_OPEN: "Esa oferta ya estaba cerrada.",
+  OFFER_NOT_FOUND: "Esa oferta ya no existe.",
+  NOT_RECIPIENT: "Solo quien recibe la oferta puede aceptarla.",
+  SAME_PLAYER: "No puedes hacerte una oferta a ti mismo.",
+};
+
 /** Ventanas de traspasos: tras la defensa (slotIndex 4) y tras el mediocampo (slotIndex 7), ver AuctionRoom.TRANSFER_MARKET_SLOT_INDEXES. */
 function TransferMarket({
   state,
   myId,
   tradeOffers,
+  tradeRejection,
   send,
 }: {
   state: ClientState;
   myId: string;
   tradeOffers: TradeOfferView[];
+  tradeRejection: { reason: string; seq: number } | null;
   send: (type: string, payload?: unknown) => void;
 }) {
   const me = state.players.get(myId);
@@ -408,6 +425,12 @@ function TransferMarket({
 
   const ownPlayers = me ? [...me.squad.entries()] : [];
   const otherPlayers = [...state.players.values()].filter((player) => player.playerId !== myId);
+  // Solo se puede cambiar un jugador por otro de la MISMA posicion (el servidor lo exige).
+  // Los dos centrales cuentan como una: antes el selector dejaba elegir cualquier pareja y
+  // el servidor rechazaba en silencio las que no casaban.
+  const offeredSlot = offeredSelection.split(":")[0] ?? "";
+  const positionOf = (slot: string) => (slot === "CB1" || slot === "CB2" ? "CB" : slot);
+  const canSend = offeredSelection !== "" && requestedSelection !== "";
 
   /**
    * Nombre legible de una carta. Cuando el mercado abre todas las cartas
@@ -428,8 +451,9 @@ function TransferMarket({
       recipientId,
       offeredCardIds: [offeredCardId],
       requestedCardIds: [requestedCardId],
-      proposerPays: Math.max(0, Number(payment) || 0),
+      proposerPays: Math.max(0, Math.floor(Number(payment) || 0)),
     });
+    setRequestedSelection("");
   };
 
   // Los traspasos hechos primero: son la noticia; lo que sigue abierto aun se puede deshacer.
@@ -487,7 +511,14 @@ function TransferMarket({
             <div className="mt-4 grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
               <label className="flex flex-col gap-2 font-copy text-[0.98rem] text-slate">
                 Tu jugador
-                <select value={offeredSelection} onChange={(event) => setOfferedSelection(event.target.value)} className={selectClass}>
+                <select
+                  value={offeredSelection}
+                  onChange={(event) => {
+                    setOfferedSelection(event.target.value);
+                    setRequestedSelection("");
+                  }}
+                  className={selectClass}
+                >
                   <option value="">Selecciona</option>
                   {ownPlayers.map(([slot, cardId]) => (
                     <option key={`${slot}:${cardId}`} value={`${slot}:${cardId}`}>
@@ -501,13 +532,18 @@ function TransferMarket({
               </span>
               <label className="flex flex-col gap-2 font-copy text-[0.98rem] text-slate">
                 Jugador a recibir
-                <select value={requestedSelection} onChange={(event) => setRequestedSelection(event.target.value)} className={selectClass}>
-                  <option value="">Selecciona</option>
+                <select
+                  value={requestedSelection}
+                  onChange={(event) => setRequestedSelection(event.target.value)}
+                  disabled={offeredSelection === ""}
+                  className={`${selectClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  <option value="">{offeredSelection === "" ? "Elige antes tu jugador" : "Selecciona"}</option>
                   {otherPlayers
-                    .filter((player) => player.squad.size > 0)
+                    .filter((player) => [...player.squad.keys()].some((slot) => positionOf(slot) === positionOf(offeredSlot)))
                     .map((player) => (
                       <optgroup key={player.playerId} label={`${player.name} · ${player.budget} M`}>
-                        {[...player.squad.entries()].map(([slot, cardId]) => (
+                        {[...player.squad.entries()].filter(([slot]) => positionOf(slot) === positionOf(offeredSlot)).map(([slot, cardId]) => (
                           <option key={`${player.playerId}:${slot}:${cardId}`} value={`${player.playerId}:${slot}:${cardId}`}>
                             {SLOT_ABBR[slot] ?? slot} · {cardLabel(cardId)}
                           </option>
@@ -532,11 +568,20 @@ function TransferMarket({
               <button
                 type="button"
                 onClick={sendTradeOffer}
-                className="h-14 cursor-pointer rounded-full bg-pitch px-7 font-copy text-[1.05rem] font-semibold text-white transition-colors duration-200 hover:bg-[#106E3D]"
+                disabled={!canSend}
+                className="h-14 cursor-pointer rounded-full bg-pitch px-7 font-copy text-[1.05rem] font-semibold text-white transition-colors duration-200 hover:bg-[#106E3D] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Enviar oferta
               </button>
             </div>
+            <p className="mt-3 font-copy text-[0.95rem] leading-[1.5] text-slate">
+              Solo puedes cambiar jugadores de la misma posición: elige el tuyo y verás a quién puedes pedirle.
+            </p>
+            {tradeRejection && (
+              <p key={tradeRejection.seq} role="alert" className="mt-3 rounded-2xl bg-alert/10 px-4 py-3 font-copy text-[1rem] font-medium text-alert">
+                {TRADE_REJECTION_TEXT[tradeRejection.reason] ?? "No se pudo completar la operación."}
+              </p>
+            )}
           </div>
 
           {pendingForMe > 0 && (

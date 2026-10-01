@@ -122,6 +122,8 @@ export interface Connection {
   chat: ChatMessage[];
   /** Sube cada vez que el servidor rechaza un mensaje por ir demasiado rapido; la interfaz avisa con "mas despacio". */
   chatRejectedSeq: number;
+  /** Ultimo rechazo del servidor a una accion del mercado (oferta, aceptar, cancelar). `seq` distingue dos rechazos iguales seguidos. */
+  tradeRejection: { reason: string; seq: number } | null;
   /** Retira una reaccion de `reactions` por `id` -- lo llama `Reactions.onExpire` cuando su burbuja ya termino de animarse. */
   dismissReaction: (id: string) => void;
   /** Crea una sala nueva. Nunca coincide con una existente -- a diferencia de `joinOrCreate`, `create` no busca hueco en otra sala antes. */
@@ -150,6 +152,7 @@ export function useRoom(): Connection {
   const [tradeOffers, setTradeOffers] = useState<TradeOfferView[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatRejectedSeq, setChatRejectedSeq] = useState(0);
+  const [tradeRejection, setTradeRejection] = useState<{ reason: string; seq: number } | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connected");
 
   // Token de reconexion de la sala VIVA -- se actualiza en cada attach() (el
@@ -204,6 +207,7 @@ export function useRoom(): Connection {
     clearRetryTimeout();
     setReactions([]);
     setTradeOffers([]);
+    setTradeRejection(null);
     setChat([]);
     setConnectionStatus("connected");
 
@@ -226,6 +230,12 @@ export function useRoom(): Connection {
     joined.onMessage("bid:rejected", (msg: { reason: string }) => {
       setBidError(msg.reason);
       setBidErrorSeq((n) => n + 1);
+    });
+    // Sin este listener los rechazos del mercado (posiciones distintas, saldo
+    // insuficiente...) llegaban y nadie los leia: el jugador pulsaba "Enviar
+    // oferta" y no pasaba nada, sin saber por que.
+    joined.onMessage("trade:rejected", (msg: { reason: string }) => {
+      setTradeRejection((previous) => ({ reason: msg.reason, seq: (previous?.seq ?? 0) + 1 }));
     });
     joined.onMessage("trade:updated", (offer: TradeOfferView) => {
       setTradeOffers((previous) => [...previous.filter((item) => item.offerId !== offer.offerId), offer]);
@@ -455,6 +465,6 @@ export function useRoom(): Connection {
 
   return {
     room, state, connectionStatus, retryNow,
-    startError, bidError, bidErrorSeq, reactions, tradeOffers, chat, chatRejectedSeq, dismissReaction, createRoom, joinByCode, joinPublicRoom, send, leave,
+    startError, bidError, bidErrorSeq, reactions, tradeOffers, chat, chatRejectedSeq, tradeRejection, dismissReaction, createRoom, joinByCode, joinPublicRoom, send, leave,
   };
 }

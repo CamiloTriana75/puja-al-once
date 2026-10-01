@@ -29,7 +29,7 @@ const SCREEN_VARIANTS = {
 
 export default function App() {
   const {
-    room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, reactions, tradeOffers, chat, chatRejectedSeq, dismissReaction,
+    room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, reactions, tradeOffers, chat, chatRejectedSeq, tradeRejection, dismissReaction,
     createRoom, joinByCode, joinPublicRoom, send,
   } = useRoom();
   const inGame = state && state.phase !== "LOBBY";
@@ -112,6 +112,7 @@ export default function App() {
                 reactions={reactions}
                 onDismissReaction={dismissReaction}
                 tradeOffers={tradeOffers}
+                tradeRejection={tradeRejection}
                 send={send}
               />
             )}

@@ -289,6 +289,68 @@ describe("Auction -- mercado de transferencias", () => {
     }));
   });
 
+  describe("primer mercado (defensa)", () => {
+    const defenceState = () =>
+      baseState({
+        phase: "TRANSFER_MARKET",
+        slotIndex: 4,
+        currentSlot: "RB",
+        marketReady: new Map(),
+        players: new Map([
+          ["a", player({ playerId: "a", name: "Ana", squad: new Map([["GK", "gk-a"], ["LB", "lb-a"], ["CB1", "cb1-a"], ["CB2", "cb2-a"], ["RB", "rb-a"]]) })],
+          ["b", player({ playerId: "b", name: "Bea", squad: new Map([["GK", "gk-b"], ["LB", "lb-b"], ["CB1", "cb1-b"], ["CB2", "cb2-b"], ["RB", "rb-b"]]) })],
+        ]),
+      });
+    const renderMarket = (send = vi.fn(), tradeRejection: { reason: string; seq: number } | null = null) =>
+      render(
+        <Auction
+          state={defenceState()}
+          myId="a"
+          roomId="room-1"
+          error={null}
+          errorSeq={0}
+          reactions={[]}
+          onDismissReaction={vi.fn()}
+          send={send}
+          tradeOffers={[]}
+          tradeRejection={tradeRejection}
+        />,
+      );
+
+    it("solo ofrece pedir jugadores de la misma posicion que el elegido", () => {
+      renderMarket();
+      const requested = screen.getByLabelText("Jugador a recibir") as HTMLSelectElement;
+      expect(requested.disabled).toBe(true);
+
+      fireEvent.change(screen.getByLabelText("Tu jugador"), { target: { value: "LB:lb-a" } });
+      expect(requested.disabled).toBe(false);
+      expect([...requested.options].map((o) => o.value).filter(Boolean)).toEqual(["b:LB:lb-b"]);
+    });
+
+    it("un central se puede cambiar por cualquiera de los dos centrales del rival", () => {
+      const send = vi.fn();
+      renderMarket(send);
+      fireEvent.change(screen.getByLabelText("Tu jugador"), { target: { value: "CB1:cb1-a" } });
+      const requested = screen.getByLabelText("Jugador a recibir") as HTMLSelectElement;
+      expect([...requested.options].map((o) => o.value).filter(Boolean)).toEqual(["b:CB1:cb1-b", "b:CB2:cb2-b"]);
+
+      fireEvent.change(requested, { target: { value: "b:CB2:cb2-b" } });
+      fireEvent.click(screen.getByRole("button", { name: "Enviar oferta" }));
+      expect(send).toHaveBeenCalledWith("trade:create", expect.objectContaining({ offeredCardIds: ["cb1-a"], requestedCardIds: ["cb2-b"] }));
+    });
+
+    it("no envia nada hasta elegir los dos jugadores", () => {
+      const send = vi.fn();
+      renderMarket(send);
+      expect((screen.getByRole("button", { name: "Enviar oferta" }) as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it("explica por que el servidor rechazo la oferta", () => {
+      renderMarket(vi.fn(), { reason: "INSUFFICIENT_BUDGET", seq: 1 });
+      expect(screen.getByRole("alert").textContent).toMatch(/saldo/);
+    });
+  });
+
   it("un traspaso aceptado se ve claro, con nombres y no con cardIds", () => {
     // Lo que se quejaba el jugador: el resultado de un traspaso pasaba
     // inadvertido. Antes salia "facchetti-1968 por c1b-1975" en gris, con el
