@@ -35,10 +35,10 @@ describe("Landing: vestuario público", () => {
 
     render(<Landing error={null} onCreate={vi.fn()} onJoinByCode={vi.fn()} onJoinPublicRoom={onJoinPublicRoom} />);
 
-    await screen.findByText("Sala ABCDE");
+    await screen.findByText("ABCDE");
     const name = screen.getByLabelText("Tu nombre en el vestuario");
     fireEvent.change(name, { target: { value: "Ana" } });
-    fireEvent.click(screen.getByRole("button", { name: /Sala ABCDE/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Entrar a la sala ABCDE" }));
 
     expect(onJoinPublicRoom).toHaveBeenCalledWith("Ana", "room-public-1");
   });
@@ -58,7 +58,7 @@ describe("Landing: vestuario público", () => {
     const onCreate = vi.fn();
     render(<Landing error={null} onCreate={onCreate} onJoinByCode={vi.fn()} onJoinPublicRoom={vi.fn()} />);
     fireEvent.change(screen.getByLabelText("Tu nombre en el vestuario"), { target: { value: "Bea" } });
-    fireEvent.click(screen.getByRole("button", { name: "Pública · probar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pública" }));
     fireEvent.click(screen.getByRole("button", { name: "Crear mi sala" }));
     expect(onCreate).toHaveBeenCalledWith("Bea", "public");
   });

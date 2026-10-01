@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, Copy, Crown, Globe, Hourglass, Lock, Share2, UserMinus, UserPlus, WifiOff } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, Copy, Crown, Globe, Hourglass, Link2, Lock, UserMinus, UserPlus, WifiOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { EarlyAccessNotice } from "../components/EarlyAccessNotice.js";
 import { GameHeader } from "../components/game/GameHeader.js";
 import type { ClientState, PlayerView } from "../net/types.js";
 
@@ -43,54 +44,81 @@ function initials(name: string): string {
   return name.trim().split(/\s+/).map((part) => part[0] ?? "").slice(0, 2).join("").toUpperCase() || "?";
 }
 
-/** El billete de la sala: el código en fichas grandes, para dictarlo por la llamada. */
+/** El billete de la sala: el codigo en fichas grandes para dictarlo, y el enlace listo para copiar de un clic. */
 function RoomTicket({ code, visibility }: { code: string; visibility: "private" | "public" }) {
-  const [feedback, setFeedback] = useState<"code" | "invite" | "fallback" | null>(null);
+  const [copied, setCopied] = useState<"link" | "code" | "failed" | null>(null);
+  const link = new URL(`/sala/${code}`, window.location.origin).toString();
+  const linkField = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!feedback) return;
-    const id = setTimeout(() => setFeedback(null), 2200);
+    if (!copied) return;
+    const id = setTimeout(() => setCopied(null), 2400);
     return () => clearTimeout(id);
-  }, [feedback]);
+  }, [copied]);
 
-  const copyCode = async () => {
+  const copy = async (text: string, what: "link" | "code") => {
     try {
-      await navigator.clipboard.writeText(code);
-      setFeedback("code");
+      await navigator.clipboard.writeText(text);
+      setCopied(what);
     } catch {
-      setFeedback("fallback");
-    }
-  };
-
-  const shareInvite = async () => {
-    const url = new URL(`/sala/${code}`, window.location.origin).toString();
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Futbolera", text: "¡Únete a mi sala!", url });
-        setFeedback("invite");
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setFeedback("fallback");
-      }
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setFeedback("invite");
-    } catch {
-      setFeedback("fallback");
+      // Sin permiso de portapapeles: se deja el enlace seleccionado para copiarlo a mano.
+      linkField.current?.select();
+      setCopied("failed");
     }
   };
 
   return (
     <section aria-labelledby="ticket-title" className="rounded-[2rem] bg-white p-6 shadow-[0_30px_60px_-40px_rgba(12,36,28,.55)] ring-1 ring-line sm:p-8">
-      <h2 id="ticket-title" className="font-copy text-[1.05rem] text-slate">Código de la sala</h2>
-      <p className="mt-3 flex gap-2" aria-label={`Código ${code.split("").join(" ")}`}>
+      <h2 id="ticket-title" className="font-copy text-[1.05rem] text-slate">Invita a tu grupo</h2>
+
+      <div className="mt-3 flex items-center gap-2 rounded-2xl bg-canvas p-1.5 ring-1 ring-line">
+        <input
+          ref={linkField}
+          readOnly
+          value={link}
+          aria-label="Enlace de invitación"
+          onFocus={(event) => event.currentTarget.select()}
+          className="h-11 min-w-0 flex-1 truncate bg-transparent px-3 font-copy text-[1rem] text-forest"
+        />
+        <button
+          type="button"
+          onClick={() => void copy(link, "link")}
+          className={`flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-xl px-4 font-copy text-[1rem] font-semibold text-white transition-colors duration-200 ${
+            copied === "link" ? "bg-forest" : "bg-pitch hover:bg-[#106E3D]"
+          }`}
+        >
+          {copied === "link" ? <Check className="size-5" aria-hidden="true" /> : <Link2 className="size-5" aria-hidden="true" />}
+          {copied === "link" ? "¡Copiado!" : "Copiar enlace"}
+        </button>
+      </div>
+      <p aria-live="polite" className="mt-2 min-h-6 font-copy text-[0.95rem] text-pitch">
+        {copied === "link"
+          ? "Enlace copiado: pégalo en el chat y quien lo abra entra directo."
+          : copied === "code"
+            ? "Código copiado."
+            : copied === "failed"
+              ? "No se pudo copiar solo: el enlace está seleccionado, usa Ctrl+C."
+              : ""}
+      </p>
+
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="font-copy text-[0.98rem] text-slate">O dicta el código:</p>
+        <button
+          type="button"
+          onClick={() => void copy(code, "code")}
+          aria-label="Copiar código de sala"
+          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 font-copy text-[0.98rem] font-medium text-slate transition-colors duration-200 hover:bg-canvas hover:text-forest"
+        >
+          {copied === "code" ? <Check className="size-4 text-pitch" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+          Copiar código
+        </button>
+      </div>
+      <p className="mt-1 flex gap-2" aria-label={`Código ${code.split("").join(" ")}`}>
         {code.split("").map((char, index) => (
           <span
             key={`${char}-${index}`}
             aria-hidden="true"
-            className="grid h-[clamp(3.4rem,6vw,4.4rem)] flex-1 place-items-center rounded-2xl bg-forest font-headline text-[clamp(1.7rem,3.2vw,2.4rem)] font-bold text-gold"
+            className="grid h-[clamp(3.2rem,5.5vw,4.2rem)] flex-1 place-items-center rounded-2xl bg-forest font-headline text-[clamp(1.6rem,3vw,2.3rem)] font-bold text-gold"
           >
             {char}
           </span>
@@ -98,30 +126,7 @@ function RoomTicket({ code, visibility }: { code: string; visibility: "private" 
       </p>
       <p className="mt-4 flex items-center gap-2 font-copy text-[1rem] text-slate">
         {visibility === "public" ? <Globe className="h-4 w-4 text-pitch" aria-hidden="true" /> : <Lock className="h-4 w-4 text-pitch" aria-hidden="true" />}
-        {visibility === "public" ? "Pública: aparece en el vestuario mientras haya sitio." : "Privada: solo entra quien tenga el código."}
-      </p>
-      <div className="mt-6 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => void copyCode()}
-          className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-canvas font-copy text-[1rem] font-semibold text-forest ring-1 ring-line transition-colors duration-200 hover:ring-forest"
-          aria-label="Copiar código de sala"
-        >
-          {feedback === "code" ? <Check className="h-5 w-5 text-pitch" aria-hidden="true" /> : <Copy className="h-5 w-5" aria-hidden="true" />}
-          Copiar
-        </button>
-        <button
-          type="button"
-          onClick={() => void shareInvite()}
-          className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-pitch font-copy text-[1rem] font-semibold text-white transition-colors duration-200 hover:bg-[#106E3D]"
-          aria-label="Compartir invitación a la sala"
-        >
-          <Share2 className="h-5 w-5" aria-hidden="true" />
-          Invitar
-        </button>
-      </div>
-      <p aria-live="polite" className="mt-3 min-h-6 font-copy text-[0.95rem] text-pitch">
-        {feedback === "code" ? "Código copiado." : feedback === "invite" ? "Enlace listo para compartir." : feedback === "fallback" ? "Dicta el código por la llamada." : ""}
+        {visibility === "public" ? "Pública: aparece en el vestuario mientras haya sitio." : "Privada: solo entra quien tenga el enlace o el código."}
       </p>
     </section>
   );
@@ -261,6 +266,7 @@ export function Lobby({ state, error, onReady, myId, onKick }: Props) {
 
   return (
     <div className="min-h-screen bg-canvas text-forest">
+      <EarlyAccessNotice />
       <GameHeader roomCode={state.roomCode} visibility={state.visibility}>
         <p className="truncate text-center font-copy text-[1rem] font-semibold text-forest">Sala de espera</p>
       </GameHeader>

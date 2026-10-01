@@ -1,4 +1,4 @@
-import { Globe, Lock, RefreshCw } from "lucide-react";
+import { ArrowRight, Globe, Lock, RefreshCw, Users } from "lucide-react";
 import { useEffect, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { fetchPublicRooms, type PublicRoomSummary, type RoomVisibility } from "../../net/roomLookup.js";
 import { PillButton, SectionTitle } from "./ui.js";
@@ -197,7 +197,7 @@ export function EnterSection({ error, initialCode, nameInputRef, codeInputRef, o
                     onSelect={() => setVisibility("public")}
                     icon={<Globe className="h-4 w-4" aria-hidden="true" />}
                   >
-                    Pública · probar
+                    Pública
                   </VisibilityOption>
                 </div>
                 <p className="mt-3 font-copy text-[1rem] leading-[1.5] text-white/90">
@@ -247,63 +247,118 @@ export function EnterSection({ error, initialCode, nameInputRef, codeInputRef, o
                   Unirme a la partida
                 </PillButton>
               </form>
+            </div>
+          </div>
+          <section aria-labelledby="public-rooms-title" className="border-t border-line px-6 py-8 sm:px-10 sm:py-10">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h3 id="public-rooms-title" className="flex items-center gap-3 font-headline text-[1.3rem] font-semibold tracking-[-0.03em] text-forest">
+                  Salas abiertas ahora
+                  <span className="relative flex size-2.5" aria-hidden="true">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-pitch opacity-60 motion-reduce:animate-none" />
+                    <span className="relative inline-flex size-2.5 rounded-full bg-pitch" />
+                  </span>
+                </h3>
+                <p className="mt-1 font-copy text-[1.02rem] text-slate">
+                  Entra a una partida pública con otros jugadores. La lista se actualiza sola.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={refreshRooms}
+                disabled={roomsLoading}
+                className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full bg-canvas px-4 font-copy text-[0.98rem] font-medium text-forest ring-1 ring-line transition-colors hover:ring-forest disabled:cursor-wait disabled:opacity-60"
+              >
+                <RefreshCw className={`size-4 ${roomsLoading ? "animate-spin motion-reduce:animate-none" : ""}`} aria-hidden="true" />
+                Actualizar
+              </button>
+            </div>
 
-              <section aria-labelledby="public-rooms-title" className="mt-9 border-t border-line pt-7">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 id="public-rooms-title" className="font-headline text-[1.05rem] font-semibold tracking-[-0.02em] text-forest">
-                    Vestuario público
-                  </h3>
+            <div className="mt-6">
+              {roomsLoading && publicRooms.length === 0 ? (
+                <ul aria-label="Buscando salas abiertas" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {[0, 1, 2].map((index) => (
+                    <li key={index} className="h-[8.5rem] animate-pulse rounded-3xl bg-canvas motion-reduce:animate-none" />
+                  ))}
+                </ul>
+              ) : roomsError && publicRooms.length === 0 ? (
+                <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-3xl bg-canvas px-6 py-5">
+                  <p className="font-copy text-[1.05rem] text-forest">{roomsError}</p>
                   <button
                     type="button"
                     onClick={refreshRooms}
-                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-3 font-copy text-[0.98rem] font-medium text-slate transition-colors hover:bg-canvas hover:text-forest"
+                    className="min-h-11 cursor-pointer rounded-full bg-forest px-5 font-copy text-[1rem] font-semibold text-white transition-colors hover:bg-[#163A2D]"
                   >
-                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                    Actualizar
+                    Reintentar
                   </button>
                 </div>
-                <div className="mt-3">
-                  {roomsLoading ? (
-                    <p role="status" className="rounded-xl bg-canvas px-4 py-3 font-copy text-[1rem] text-slate">
-                      Buscando salas abiertas…
-                    </p>
-                  ) : roomsError ? (
-                    <p role="status" className="rounded-xl bg-canvas px-4 py-3 font-copy text-[1rem] text-slate">
-                      {roomsError}
-                    </p>
-                  ) : publicRooms.length === 0 ? (
-                    <p role="status" className="rounded-xl bg-canvas px-4 py-3 font-copy text-[1rem] text-slate">
-                      No hay salas abiertas ahora. Crea una pública para que se sumen otros.
-                    </p>
-                  ) : (
-                    <ul className="flex flex-col gap-2">
-                      {publicRooms.map((room) => (
-                        <li key={room.roomId}>
-                          <button
-                            type="button"
-                            disabled={joiningRoomId !== null}
-                            onClick={() => joinPublic(room.roomId)}
-                            className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 border-line px-4 text-left transition-colors hover:border-pitch disabled:cursor-wait disabled:opacity-60"
-                          >
-                            <span>
-                              <span className="block font-headline text-[0.95rem] font-semibold text-forest">Sala {room.code}</span>
-                              <span className="block font-copy text-[0.95rem] text-slate">
-                                {room.players} de {room.capacity} jugadores, {room.ready} {room.ready === 1 ? "listo" : "listos"}
-                              </span>
-                            </span>
-                            <span className="font-copy text-[1rem] font-semibold text-forest">
-                              {joiningRoomId === room.roomId ? "Entrando…" : "Entrar"}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+              ) : publicRooms.length === 0 ? (
+                <div role="status" className="flex flex-col items-center gap-3 rounded-3xl bg-canvas px-6 py-9 text-center">
+                  <span className="grid size-14 place-items-center rounded-2xl bg-white text-pitch ring-1 ring-line">
+                    <Users className="size-7" aria-hidden="true" />
+                  </span>
+                  <p className="font-headline text-[1.2rem] font-semibold tracking-[-0.03em] text-forest">Ahora mismo no hay salas abiertas</p>
+                  <p className="max-w-md font-copy text-[1.02rem] text-slate">Crea una pública y aparecerá aquí para que otros se sumen.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVisibility("public");
+                      nameInputRef.current?.focus();
+                    }}
+                    className="mt-1 min-h-12 cursor-pointer rounded-full bg-pitch px-6 font-copy text-[1.02rem] font-semibold text-white transition-colors hover:bg-[#106E3D]"
+                  >
+                    Crear una sala pública
+                  </button>
                 </div>
-                <p className="mt-3 font-copy text-[0.95rem] text-slate">La lista se actualiza sola cada 10 segundos.</p>
-              </section>
+              ) : (
+                <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {publicRooms.map((room) => {
+                    const joining = joiningRoomId === room.roomId;
+                    const free = Math.max(0, room.capacity - room.players);
+                    return (
+                      <li key={room.roomId} className="flex flex-col gap-4 rounded-3xl bg-canvas p-5 ring-1 ring-line transition-shadow duration-200 hover:ring-pitch">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-copy text-[0.95rem] text-slate">Sala</p>
+                            <p className="tnum font-headline text-[1.5rem] font-bold leading-none tracking-[0.08em] text-forest">{room.code}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5" role="img" aria-label={`${room.players} de ${room.capacity} jugadores`}>
+                            {Array.from({ length: room.capacity }, (_, index) => (
+                              <span
+                                key={index}
+                                aria-hidden="true"
+                                className={`size-3.5 rounded-full ${index < room.players ? "bg-pitch" : "border-2 border-dashed border-slate/50"}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p className="font-copy text-[1rem] text-forest">
+                          {room.players} de {room.capacity} jugadores
+                          <span className="text-slate">
+                            {" "}
+                            · {room.ready} {room.ready === 1 ? "listo" : "listos"} · {free} {free === 1 ? "sitio libre" : "sitios libres"}
+                          </span>
+                        </p>
+                        <button
+                          type="button"
+                          disabled={joiningRoomId !== null}
+                          aria-label={`Entrar a la sala ${room.code}`}
+                          onClick={() => joinPublic(room.roomId)}
+                          className="mt-auto flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-forest font-copy text-[1.02rem] font-semibold text-white transition-colors duration-200 hover:bg-[#163A2D] disabled:cursor-wait disabled:opacity-60"
+                        >
+                          {joining ? "Entrando…" : "Entrar a esta sala"}
+                          {!joining && <ArrowRight className="size-4" aria-hidden="true" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {!name.trim() && publicRooms.length > 0 && (
+                <p className="mt-4 font-copy text-[0.98rem] text-slate">Escribe tu nombre arriba antes de entrar: así te verán en la sala.</p>
+              )}
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </section>

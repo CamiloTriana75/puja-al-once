@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, type ReactNode } from "react";
 import heroPhoto from "../assets/hero-photo.png";
 import heroSilhouette from "../assets/hero-silhouette.png";
 import { Faq } from "../components/Faq.js";
+import { openFeedback } from "../net/feedback.js";
 import type { RoomVisibility } from "../net/roomLookup.js";
 import { Wordmark } from "../components/Brand.js";
 import { CtaBand } from "./landing/CtaBand.js";
@@ -376,6 +377,13 @@ function Nav({ ctaLabel, onCta }: { ctaLabel: string; onCta: () => void }) {
           <a href="#preguntas" className="font-copy text-[1.05rem] font-medium text-forest/80 transition-colors hover:text-forest">
             Preguntas
           </a>
+          <button
+            type="button"
+            onClick={openFeedback}
+            className="cursor-pointer font-copy text-[1.05rem] font-medium text-forest/80 transition-colors hover:text-forest"
+          >
+            Comentarios
+          </button>
         </nav>
         <PillButton size="sm" onClick={onCta}>
           {ctaLabel}

@@ -1,4 +1,5 @@
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, MessageSquarePlus } from "lucide-react";
+import { openFeedback } from "../../net/feedback.js";
 import { Wordmark } from "../../components/Brand.js";
 import { CONTAINER } from "./ui.js";
 
@@ -54,6 +55,18 @@ export function SiteFooter({ onTop }: { onTop: () => void }) {
                   </a>
                 </li>
               ))}
+              {group.title === "Comunidad" && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={openFeedback}
+                    className="inline-flex min-h-11 cursor-pointer items-center gap-2 font-copy text-[1.05rem] font-semibold text-gold transition-colors hover:text-white"
+                  >
+                    <MessageSquarePlus className="size-4" aria-hidden="true" />
+                    Enviar comentarios
+                  </button>
+                </li>
+              )}
             </ul>
           </nav>
         ))}
