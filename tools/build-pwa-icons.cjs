@@ -1,6 +1,9 @@
 /**
- * Genera los iconos de la app instalable (PWA) y el favicon con la marca:
- * balon dorado sobre bosque. Uso: `node tools/build-pwa-icons.cjs`.
+ * Genera SOLO el favicon (balon dorado sobre bosque): a 32 px el logo con la
+ * mano y el mazo se vuelve una mancha. Los iconos de la app, el apple-touch-icon
+ * y la imagen social salen de tools/build-logo.cjs. Uso: `node tools/build-pwa-icons.cjs`.
+ *
+ * (Los iconos de abajo se conservan por si se quiere volver al balon simple.)
  *
  * - icons/icon-192.png, icons/icon-512.png: iconos normales (esquinas redondas).
  * - icons/icon-maskable-512.png: sin esquinas y con el balon dentro de la zona
@@ -45,10 +48,6 @@ async function png(svg, size, file) {
   const square = icon({ ball: 352, radius: 0 });
   const maskable = icon({ ball: 290, radius: 0 });
 
-  await png(rounded, 192, path.join(PUBLIC, "icons/icon-192.png"));
-  await png(rounded, 512, path.join(PUBLIC, "icons/icon-512.png"));
-  await png(maskable, 512, path.join(PUBLIC, "icons/icon-maskable-512.png"));
-  await png(square, 180, path.join(PUBLIC, "apple-touch-icon.png"));
   await png(icon({ ball: 400, radius: 96 }), 32, path.join(PUBLIC, "favicon.png"));
 
   fs.writeFileSync(
