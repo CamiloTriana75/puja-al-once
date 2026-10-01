@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, type ReactNode } from "react";
 import heroPhoto from "../assets/hero-photo.png";
 import heroSilhouette from "../assets/hero-silhouette.png";
 import { Faq } from "../components/Faq.js";
+import { SupportHost } from "../components/SupportDialog.js";
 import { openFeedback } from "../net/feedback.js";
 import type { RoomVisibility } from "../net/roomLookup.js";
 import { Wordmark } from "../components/Brand.js";
@@ -17,7 +18,7 @@ import { Numbers } from "./landing/Numbers.js";
 import { RoundLoop } from "./landing/RoundLoop.js";
 import { Seasons } from "./landing/Seasons.js";
 import { SiteFooter } from "./landing/SiteFooter.js";
-import { Support } from "./landing/Support.js";
+import { SupportStrip } from "./landing/SupportStrip.js";
 import { CONTAINER, EASE_OUT, PillButton, SectionTitle } from "./landing/ui.js";
 
 interface Props {
@@ -541,7 +542,6 @@ export function Landing({ error, onCreate, onJoinByCode, onJoinPublicRoom }: Pro
           </PhoneFrame>
         }
       />
-      <Support />
       <Faq />
       <EnterSection
         error={error}
@@ -552,7 +552,9 @@ export function Landing({ error, onCreate, onJoinByCode, onJoinPublicRoom }: Pro
         onJoinByCode={onJoinByCode}
         onJoinPublicRoom={onJoinPublicRoom}
       />
+      <SupportStrip />
       <SiteFooter onTop={goTop} />
+      <SupportHost />
     </div>
   );
 }
