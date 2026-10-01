@@ -107,3 +107,16 @@ test("todos los mensajes pasan la validacion de discord.js una vez resueltas las
     }
   }
 });
+
+test("el canal del fundador lo ve solo el fundador: ni @everyone ni los moderadores", () => {
+  const o = buildOverwrites({ founder: true }, ids, true);
+  assert.ok(o.find((x) => x.id === "e").deny.includes(P.ViewChannel));
+  assert.ok(o.find((x) => x.id === "m").deny.includes(P.ViewChannel));
+  assert.ok(!o.some((x) => x.allow?.length));
+});
+
+test("un emoji sin resolver desaparece en vez de dejar {:nombre} a la vista", () => {
+  const ctx = { gameUrl: "", channelId: () => undefined, roleId: () => undefined };
+  assert.equal(render("Hola {:mazo}", ctx), "Hola ");
+  assert.equal(render("Hola {:mazo}", { ...ctx, emoji: () => "<:mazo:1>" }), "Hola <:mazo:1>");
+});

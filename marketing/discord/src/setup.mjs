@@ -69,6 +69,7 @@ export async function run({ client, guild, only = [], clean = false }) {
   }
 
   const roles = new Map(); // clave -> Role
+  const emojiIds = new Map(); // nombre -> id del emoji personalizado
   const channels = new Map(); // clave -> canal
   const categories = new Map(); // clave -> categoria
 
@@ -77,13 +78,15 @@ export async function run({ client, guild, only = [], clean = false }) {
     gameUrl: BRAND.gameUrl,
     channelId: (key) => channels.get(key)?.id,
     roleId: (key) => roles.get(key)?.id,
+    emoji: (name) => (emojiIds.has(name) ? `<:${name}:${emojiIds.get(name)}>` : ""),
     render: (text) => render(text, ctx),
   };
 
   const readAsset = (name) => readFileSync(resolve(ASSETS, name));
 
   async function loadExisting() {
-    const [allRoles, allChannels] = await Promise.all([guild.roles.fetch(), guild.channels.fetch()]);
+    const [allRoles, allChannels, allEmojis] = await Promise.all([guild.roles.fetch(), guild.channels.fetch(), guild.emojis.fetch()]);
+    for (const emoji of allEmojis.values()) emojiIds.set(emoji.name, emoji.id);
     for (const spec of ROLES) {
       const role = allRoles.find((r) => r.name === spec.name && !r.managed);
       if (role) roles.set(spec.key, role);
@@ -291,16 +294,18 @@ export async function run({ client, guild, only = [], clean = false }) {
     const recent = await channel.messages.fetch({ limit: 50 });
     const existing = recent.find((m) => m.author.id === client.user.id && m.embeds[0]?.title === first);
 
-    const embeds = spec.embeds.map((embed, i) => embedData(embed, ctx, i === 0 ? spec.image : undefined));
+    const embeds = spec.embeds.map((embed, i) => embedData(embed, ctx, i === 0 ? spec.image : undefined, i === 0 ? spec.thumbnail : undefined));
     const payload = { embeds, allowedMentions: { parse: [] } };
     if (spec.buttons?.length) payload.components = [buttonRow(spec.buttons, ctx)];
+    const files = [spec.image, spec.thumbnail].filter(Boolean).map((name) => new AttachmentBuilder(resolve(ASSETS, name), { name }));
 
     let message;
     if (existing) {
-      message = await existing.edit(payload);
+      // Se vuelven a subir las imagenes para que una cabecera nueva se actualice tambien.
+      message = await existing.edit(files.length ? { ...payload, files, attachments: [] } : payload);
       skip(`mensaje actualizado: ${first}`);
     } else {
-      if (spec.image) payload.files = [new AttachmentBuilder(resolve(ASSETS, spec.image), { name: spec.image })];
+      if (files.length) payload.files = files;
       message = await channel.send(payload);
       ok(`mensaje publicado en #${channel.name}: ${first}`);
     }
@@ -336,7 +341,8 @@ export async function run({ client, guild, only = [], clean = false }) {
         skip(`emoji ya existe: :${name}:`);
         continue;
       }
-      await guild.emojis.create({ attachment: resolve(ASSETS, `emoji-${name}.png`), name, reason: REASON });
+      const created = await guild.emojis.create({ attachment: resolve(ASSETS, `emoji-${name}.png`), name, reason: REASON });
+      if (created?.id) emojiIds.set(name, created.id);
       ok(`emoji creado: :${name}:`);
     }
   }
@@ -470,6 +476,7 @@ export async function run({ client, guild, only = [], clean = false }) {
     await step("Orden de canales", orderChannels);
     if (CLEAN) await step("Limpieza de canales de plantilla", cleanTemplateChannels);
   }
+  if (wants("emojis") || wants("content")) await step("Emojis", ensureEmojis);
   if (wants("content")) {
     await step("Mensajes fijos", async () => {
       for (const msg of MESSAGES) await upsertMessage(msg);
@@ -478,7 +485,6 @@ export async function run({ client, guild, only = [], clean = false }) {
       for (const post of FORUM_POSTS) await upsertForumPost(post);
     });
   }
-  if (wants("emojis")) await step("Emojis", ensureEmojis);
   if (wants("automod")) await step("AutoMod", ensureAutomod);
   if (wants("onboarding")) await step("Canales y roles + bienvenida", applyOnboarding);
   if (wants("webhook")) await step("Webhook de comentarios", ensureWebhook);

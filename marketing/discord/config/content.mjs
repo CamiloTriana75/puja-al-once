@@ -15,33 +15,78 @@ export const MESSAGES = [
     channel: "bienvenida",
     pin: true,
     image: "welcome.png",
+    thumbnail: "icon.png",
     embeds: [
       {
         color: C.gold,
         title: "Bienvenido al vestuario de Puja el Once",
         description: [
-          "Aquí se **puja a ciegas** por futbolistas, se revela quién era y se **arma el once** más caro del grupo.",
+          "{:mazo} **Aquí se puja a ciegas.** Sale la silueta de un futbolista, nadie sabe quién es y gana quien más arriesga. Al final se revela quién era y se arma el once.",
           "",
-          "**Cómo empezar**",
-          "1️⃣ Lee las {#reglas}",
-          "2️⃣ Elige tus roles en **Canales y roles** (arriba a la izquierda)",
-          "3️⃣ Mira {#como-se-juega} y entra a {#salas-abiertas}",
-          "",
-          "Se juega **gratis en el navegador**, de 2 a 4 amigos, sin cuentas ni descargas. También se instala como app en el móvil.",
+          "Se juega **gratis en el navegador**, de 2 a 4 amigos, sin cuentas ni descargas. En el móvil también se instala como app.",
         ].join("\n"),
+        fields: [
+          {
+            name: "🧭 Empieza en 3 pasos",
+            value: "1️⃣ Lee las {#reglas}\n2️⃣ Elige tus roles en **Canales y roles** (arriba a la izquierda)\n3️⃣ Entra a {#salas-abiertas} o pide partida en {#busco-partida}",
+          },
+          { name: "🗺️ ¿Te pierdes?", value: "La {#guia} te cuenta qué hay en cada canal y las {#faq} contestan lo que más se pregunta." },
+          { name: "📣 Para enterarte de todo", value: "Noticias en {#anuncios}, cambios en {#novedades}. Fallos en {#bugs} e ideas en {#sugerencias}: aquí se lee todo." },
+          { name: "{:hinchada} La hinchada", value: "Quien apoya el proyecto sale en la hinchada y tiene su rol dorado. Es opcional: lo importante es jugar." },
+        ],
         footer: "Puja a ciegas. Arma tu once.",
       },
     ],
     buttons: [
       { label: "Jugar ahora", url: "{game}" },
+      { label: "Guía del servidor", url: "{channel:guia}" },
       { label: "Cómo se juega", url: "{channel:como-se-juega}" },
-      { label: "Reglas", url: "{channel:reglas}" },
+    ],
+  },
+  {
+    channel: "guia",
+    pin: true,
+    thumbnail: "icon.png",
+    embeds: [
+      {
+        color: C.pitch,
+        title: "Guía del servidor",
+        description: "El mapa para no perderte. Todo está agrupado por categorías, de arriba abajo.",
+        fields: [
+          { name: "📣 Bienvenida", value: "{#bienvenida} · {#guia} · {#reglas} · {#como-se-juega} · {#faq} · {#anuncios} · {#novedades}" },
+          {
+            name: "⚽ A jugar",
+            value: "{#salas-abiertas} — pega tu sala si faltan jugadores\n{#busco-partida} — ¿sin grupo? pregunta aquí\n{#mejores-onces} — tu once final y lo que gastaste\n{#fichajes-locos} — pujas absurdas y fichajes que salieron mal\n{#clips} — vídeos y capturas de tus mejores momentos",
+          },
+          {
+            name: "💬 Comunidad",
+            value: "{#general} — charla libre\n{#debate} — ¿quién es mejor? con argumentos\n{#presentaciones} — cuéntanos quién eres\n{#off-topic} — todo lo que no sea fútbol",
+          },
+          {
+            name: "🛠️ El proyecto",
+            value: "{#sugerencias} — ideas para el juego (foro)\n{#bugs} — fallos (foro)\n{#comentarios} — lo que llega desde el formulario del juego\n{#testers} — versiones de prueba (solo testers)",
+          },
+          { name: "🔊 Voz", value: "Cuatro salas de **4 plazas** (como una partida) y un Lounge para charlar." },
+        ],
+        footer: "¿Falta algo? Cuéntalo en #sugerencias",
+      },
+      {
+        color: C.gold,
+        title: "Los roles, explicados",
+        description: "Algunos los das tú desde **Canales y roles**; otros los da el equipo.",
+        fields: [
+          { name: "Los da el equipo", value: "👑 **Fundador** — quien hace el juego\n🛡️ **Moderador** — cuida el vestuario\n🧪 **Tester** — prueba versiones antes que nadie\n🎙️ **Creador** — hace contenido sobre el juego (escribe a un moderador con tu canal)\n⭐ **La hinchada** — apoyó el proyecto" },
+          { name: "Los eliges tú", value: "🔔 **Avisos de partidas** — te mencionan cuando alguien abre sala\n📰 **Novedades** — cada actualización\n🎮 **Busco partida** — para que te propongan jugar\n🌎 🇪🇸 🌍 **Región** — para coincidir en horarios" },
+          { name: "¿Cómo cambio mis roles?", value: "Arriba a la izquierda del servidor, en **Canales y roles**. Puedes cambiarlos cuando quieras." },
+        ],
+      },
     ],
   },
   {
     channel: "reglas",
     pin: true,
     image: "rules.png",
+    thumbnail: "icon.png",
     embeds: [
       {
         color: C.pitch,
@@ -66,6 +111,7 @@ export const MESSAGES = [
     channel: "como-se-juega",
     pin: true,
     image: "howto.png",
+    thumbnail: "icon.png",
     embeds: [
       {
         color: C.gold,
@@ -178,6 +224,75 @@ export const MESSAGES = [
           "**Para reportes del juego:** los comentarios llegan a {#comentarios}; si es un fallo real, ábrelo en {#bugs}.",
           "**Nuevos moderadores:** solo por invitación del {@fundador}. Nadie recibe permisos a cambio de dinero.",
         ].join("\n"),
+      },
+    ],
+  },
+  {
+    channel: "faq",
+    pin: true,
+    embeds: [
+      {
+        color: C.pitch,
+        title: "Preguntas frecuentes",
+        description: "Lo que más se pregunta. Si no está aquí, pregunta en {#general}.",
+        fields: [
+          { name: "¿Es gratis? ¿Necesito cuenta?", value: "Gratis, sin anuncios y **sin cuentas**: pones tu nombre y a pujar." },
+          { name: "¿Cuántos podemos jugar?", value: "De **2 a 4** personas por sala. Una partida a dos es igual de válida." },
+          { name: "¿Funciona en el móvil?", value: "Sí. Se juega en el navegador y también se **instala como app** desde la portada." },
+          { name: "¿Qué pasa si se me cae el internet?", value: "La partida te espera **60 segundos**. Si vuelves a tiempo, sigues en tu sitio." },
+          { name: "¿Por qué algunas fotos no se ven?", value: "El juego está en **fase temprana** y algunas fotos fallan; se irán corrigiendo. Cuéntanos cuáles en {#bugs}." },
+          { name: "¿Cómo encuentro con quién jugar?", value: "Pega tu sala en {#salas-abiertas} o pide partida en {#busco-partida}. También hay salas públicas en la portada." },
+          { name: "¿Cómo reporto un fallo o propongo algo?", value: "Fallos en {#bugs} e ideas en {#sugerencias}. También hay un botón de **Comentarios** dentro del juego." },
+          { name: "¿Cómo puedo apoyar el proyecto?", value: "Es opcional. Hay un botón de apoyo en la web y quien colabora sale en **La hinchada** si lo pide." },
+        ],
+      },
+    ],
+    buttons: [{ label: "Abrir el juego", url: "{game}" }],
+  },
+  {
+    channel: "comentarios",
+    pin: true,
+    embeds: [
+      {
+        color: C.gold,
+        title: "De dónde sale este canal",
+        description: [
+          "Cada vez que alguien envía el formulario de **Comentarios** dentro del juego, aparece aquí una tarjeta con el tipo (error, sugerencia u otro), el mensaje y el contacto si lo dejó.",
+          "",
+          "• Solo el equipo ve este canal.",
+          "• Si es un fallo real, ábrelo en {#bugs}; si es una idea buena, en {#sugerencias}.",
+          "• Si no llega nada, mira el panel de Render: el servidor registra lo que contesta Discord.",
+        ].join("\n"),
+      },
+    ],
+  },
+  {
+    channel: "fundador",
+    pin: true,
+    embeds: [
+      {
+        color: C.gold,
+        title: "Panel del fundador",
+        description: "Solo tú ves este canal. Enlaces clave y tu rutina, en un sitio.",
+        fields: [
+          {
+            name: "🔗 Enlaces",
+            value: "• Juego: {game}\n• Monitor en vivo: {game}/colyseus\n• Panel de Render: https://dashboard.render.com\n• Apoyo (PayPal): https://paypal.me/trianaq\n• Repositorio: https://github.com/CamiloTriana75/subasta-futbolera",
+          },
+          {
+            name: "🧰 Dónde mirar cada cosa",
+            value: "• Comentarios del juego: {#comentarios}\n• Fallos: {#bugs} · Ideas: {#sugerencias}\n• Alertas de AutoMod: {#logs}\n• Quién juega ahora: el monitor (usuario y contraseña de Render)",
+          },
+          {
+            name: "🗓️ Rutina semanal",
+            value: "1. Revisa {#comentarios} y pasa lo útil a {#bugs} o {#sugerencias}.\n2. Etiqueta lo nuevo (🔎 Investigando, ⏳ Planeado, ✅ Hecho).\n3. Publica en {#novedades} lo que cambió.\n4. Abre una sala el fin de semana en {#salas-abiertas} y menciona a {@avisos}.\n5. Sube un clip o una captura a {#clips}.\n6. Da el rol {@hinchada} a quien haya apoyado (y pidió salir).",
+          },
+          {
+            name: "🚀 Lista de lanzamiento",
+            value: "☐ Comentarios llegando a Discord\n☐ Contraseña del monitor puesta en Render\n☐ Invitación permanente en la bio y en la web\n☐ Primera partida con amigos\n☐ 3 clips del trailer publicados\n☐ Moderadores con verificación en dos pasos",
+          },
+        ],
+        footer: "Solo el fundador ve este canal",
       },
     ],
   },

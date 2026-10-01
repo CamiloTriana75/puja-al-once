@@ -67,8 +67,10 @@ export const CATEGORIES = [
     name: "📣 BIENVENIDA",
     channels: [
       { key: "bienvenida", name: "👋｜bienvenida", type: "text", readonly: true, topic: "Empieza por aquí: qué es Puja el Once y cómo entrar al vestuario." },
+      { key: "guia", name: "🧭｜guía-del-servidor", type: "text", readonly: true, topic: "El mapa del servidor: qué hay en cada canal y qué significa cada rol." },
       { key: "reglas", name: "📜｜reglas", type: "text", readonly: true, topic: "Cómo convivimos. Léelas antes de escribir." },
       { key: "como-se-juega", name: "❓｜cómo-se-juega", type: "text", readonly: true, topic: "Las reglas del juego explicadas en un minuto." },
+      { key: "faq", name: "❔｜preguntas-frecuentes", type: "text", readonly: true, topic: "Lo que más se pregunta, contestado." },
       { key: "anuncios", name: "📢｜anuncios", type: "announcement", readonly: true, topic: "Noticias importantes del juego y de la comunidad." },
       { key: "novedades", name: "🆕｜novedades", type: "text", readonly: true, topic: "Cada actualización del juego, con lo que cambia." },
     ],
@@ -147,6 +149,7 @@ export const CATEGORIES = [
       { key: "staff", name: "🛡️｜staff", type: "text", staff: true, topic: "Coordinación del equipo. Manual de moderación fijado." },
       { key: "logs", name: "🧾｜logs", type: "text", staff: true, topic: "Alertas automáticas de AutoMod y registro de acciones." },
       { key: "voz-staff", name: "🔒 Staff", type: "voice", staff: true },
+      { key: "fundador", name: "🗝️｜fundador", type: "text", founder: true, topic: "Solo para el fundador: enlaces clave, lista de lanzamiento y rutina semanal." },
     ],
   },
 ];
@@ -171,7 +174,7 @@ export const EMOJIS = ["puja", "mazo", "balon", "vendido", "silueta", "once", "h
 /** Preguntas de "Canales y roles": cada opcion da un rol y/o muestra canales. */
 export const ONBOARDING = {
   defaultChannels: [
-    "bienvenida", "reglas", "como-se-juega", "anuncios", "salas-abiertas", "busco-partida",
+    "bienvenida", "guia", "reglas", "como-se-juega", "faq", "anuncios", "salas-abiertas", "busco-partida",
     "general", "presentaciones", "mejores-onces", "fichajes-locos", "clips",
   ],
   prompts: [
@@ -203,7 +206,7 @@ export const WELCOME_SCREEN = {
   channels: [
     { channel: "como-se-juega", description: "Cómo se juega, en un minuto", emoji: "❓" },
     { channel: "salas-abiertas", description: "Entra a una partida ahora", emoji: "🔔" },
-    { channel: "mejores-onces", description: "Presume de tu once", emoji: "🏆" },
+    { channel: "guia", description: "El mapa del servidor", emoji: "🧭" },
     { channel: "sugerencias", description: "Dinos qué mejorar", emoji: "💡" },
     { channel: "general", description: "Charla con la comunidad", emoji: "💬" },
   ],

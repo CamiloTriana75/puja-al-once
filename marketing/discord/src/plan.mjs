@@ -54,6 +54,7 @@ export function render(text, ctx) {
   return text
     .replaceAll("{game}", ctx.gameUrl)
     .replace(/\{#([\w-]+)\}/g, (_, key) => (ctx.channelId(key) ? `<#${ctx.channelId(key)}>` : `#${key}`))
+    .replace(/\{:(\w+)\}/g, (_, name) => (ctx.emoji ? ctx.emoji(name) : ""))
     .replace(/\{@([\w-]+)\}/g, (_, key) => (ctx.roleId(key) ? `<@&${ctx.roleId(key)}>` : `@${key}`))
     .replace(/\{channel:([\w-]+)\}/g, (_, key) => (ctx.guildId && ctx.channelId(key) ? `https://discord.com/channels/${ctx.guildId}/${ctx.channelId(key)}` : `{channel:${key}}`));
 }
@@ -170,9 +171,11 @@ export function validate() {
   const refs = (text) => ({
     channels: [...text.matchAll(/\{#([\w-]+)\}/g)].map((m) => m[1]).concat([...text.matchAll(/\{channel:([\w-]+)\}/g)].map((m) => m[1])),
     roles: [...text.matchAll(/\{@([\w-]+)\}/g)].map((m) => m[1]),
+    emojis: [...text.matchAll(/\{:(\w+)\}/g)].map((m) => m[1]),
   });
   const checkRefs = (where, text) => {
-    const { channels, roles } = refs(text);
+    const { channels, roles, emojis } = refs(text);
+    for (const name of emojis) if (!EMOJIS.includes(name)) fail(`${where}: emoji desconocido {:${name}}`);
     for (const key of channels) if (!channelKeys().includes(key)) fail(`${where}: canal desconocido {${key}}`);
     for (const key of roles) if (!roleKeys().includes(key)) fail(`${where}: rol desconocido {${key}}`);
   };
@@ -184,6 +187,7 @@ export function validate() {
     if (!msg.embeds?.length) fail(`${where}: sin embeds`);
     if (msg.embeds.length > LIMITS.embedsPerMessage) fail(`${where}: demasiados embeds`);
     if (msg.image && !existsSync(resolve(ASSETS, msg.image))) fail(`${where}: falta assets/${msg.image}`);
+    if (msg.thumbnail && !existsSync(resolve(ASSETS, msg.thumbnail))) fail(`${where}: falta assets/${msg.thumbnail}`);
     const idKey = `${msg.channel}:${msg.embeds[0].title}`;
     if (titles.has(idKey)) fail(`${where}: titulo repetido en el mismo canal (se usa para reconocer el mensaje)`);
     titles.add(idKey);

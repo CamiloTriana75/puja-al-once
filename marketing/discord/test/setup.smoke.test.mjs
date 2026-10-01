@@ -27,6 +27,7 @@ function makeServer() {
   const log = { rolesCreated: 0, channelsCreated: [], messagesSent: 0, messagesEdited: 0, pins: 0, automodCreated: 0, threads: 0, emojis: 0 };
   const botId = "bot";
 
+  const emojiStore = new Collection();
   const roles = new Collection();
   const channels = new Collection();
   const everyone = { id: id(), setPermissions: async function (p) { this.permissions = p; } };
@@ -107,7 +108,15 @@ function makeServer() {
       return guild;
     },
     fetch: async () => guild,
-    emojis: { fetch: async () => new Collection(), create: async () => { log.emojis++; } },
+    emojis: {
+      fetch: async () => emojiStore,
+      create: async ({ name }) => {
+        log.emojis++;
+        const e = { id: id(), name };
+        emojiStore.set(e.id, e);
+        return e;
+      },
+    },
     autoModerationRules: {
       fetch: async () => new Collection(),
       create: async () => { log.automodCreated++; },
@@ -148,7 +157,8 @@ test("run() monta el servidor completo y es repetible sin duplicar nada", async 
 
     // Las menciones y enlaces del primer mensaje se resolvieron.
     const welcome = [...channels.values()].find((c) => c.name === "👋｜bienvenida").sent[0];
-    assert.ok(!/\{[#@]/.test(JSON.stringify(welcome.embeds)));
+    assert.ok(!/\{[#@:]/.test(JSON.stringify(welcome.embeds)), "sin placeholders sin resolver");
+    assert.match(JSON.stringify(welcome.embeds), /<:mazo:\d+>/, "el emoji personalizado se resuelve a su id");
 
     // Segunda ejecucion: nada nuevo.
     const rolesBefore = log.rolesCreated;

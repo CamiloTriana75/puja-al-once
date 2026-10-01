@@ -39,6 +39,12 @@ export function buildOverwrites(spec, ids, categoryIsStaff = false) {
   const staffAllow = [P.ViewChannel, P.SendMessages, P.ReadMessageHistory, P.Connect, P.Speak, P.ManageMessages];
   const out = [];
 
+  if (spec.founder) {
+    // Solo el Fundador (administrador, que ve todo): ni siquiera los moderadores.
+    out.push({ id: ids.everyone, deny: [P.ViewChannel] });
+    out.push({ id: ids.moderador, deny: [P.ViewChannel] });
+    return out;
+  }
   if (spec.staff || categoryIsStaff) {
     out.push({ id: ids.everyone, deny: [P.ViewChannel] });
     out.push({ id: ids.moderador, allow: staffAllow });
@@ -63,7 +69,7 @@ export function categoryOverwrites(spec, ids) {
   return spec.staff ? [{ id: ids.everyone, deny: [P.ViewChannel] }, { id: ids.moderador, allow: [P.ViewChannel] }] : [];
 }
 
-export function embedData(embed, ctx, imageName) {
+export function embedData(embed, ctx, imageName, thumbnailName) {
   const data = {
     color: embed.color,
     title: embed.title,
@@ -72,6 +78,7 @@ export function embedData(embed, ctx, imageName) {
   };
   if (embed.footer) data.footer = { text: embed.footer };
   if (imageName) data.image = { url: `attachment://${imageName}` };
+  if (thumbnailName) data.thumbnail = { url: `attachment://${thumbnailName}` };
   return data;
 }
 
