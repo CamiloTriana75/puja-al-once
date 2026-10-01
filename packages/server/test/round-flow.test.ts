@@ -261,13 +261,13 @@ describe("voto de salto", () => {
 });
 
 describe("mercado de transferencias", () => {
-  it("pausa la partida al terminar la defensa y antes de abrir el CDM", async () => {
+  it("pausa la partida al terminar el mediocampo y antes de abrir el extremo izquierdo", async () => {
     const { room, clients, hooks } = await startedRoom();
 
-    // SLOTS = GK, LB, CB1, CB2, RB, CDM, ...: las 5 rondas de la defensa (0-4)
-    // se juegan enteras y al cerrar RB entra el mercado. Antes se colgaba tras
-    // CAM (hueco 8), ya en mitad del ataque.
-    for (let slotIndex = 0; slotIndex <= 4; slotIndex++) {
+    // SLOTS = GK, LB, CB1, CB2, RB, CDM, CM, CAM, LW, ...: las 8 rondas de la
+    // defensa y el mediocampo (0-7) se juegan enteras y al cerrar CAM entra el
+    // mercado, justo antes del extremo izquierdo.
+    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
       for (const client of clients) {
         client.send("bid", { amount: room.state.minimumBid });
         await room.waitForNextPatch();
@@ -278,9 +278,9 @@ describe("mercado de transferencias", () => {
       }
     }
 
-    expect(room.state.slotIndex).toBe(4);
+    expect(room.state.slotIndex).toBe(7);
     expect(room.state.phase).toBe("TRANSFER_MARKET");
-    expect(room.state.currentSlot).toBe("RB");
+    expect(room.state.currentSlot).toBe("CAM");
 
     clients[0]!.send("market:continue", {});
     await room.waitForNextPatch();
@@ -293,14 +293,14 @@ describe("mercado de transferencias", () => {
     }
 
     expect(room.state.phase).toBe("BIDDING");
-    expect(room.state.slotIndex).toBe(5);
-    expect(room.state.currentSlot).toBe("CDM");
-  });
+    expect(room.state.slotIndex).toBe(8);
+    expect(room.state.currentSlot).toBe("LW");
+  }, 60_000);
 
   it("crea una oferta visible para toda la sala y la acepta de forma atomica", async () => {
     const { room, clients } = await startedRoom();
 
-    for (let slotIndex = 0; slotIndex <= 4; slotIndex++) {
+    for (let slotIndex = 0; slotIndex <= 7; slotIndex++) {
       for (const client of clients) {
         client.send("bid", { amount: room.state.minimumBid });
         await room.waitForNextPatch();
@@ -354,7 +354,7 @@ describe("mercado de transferencias", () => {
     clients[3]!.send("market:continue", {});
     await room.waitForNextPatch();
     expect(room.state.phase).toBe("BIDDING");
-  }, 30_000);
+  }, 60_000);
 });
 
 describe("reveal y avance", () => {

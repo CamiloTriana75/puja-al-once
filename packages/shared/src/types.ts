@@ -40,8 +40,14 @@ export interface Rules {
   antiSnipeMs: number;
   /** Duracion de la votacion de salto. */
   skipVoteMs: number;
-  /** Cuanto se muestra la carta revelada. */
+  /** Cuanto se muestra la carta revelada cuando se descarta (nadie la quiso). */
   revealMs: number;
+  /**
+   * Cuanto dura la fase REVEAL cuando la carta se adjudica: lo que tarda la
+   * secuencia de venta del cliente (mazo, pase del balon y jugador a la vista,
+   * ~5,7 s) mas unos 3-4 s de respiro antes de la siguiente carta.
+   */
+  soldRevealMs: number;
   /** Margen de reconexion tras una desconexion. */
   reconnectSeconds: number;
 }
@@ -83,6 +89,7 @@ export const DEFAULT_RULES: Rules = {
   antiSnipeMs: 10_000,
   skipVoteMs: 10_000,
   revealMs: 6_000,
+  soldRevealMs: 9_500,
   reconnectSeconds: 60,
 };
 

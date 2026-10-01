@@ -26,18 +26,18 @@ const matchmakeLimiter = new RateLimiter();
 
 /**
  * Indice de `SLOTS` al que se abre el mercado de traspasos: en cuanto termina
- * la DEFENSA y antes de empezar el CDM (`advance()` lo entra al cerrar el
- * hueco 4 = RB, y `onMarketContinue` arranca la ronda 5 = CDM).
+ * el MEDIOCAMPO (CDM, CM y CAM) y antes de empezar el extremo izquierdo
+ * (`advance()` lo entra al cerrar el hueco 7 = CAM, y `onMarketContinue`
+ * arranca la ronda 8 = LW). Asi cada uno llega al mercado con la defensa y el
+ * mediocampo ya formados y solo le queda el ataque por subastar.
  *
- * Antes vivia en el hueco 8, o sea en mitad del ataque (tras CAM, antes de
- * LW): es decir los defensa ya estaban cerrados y nadie habia formado
- * todavia su mediocampo al pasar por caja. El numero va escrito en los dos
- * lados del mismo cruce -- el que abre el mercado y el que reanuda la partida
- * -- y ambos tienen que decir el mismo, asi que salen de aqui los dos en vez
- * de repetir un 8 magico: si se cambia uno y no el otro, el mercado cerraria
- * y `startRound` saltaria a un hueco que no es el siguiente.
+ * El numero va escrito en los dos lados del mismo cruce -- el que abre el
+ * mercado y el que reanuda la partida -- y ambos tienen que decir el mismo,
+ * asi que salen de aqui los dos en vez de repetir un 8 magico: si se cambia
+ * uno y no el otro, el mercado cerraria y `startRound` saltaria a un hueco
+ * que no es el siguiente.
  */
-const TRANSFER_MARKET_SLOT_INDEX = 5;
+const TRANSFER_MARKET_SLOT_INDEX = 8;
 
 export interface AuctionRoomOptions {
   /** La privacidad es explícita; todas las creaciones conservan el valor privado por defecto. */
@@ -736,7 +736,10 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     // la fase quedaria bien puesta pero la carta seguiria sin salir de
     // remainingCards, que es justo el fallo que el reparto de
     // responsabilidades entre ambos existe para hacer imposible.
-    this.game.endsAt = Date.now() + this.rules.revealMs;
+    // Una carta adjudicada deja sitio a la secuencia de venta del cliente y a un
+    // respiro antes de la siguiente; una descartada no tiene nada que celebrar.
+    const revealMs = outcome.kind === "DISCARDED" ? this.rules.revealMs : this.rules.soldRevealMs;
+    this.game.endsAt = Date.now() + revealMs;
     this.sync();
 
     // La carta de la mesa se mantiene visible con sus campos ya publicados.
@@ -761,7 +764,7 @@ export class AuctionRoom extends Room<AuctionRoomState> {
     // (0) hasta RESULTS, igual que row.rating arriba.
 
     this.timer?.clear();
-    this.timer = this.clock.setTimeout(() => this.onRevealTimeout(), this.rules.revealMs);
+    this.timer = this.clock.setTimeout(() => this.onRevealTimeout(), revealMs);
   }
 
   protected onRevealTimeout(): void {

@@ -26,6 +26,7 @@ const REAL_RULES: Rules = {
   antiSnipeMs: 250,
   skipVoteMs: 250,
   revealMs: 200,
+  soldRevealMs: 200,
   // Este fichero prueba relojes, no economia. Con el presupuesto real un
   // jugador que puja el minimo en cada carta se queda sin fondos a mitad de
   // partida, la carta se resuelve por timeout sola y el recuento de cartas
