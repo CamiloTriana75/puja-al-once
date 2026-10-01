@@ -78,6 +78,25 @@ El flujo automatizado es manual a propósito. Un push a `main` no despliega: `au
 - Ese procedimiento revierte el código, no la configuración: revisa aparte los cambios de variables de entorno.
 - Si la instancia se reinicia, informa que las partidas que estaban activas se perdieron. V1 no tiene almacenamiento persistente de salas.
 
+## Cloudflare delante de Render (cuando haya dominio propio)
+
+Un subdominio `onrender.com` no se puede poner detrás de Cloudflare: hace falta un dominio propio. Con él, Cloudflare (plan gratuito) aporta CDN, protección DDoS básica, reglas de WAF y límites de peticiones. El servidor ya está preparado:
+
+- **Caché de estáticos**: el servidor envía `Cache-Control` por tipo (`staticCacheControl` en `requestPolicy.ts`): `/assets/*` un año e inmutable (llevan hash), páginas, `sw.js` y manifiesto con `no-cache`, iconos un día. Cloudflare respeta esas cabeceras tal cual.
+- **IP real del jugador**: en Render con Cloudflare, `X-Forwarded-For` acaba en una IP del borde de Cloudflare compartida por muchos usuarios, y el límite por IP se volvería casi global. Pon `TRUST_CLOUDFLARE=1` en Render **solo cuando el tráfico pase por Cloudflare**: el servidor pasa a leer `CF-Connecting-IP`. Si se activa sin Cloudflare delante, un cliente podría inventarse esa cabecera para esquivar los límites.
+
+Pasos:
+
+1. Compra el dominio y añádelo a Cloudflare; cambia los nameservers en el registrador.
+2. En Render, añade el dominio al servicio (Custom Domains) y crea en Cloudflare el `CNAME` hacia el `onrender.com` con proxy activado (nube naranja).
+3. SSL/TLS en modo **Full (strict)**. WebSockets vienen activados por defecto en todos los planes.
+4. Reglas de caché (Cache Rules):
+   - Cachear: `/assets/*` (respetar la caché del origen) y los ficheros de `/icons/`.
+   - **Saltarse la caché (Bypass)**: `/photos/*`, `/silhouettes/*`, `/rooms/*`, `/matchmake/*`, `/feedback*`, `/time`, `/health/*`. Llevan identificadores secretos de carta o son tráfico en vivo, igual que en la lista de exclusión del service worker (`public/sw.js`).
+5. Seguridad: activa *Bot Fight Mode* y, como regla de WAF, un límite de peticiones a `/feedback` y a `/matchmake/*` (p. ej. 20 por minuto por IP). Es una capa más; los límites del servidor siguen activos.
+6. Pon `TRUST_CLOUDFLARE=1` en Render, redespliega y actualiza `PUBLIC_ORIGINS` con el dominio nuevo (ver `render.yaml`).
+7. Aviso de capacidad: el cuello de botella de este juego son las conexiones WebSocket y la memoria de un solo proceso, no los estáticos. Cloudflare no lo arregla: con más jugadores simultáneos, pasa Render al plan `starter` o superior (y recuerda que no se puede escalar horizontalmente, ver abajo).
+
 ## Decisiones de infraestructura pendientes
 
 El sistema de salas públicas y matchmaking usa estado local del proceso. No escales horizontalmente hasta migrar salas y presencia a un driver compartido y probarlo. El directorio tampoco conserva cuentas ni historial entre reinicios. El despliegue seguirá siendo manual hasta que se elija dominio, se creen secretos y se proteja el environment de producción.

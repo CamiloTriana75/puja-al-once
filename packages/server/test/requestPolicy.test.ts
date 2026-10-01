@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus } from "../src/requestPolicy.js";
+import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus, staticCacheControl } from "../src/requestPolicy.js";
 import { AuctionRoom } from "../src/AuctionRoom.js";
 
 describe("politica de peticiones", () => {
@@ -33,6 +33,40 @@ describe("politica de peticiones", () => {
 
 describe("dirección del cliente tras un proxy", () => {
   const PROXY_SOCKET = "10.0.0.7";
+
+  describe("con Cloudflare delante (TRUST_CLOUDFLARE=1)", () => {
+    const run = (value: string | undefined, fn: () => void) => {
+      const previous = process.env.TRUST_CLOUDFLARE;
+      if (value === undefined) delete process.env.TRUST_CLOUDFLARE;
+      else process.env.TRUST_CLOUDFLARE = value;
+      try {
+        fn();
+      } finally {
+        if (previous === undefined) delete process.env.TRUST_CLOUDFLARE;
+        else process.env.TRUST_CLOUDFLARE = previous;
+      }
+    };
+
+    it("usa CF-Connecting-IP: X-Forwarded-For acaba en una IP del borde de Cloudflare, igual para todos", () => {
+      run("1", () => {
+        const headers = { "cf-connecting-ip": "203.0.113.50", "x-forwarded-for": "172.70.1.1" };
+        expect(clientAddress(headers, PROXY_SOCKET)).toBe("203.0.113.50");
+      });
+    });
+
+    it("sin la variable ignora CF-Connecting-IP, para no fiarse de un cliente que lo invente", () => {
+      run(undefined, () => {
+        const headers = { "cf-connecting-ip": "203.0.113.50", "x-forwarded-for": "203.0.113.9" };
+        expect(clientAddress(headers, PROXY_SOCKET)).toBe("203.0.113.9");
+      });
+    });
+
+    it("si falta la cabecera vuelve al comportamiento normal", () => {
+      run("1", () => {
+        expect(clientAddress({ "x-forwarded-for": "203.0.113.9" }, PROXY_SOCKET)).toBe("203.0.113.9");
+      });
+    });
+  });
 
   it("usa Fly-Client-IP cuando sigue desplegándose en Fly", () => {
     const previous = process.env.FLY_APP_NAME;
@@ -137,6 +171,23 @@ describe("spaFallbackStatus (soft-404)", () => {
     expect(spaFallbackStatus("/legal")).toBe(200);
   });
 });
+describe("staticCacheControl", () => {
+  it("cachea un ano, inmutable, lo que lleva hash en el nombre", () => {
+    expect(staticCacheControl("/assets/index-Ab12Cd34.js")).toBe("public, max-age=31536000, immutable");
+  });
+
+  it("deja que iconos y estaticos sueltos se revaliden a diario", () => {
+    expect(staticCacheControl("/icons/icon-192.png")).toBe("public, max-age=86400");
+    expect(staticCacheControl("/logo-symbol.png")).toBe("public, max-age=86400");
+  });
+
+  it("obliga a revalidar paginas, service worker y manifiesto", () => {
+    for (const path of ["/", "/index.html", "/sw.js", "/manifest.webmanifest", "/offline.html", "/mantenimiento.html", "/actualizaciones.html"]) {
+      expect(staticCacheControl(path)).toBe("no-cache");
+    }
+  });
+});
+
 describe("maintenanceAction", () => {
   it("no hace nada si el mantenimiento esta apagado", () => {
     expect(maintenanceAction("/", false)).toBeNull();

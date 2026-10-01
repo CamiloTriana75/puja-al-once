@@ -84,6 +84,14 @@ export function clientAddress(
   const flyIp = headers["fly-client-ip"];
   if (process.env.FLY_APP_NAME && typeof flyIp === "string" && flyIp.trim()) return flyIp.trim();
 
+  // Con Cloudflare delante, la ultima entrada de X-Forwarded-For es una IP del
+  // borde de Cloudflare (la misma para miles de usuarios): el limite por IP se
+  // volveria casi global. Cloudflare pone la IP real en CF-Connecting-IP. Solo se
+  // lee si se declara (TRUST_CLOUDFLARE=1) porque un cliente que llegue al origen
+  // sin pasar por Cloudflare podria inventarsela para esquivar el limite.
+  const cfIp = headers["cf-connecting-ip"];
+  if (process.env.TRUST_CLOUDFLARE === "1" && typeof cfIp === "string" && cfIp.trim()) return cfIp.trim();
+
   const forwarded = headers["x-forwarded-for"];
   const chain = (Array.isArray(forwarded) ? forwarded.join(",") : forwarded ?? "")
     .split(",")
@@ -139,4 +147,21 @@ export function maintenanceAction(pathname: string, enabled: boolean): "page" | 
   const lastSegment = pathname.split("/").filter(Boolean).pop() ?? "";
   // Un fichero con extension (assets, iconos, sw.js...) pasa; una ruta limpia es una pagina.
   return lastSegment.includes(".") ? null : "page";
+}
+
+/**
+ * Cache-Control de los ficheros estaticos del cliente. Pensado para que una CDN
+ * (Cloudflare) y el navegador cacheen lo que se puede y nada mas:
+ *  - /assets/*: Vite pone un hash en el nombre, el contenido de una URL nunca
+ *    cambia -> un ano, inmutable.
+ *  - Paginas, service worker y manifiesto: se revalidan siempre, o una version
+ *    nueva tardaria dias en llegar (y el SW viejo apuntaria a ficheros borrados).
+ *  - Resto (iconos, logos, favicon): un dia.
+ * Las rutas de juego (/photos, /silhouettes, /rooms, /matchmake) NO pasan por
+ * aqui: llevan identificadores secretos de carta y no deben cachearse jamas.
+ */
+export function staticCacheControl(pathname: string): string {
+  if (pathname.startsWith("/assets/")) return "public, max-age=31536000, immutable";
+  if (pathname === "/" || pathname === "/sw.js" || pathname === "/manifest.webmanifest" || pathname.endsWith(".html")) return "no-cache";
+  return "public, max-age=86400";
 }

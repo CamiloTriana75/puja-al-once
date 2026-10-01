@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
 import { buildWebhookPayload, parseFeedback } from "./feedback.js";
-import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus } from "./requestPolicy.js";
+import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus, staticCacheControl } from "./requestPolicy.js";
 
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
 // AuctionRoom.ts: pnpm fija el cwd de cada paquete al ejecutar sus scripts.
@@ -303,13 +303,20 @@ const app = config({
     // Va al final a proposito: registrado antes, el comodin de abajo se
     // tragaria /time y las rutas de imagenes.
     if (process.env.NODE_ENV === "production") {
-      // El service worker y el manifiesto nunca deben quedarse en la cache HTTP:
-      // si no, una version nueva tarda dias en llegar a quien ya instalo la app.
-      app.use((req, res, next) => {
-        if (req.path === "/sw.js" || req.path === "/manifest.webmanifest") res.setHeader("Cache-Control", "no-cache");
-        next();
-      });
-      app.use(expressStatic(CLIENT_DIST));
+      // Cache-Control por tipo de fichero (ver staticCacheControl): inmutable para
+      // /assets con hash, revalidacion para paginas, service worker y manifiesto.
+      // `setHeaders` de express.static corre solo cuando hay un fichero que servir,
+      // asi que no toca las respuestas JSON ni las imagenes de cartas.
+      app.use(
+        expressStatic(CLIENT_DIST, {
+          etag: true,
+          cacheControl: false,
+          setHeaders: (res, filePath) => {
+            const relative = filePath.slice(CLIENT_DIST.length).replace(/\\/g, "/");
+            res.setHeader("Cache-Control", staticCacheControl(relative));
+          },
+        }),
+      );
       app.get("/{*splat}", (req, res) => {
         // 404 de verdad para lo que parece un fichero inexistente, 200 para
         // el resto (las salas van por ruta limpia y tienen que servir la
