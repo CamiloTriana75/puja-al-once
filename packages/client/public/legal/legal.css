@@ -6,13 +6,17 @@
  * prefers-reduced-motion respetado.
  */
 :root {
-  --deep: #0b0e0c;
-  --ink: #121512;
+  --canvas: #f5f4ec;
+  --deep: #0c241c;
+  --ink: #ffffff;
   --lime: #c6f833;
-  --green: #16c64f;
-  --mute: #7a8179;
-  --white: #f5f6f2;
-  --danger: #ff5c5c;
+  --green: #15834a;
+  --gold: #f0b83d;
+  --gold-ink: #7a4b00;
+  --mute: #536158;
+  --white: #ffffff;
+  --line: #d1dccf;
+  --danger: #b42318;
 }
 
 * {
@@ -25,26 +29,26 @@ html {
 
 body {
   margin: 0;
-  background: var(--deep);
-  color: var(--white);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--canvas);
+  color: var(--deep);
+  font-family: "Jost", "Futura", "Century Gothic", system-ui, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: var(--lime);
+  color: var(--green);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
 a:hover {
-  color: var(--white);
+  color: var(--gold-ink);
 }
 
 :focus-visible {
-  outline: 2px solid var(--lime);
+  outline: 3px solid var(--gold);
   outline-offset: 3px;
 }
 
@@ -68,7 +72,7 @@ header.top {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  color: var(--white);
+  color: var(--deep);
   text-decoration: none;
 }
 
@@ -89,14 +93,14 @@ header.top {
 
 .brand .brand-name b {
   display: block;
-  color: var(--lime);
+  color: var(--green);
   font-size: 0.7rem;
   letter-spacing: 0.14em;
   font-weight: 900;
 }
 
 .back {
-  color: var(--mute);
+  color: var(--green);
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -106,10 +110,11 @@ header.top {
 }
 
 .back:hover {
-  color: var(--lime);
+  color: var(--gold-ink);
 }
 
 h1 {
+  color: var(--deep);
   font-size: clamp(2.1rem, 7vw, 3.2rem);
   line-height: 0.95;
   letter-spacing: -0.03em;
@@ -119,7 +124,7 @@ h1 {
 
 h1 em {
   font-style: normal;
-  color: var(--lime);
+  color: var(--green);
 }
 
 .lede {
@@ -129,8 +134,11 @@ h1 em {
 }
 
 section {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
   background: var(--ink);
+  border-radius: 1rem;
+  box-shadow: 0 24px 50px -38px rgba(12, 36, 28, 0.45);
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.1rem;
 }
@@ -145,7 +153,7 @@ section > h2 {
 
 section > p {
   margin: 0.55rem 0;
-  color: rgba(245, 246, 242, 0.82);
+  color: #30443a;
 }
 
 section > p:first-child {
@@ -160,7 +168,7 @@ section ul,
 section ol {
   margin: 0.5rem 0 0;
   padding-left: 1.15rem;
-  color: rgba(245, 246, 242, 0.82);
+  color: #30443a;
 }
 
 section li {
@@ -168,7 +176,7 @@ section li {
 }
 
 section li::marker {
-  color: var(--lime);
+  color: var(--gold-ink);
 }
 
 section address {
@@ -176,7 +184,7 @@ section address {
 }
 
 section strong {
-  color: var(--white);
+  color: var(--deep);
 }
 
 .updated {
@@ -185,8 +193,8 @@ section strong {
   font-weight: 900;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  border: 1px solid rgba(198, 248, 51, 0.4);
-  color: var(--lime);
+  border: 1px solid rgba(21, 131, 74, 0.35);
+  color: var(--green);
   padding: 0.28rem 0.5rem;
   margin-bottom: 1rem;
 }
@@ -222,18 +230,18 @@ thead th {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--mute);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--line);
   padding: 0.4rem 0.6rem;
 }
 
 tbody td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--line);
   padding: 0.45rem 0.6rem;
   vertical-align: top;
 }
 
 tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--canvas);
 }
 
 td.source {
@@ -241,7 +249,7 @@ td.source {
 }
 
 .license-count {
-  color: var(--lime);
+  color: var(--gold-ink);
 }
 
 footer.page {
@@ -276,7 +284,40 @@ footer.page .legal-nav a {
 
 footer.page .legal-nav a:hover,
 footer.page .legal-nav a[aria-current="true"] {
-  color: var(--lime);
+  color: var(--green);
+}
+
+/* Actualizaciones comparte esta hoja con los documentos legales, aunque su
+ * contenido use articles y etiquetas de novedades en lugar de sections. */
+article {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
+  border-radius: 1rem;
+  background: var(--ink);
+  box-shadow: 0 24px 50px -38px rgba(12, 36, 28, 0.45);
+}
+
+article time,
+.tag {
+  color: var(--gold-ink);
+}
+
+article p,
+article ul {
+  color: #30443a;
+}
+
+article li::marker {
+  color: var(--gold-ink);
+}
+
+article .tag {
+  border-color: rgba(122, 75, 0, 0.35);
+}
+
+footer.page {
+  border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
