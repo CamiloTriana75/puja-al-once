@@ -233,6 +233,7 @@ if __name__ == "__main__":
     make_icon()
     make_banner(960, 540, "banner.png")
     make_banner(1920, 1080, "splash.png")
+    make_banner(1600, 640, "event.png")
     make_header("welcome.png", "BIENVENIDO", "Al vestuario de Puja el Once")
     make_header("rules.png", "REGLAS", "Pujar fuerte sí. Faltar al respeto, no.")
     make_header("howto.png", "CÓMO SE JUEGA", "El juego en un minuto")

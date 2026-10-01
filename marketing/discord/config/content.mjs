@@ -75,7 +75,7 @@ export const MESSAGES = [
         title: "Los roles, explicados",
         description: "Algunos los das tú desde **Canales y roles**; otros los da el equipo.",
         fields: [
-          { name: "Los da el equipo", value: "👑 **Fundador** — quien hace el juego\n🛡️ **Moderador** — cuida el vestuario\n🧪 **Tester** — prueba versiones antes que nadie\n🎙️ **Creador** — hace contenido sobre el juego (escribe a un moderador con tu canal)\n⭐ **La hinchada** — apoyó el proyecto" },
+          { name: "Los da el equipo", value: "👑 **Fundador** — quien hace el juego\n⚔️ **Moderador** — cuida el vestuario\n🧪 **Tester** — prueba versiones antes que nadie\n🎬 **Creador** — hace contenido sobre el juego (escribe a un moderador con tu canal)\n🔥 **La hinchada** — apoyó el proyecto" },
           { name: "Los eliges tú", value: "🔔 **Avisos de partidas** — te mencionan cuando alguien abre sala\n📰 **Novedades** — cada actualización\n🎮 **Busco partida** — para que te propongan jugar\n🌎 🇪🇸 🌍 **Región** — para coincidir en horarios" },
           { name: "¿Cómo cambio mis roles?", value: "Arriba a la izquierda del servidor, en **Canales y roles**. Puedes cambiarlos cuando quieras." },
         ],

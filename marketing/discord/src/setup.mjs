@@ -23,14 +23,18 @@ import {
   Client,
   GatewayIntentBits,
   GuildOnboardingMode,
+  GuildScheduledEventEntityType,
+  GuildScheduledEventPrivacyLevel,
+  GuildScheduledEventRecurrenceRuleFrequency,
+  GuildScheduledEventRecurrenceRuleWeekday,
   GuildOnboardingPromptType,
   Locale,
   SortOrderType,
 } from "discord.js";
 import { BRAND } from "../config/brand.mjs";
 import { FORUM_POSTS, MESSAGES } from "../config/content.mjs";
-import { AUTOMOD, CATEGORIES, EMOJIS, EVERYONE_PERMISSIONS, ONBOARDING, ROLES, SERVER, WELCOME_SCREEN } from "../config/server.mjs";
-import { buildOverwrites, buttonRow, categoryOverwrites, CHANNEL_TYPES, embedData, mergeTags, NEEDS_COMMUNITY, parseTag } from "./helpers.mjs";
+import { AUTOMOD, CATEGORIES, EMOJIS, EVENTS, EVERYONE_PERMISSIONS, ONBOARDING, ROLES, SERVER, WELCOME_SCREEN } from "../config/server.mjs";
+import { buildOverwrites, buttonRow, categoryOverwrites, CHANNEL_TYPES, embedData, mergeTags, NEEDS_COMMUNITY, nextWeekly, parseTag } from "./helpers.mjs";
 import { ASSETS, normalizeChannelName, render, summary, validate } from "./plan.mjs";
 
 const REASON = "Configuración inicial de Puja el Once";
@@ -88,7 +92,8 @@ export async function run({ client, guild, only = [], clean = false }) {
     const [allRoles, allChannels, allEmojis] = await Promise.all([guild.roles.fetch(), guild.channels.fetch(), guild.emojis.fetch()]);
     for (const emoji of allEmojis.values()) emojiIds.set(emoji.name, emoji.id);
     for (const spec of ROLES) {
-      const role = allRoles.find((r) => r.name === spec.name && !r.managed);
+      const names = [spec.name, ...(spec.aliases ?? [])];
+    const role = allRoles.find((r) => names.includes(r.name) && !r.managed);
       if (role) roles.set(spec.key, role);
     }
     for (const cat of CATEGORIES) {
@@ -272,7 +277,8 @@ export async function run({ client, guild, only = [], clean = false }) {
     await guild.edit({
       name: SERVER.name,
       icon: readAsset("icon.png"),
-      preferredLocale: Locale.SpanishLATAM,
+      description: SERVER.description,
+    preferredLocale: Locale.SpanishLATAM,
       verificationLevel: SERVER.verificationLevel,
       explicitContentFilter: SERVER.explicitContentFilter,
       defaultMessageNotifications: SERVER.defaultMessageNotifications,
@@ -284,13 +290,16 @@ export async function run({ client, guild, only = [], clean = false }) {
     });
     ok("nombre, icono, idioma, verificación y modo Comunidad");
 
-    // Banner y fondo de invitacion: requieren niveles de boost, asi que se intentan sin romper nada.
-    for (const [label, key, file] of [["banner", "banner", "banner.png"], ["fondo de invitación", "splash", "splash.png"]]) {
+    // Banner y fondo de invitacion: requieren boosts. Discord contesta 200 y los ignora si no hay,
+    // asi que se vuelve a leer el servidor para saber si de verdad se guardaron.
+    for (const [label, key, file, boosts] of [["banner", "banner", "banner.png", 7], ["fondo de invitación", "splash", "splash.png", 2]]) {
       try {
         await guild.edit({ [key]: readAsset(file), reason: REASON });
-        ok(`${label} subido`);
+        await guild.fetch();
+        if (guild[key]) ok(`${label} subido`);
+        else warn(`${label}: Discord no lo guardó porque el servidor aún no tiene los boosts necesarios (${boosts}). Está listo en assets/${file}.`);
       } catch {
-        warn(`${label}: Discord lo pide con boosts (nivel 1 para el fondo, 2 para el banner). Está listo en assets/${file} para subirlo luego.`);
+        warn(`${label}: no se pudo subir. Está listo en assets/${file} para subirlo cuando haya boosts (${boosts}).`);
       }
     }
   }
@@ -456,6 +465,46 @@ export async function run({ client, guild, only = [], clean = false }) {
 
 
 
+  async function ensureEvents() {
+    const existing = await guild.scheduledEvents.fetch();
+    for (const spec of EVENTS) {
+      if (existing.some((e) => e.name === spec.name)) {
+        skip(`evento ya existe: ${spec.name}`);
+        continue;
+      }
+      const voice = channels.get(spec.voice);
+      if (!voice) throw new Error(`Falta el canal de voz ${spec.voice}`);
+      const start = nextWeekly(new Date(), spec.weekday, spec.hour);
+      const options = {
+        name: spec.name,
+        description: spec.description,
+        scheduledStartTime: start,
+        scheduledEndTime: new Date(start.getTime() + spec.durationMinutes * 60_000),
+        privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
+        entityType: GuildScheduledEventEntityType.Voice,
+        channel: voice.id,
+        recurrenceRule: {
+          startAt: start,
+          frequency: GuildScheduledEventRecurrenceRuleFrequency.Weekly,
+          interval: 1,
+          byWeekday: [GuildScheduledEventRecurrenceRuleWeekday.Friday],
+        },
+        reason: REASON,
+      };
+      if (spec.image) options.image = readAsset(spec.image);
+      try {
+        await guild.scheduledEvents.create(options);
+      } catch (error) {
+        // Si Discord rechaza la repeticion o la imagen, se crea el evento simple en vez de dejarlo sin evento.
+        delete options.recurrenceRule;
+        delete options.image;
+        await guild.scheduledEvents.create(options);
+        warn(`${spec.name}: creado sin repetición semanal (${hint(error)})`);
+      }
+      ok(`evento creado: ${spec.name} (${start.toISOString()})`);
+    }
+  }
+
   async function ensureInvite() {
     const channel = channels.get("bienvenida");
     if (!channel) throw new Error("Falta el canal bienvenida.");
@@ -498,6 +547,7 @@ export async function run({ client, guild, only = [], clean = false }) {
   if (wants("automod")) await step("AutoMod", ensureAutomod);
   if (wants("onboarding")) await step("Canales y roles + bienvenida", applyOnboarding);
   if (wants("webhook")) await step("Webhook de comentarios", ensureWebhook);
+  if (wants("events")) await step("Eventos", ensureEvents);
   if (wants("invite")) await step("Enlace de invitación", ensureInvite);
 
   return failures;

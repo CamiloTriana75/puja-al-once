@@ -28,6 +28,7 @@ function makeServer() {
   const botId = "bot";
 
   const emojiStore = new Collection();
+  const eventStore = new Collection();
   const roles = new Collection();
   const channels = new Collection();
   const everyone = { id: id(), setPermissions: async function (p) { this.permissions = p; } };
@@ -121,6 +122,15 @@ function makeServer() {
       fetch: async () => new Collection(),
       create: async () => { log.automodCreated++; },
     },
+    scheduledEvents: {
+      fetch: async () => eventStore,
+      create: async (data) => {
+        log.events = (log.events ?? 0) + 1;
+        const e = { id: id(), ...data };
+        eventStore.set(e.id, e);
+        return e;
+      },
+    },
     editOnboarding: async (data) => { log.onboarding = data; },
     editWelcomeScreen: async (data) => { log.welcome = data; },
   };
@@ -213,6 +223,36 @@ test("--limpiar borra los canales de plantilla de Discord pero nunca los nuestro
     const names = [...channels.values()].map((c) => c.name);
     for (const kept of ["☕ Lounge", "📢｜anuncios", "💬｜general"]) assert.ok(names.includes(kept), `se conserva ${kept}`);
     for (const gone of ["Lounge", "Información", "recursos", "bienvenida-y-reglas"]) assert.ok(!names.includes(gone), `se borra ${gone}`);
+  } finally {
+    console.log = quiet;
+  }
+});
+
+test("un rol con nombre antiguo se renombra en vez de duplicarse", async () => {
+  const quiet = console.log;
+  console.log = () => {};
+  try {
+    const { client, guild, roles, log } = makeServer();
+    // Servidor creado con la version anterior: el Moderador se llamaba "🛡️ Moderador".
+    const old = { id: "old1", name: "🛡️ Moderador", managed: false, edit: async function (d) { Object.assign(this, d); } };
+    roles.set(old.id, old);
+    await run({ client, guild, only: ["roles"] });
+    assert.equal(old.name, "⚔️ Moderador", "se renombra");
+    assert.equal(log.rolesCreated, ROLES.length - 1, "no se crea un segundo Moderador");
+  } finally {
+    console.log = quiet;
+  }
+});
+
+test("crea el evento semanal una sola vez, a las 20:00 de Colombia", async () => {
+  const quiet = console.log;
+  console.log = () => {};
+  try {
+    const { client, guild, log } = makeServer();
+    await run({ client, guild });
+    assert.equal(log.events, 1);
+    await run({ client, guild });
+    assert.equal(log.events, 1, "no lo duplica");
   } finally {
     console.log = quiet;
   }

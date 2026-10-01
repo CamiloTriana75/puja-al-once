@@ -82,6 +82,19 @@ export function embedData(embed, ctx, imageName, thumbnailName) {
   return data;
 }
 
+/**
+ * Proxima vez que cae `weekday` (0 = lunes) a las `hour` en hora local con UTC-5 (Colombia,
+ * sin horario de verano), al menos una hora despues de `now`. Devuelve un Date en UTC.
+ */
+export function nextWeekly(now, weekday, hour, utcOffset = -5) {
+  const local = new Date(now.getTime() + utcOffset * 3_600_000); // "reloj de pared" en UTC
+  const start = new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), hour, 0, 0));
+  const todayMonday0 = (local.getUTCDay() + 6) % 7;
+  start.setUTCDate(start.getUTCDate() + ((weekday - todayMonday0 + 7) % 7));
+  if (start.getTime() - local.getTime() < 3_600_000) start.setUTCDate(start.getUTCDate() + 7);
+  return new Date(start.getTime() - utcOffset * 3_600_000);
+}
+
 export function buttonRow(buttons, ctx) {
   return {
     type: 1,

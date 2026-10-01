@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BRAND } from "../config/brand.mjs";
 import { MESSAGES, FORUM_POSTS } from "../config/content.mjs";
-import { AUTOMOD, CATEGORIES, EMOJIS, ONBOARDING, ROLES, SERVER, WELCOME_SCREEN } from "../config/server.mjs";
+import { AUTOMOD, CATEGORIES, EMOJIS, EVENTS, ONBOARDING, ROLES, SERVER, WELCOME_SCREEN } from "../config/server.mjs";
 
 import { parseTag } from "./helpers.mjs";
 
@@ -163,6 +163,13 @@ export function validate() {
     if (entry.description.length > LIMITS.welcomeChannelDescription) fail(`Pantalla de bienvenida: descripcion larga: ${entry.channel}`);
   }
 
+  if (SERVER.description.length > 120) fail(`La descripcion del servidor tiene ${SERVER.description.length} caracteres (maximo 120)`);
+  for (const event of EVENTS) {
+    const ch = CATEGORIES.flatMap((c) => c.channels).find((c) => c.key === event.voice);
+    if (!ch || ch.type !== "voice") fail(`Evento ${event.name}: ${event.voice} no es un canal de voz`);
+    if (event.name.length > 100 || event.description.length > 1000) fail(`Evento ${event.name}: texto demasiado largo`);
+    if (event.image && !existsSync(resolve(ASSETS, event.image))) fail(`Evento ${event.name}: falta assets/${event.image}`);
+  }
   for (const key of [SERVER.systemChannel, SERVER.rulesChannel, SERVER.publicUpdatesChannel]) {
     if (!channelKeys().includes(key)) fail(`Ajustes del servidor: canal desconocido ${key}`);
   }

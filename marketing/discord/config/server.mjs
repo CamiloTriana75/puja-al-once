@@ -32,11 +32,12 @@ export const EVERYONE_PERMISSIONS = [
  * encima de todos). `self: true` = se elige desde "Canales y roles" (onboarding).
  */
 export const ROLES = [
-  { key: "fundador", name: "👑 Fundador", color: C.gold, hoist: true, permissions: [P.Administrator] },
+  { key: "fundador", name: "👑 Fundador", aliases: ["👑 Fundador"], color: 0xffc21a, hoist: true, permissions: [P.Administrator] },
   {
     key: "moderador",
-    name: "🛡️ Moderador",
-    color: C.pitch,
+    name: "⚔️ Moderador",
+    aliases: ["🛡️ Moderador"],
+    color: 0xe5483b,
     hoist: true,
     permissions: [
       P.ManageMessages, P.ManageThreads, P.ModerateMembers, P.KickMembers, P.BanMembers,
@@ -44,9 +45,9 @@ export const ROLES = [
       P.MentionEveryone, P.CreateInstantInvite,
     ],
   },
-  { key: "creador", name: "🎙️ Creador", color: 0x1c9a57, hoist: true, permissions: [] },
-  { key: "tester", name: "🧪 Tester", color: C.sky, hoist: true, permissions: [] },
-  { key: "hinchada", name: "⭐ La hinchada", color: C.goldSoft, hoist: true, permissions: [] },
+  { key: "creador", name: "🎬 Creador", aliases: ["🎙️ Creador"], color: 0xa855f7, hoist: true, permissions: [] },
+  { key: "tester", name: "🧪 Tester", color: 0x22d3ee, hoist: true, permissions: [] },
+  { key: "hinchada", name: "🔥 La hinchada", aliases: ["⭐ La hinchada"], color: 0x1fd36b, hoist: true, permissions: [] },
   { key: "avisos", name: "🔔 Avisos de partidas", color: 0, mentionable: true, self: true, permissions: [] },
   { key: "novedades", name: "📰 Novedades", color: 0, self: true, permissions: [] },
   { key: "busco", name: "🎮 Busco partida", color: 0, mentionable: true, self: true, permissions: [] },
@@ -212,8 +213,24 @@ export const WELCOME_SCREEN = {
   ],
 };
 
+/** Eventos programados (pestaña "Eventos" y cabecera de la guía del servidor). */
+export const EVENTS = [
+  {
+    key: "noche-de-pujas",
+    name: "Noche de pujas",
+    description: "Partidas abiertas en directo: baja a la sala de voz, pega tu sala en #salas-abiertas y a pujar. Todos los viernes.",
+    voice: "voz-1",
+    weekday: 4, // viernes (0 = lunes)
+    hour: 20, // hora de Colombia (UTC-5, sin horario de verano)
+    durationMinutes: 120,
+    image: "event.png",
+  },
+];
+
 export const SERVER = {
   name: BRAND.name,
+  /** Se ve en la tarjeta del servidor y en la guia (maximo 120 caracteres). */
+  description: "Subastas de fútbol a ciegas con tus amigos. Puja por una silueta, descubre quién es y arma tu once.",
   locale: BRAND.locale,
   /** Medio: cuenta con mas de 5 minutos. Frena a los bots sin molestar a quien llega por un enlace. */
   verificationLevel: 2,

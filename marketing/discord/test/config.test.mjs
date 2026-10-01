@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { PermissionFlagsBits as P } from "discord.js";
 import { CATEGORIES, ROLES } from "../config/server.mjs";
-import { buildOverwrites, categoryOverwrites, mergeTags, parseTag } from "../src/helpers.mjs";
+import { buildOverwrites, categoryOverwrites, mergeTags, nextWeekly, parseTag } from "../src/helpers.mjs";
 import { embedLength, normalizeChannelName, render, validate } from "../src/plan.mjs";
 import { MESSAGES } from "../config/content.mjs";
 
@@ -119,4 +119,15 @@ test("un emoji sin resolver desaparece en vez de dejar {:nombre} a la vista", ()
   const ctx = { gameUrl: "", channelId: () => undefined, roleId: () => undefined };
   assert.equal(render("Hola {:mazo}", ctx), "Hola ");
   assert.equal(render("Hola {:mazo}", { ...ctx, emoji: () => "<:mazo:1>" }), "Hola <:mazo:1>");
+});
+
+test("nextWeekly da el proximo viernes a las 20:00 de Colombia (01:00 UTC del sabado)", () => {
+  // Jueves 1 oct 2026 12:00 UTC -> viernes 2 oct 20:00 (UTC-5) = sabado 3 oct 01:00 UTC
+  assert.equal(nextWeekly(new Date("2026-10-01T12:00:00Z"), 4, 20).toISOString(), "2026-10-03T01:00:00.000Z");
+  // Viernes a las 21:00 de Colombia (02:00 UTC del sabado): ya paso, va a la semana siguiente
+  assert.equal(nextWeekly(new Date("2026-10-03T02:00:00Z"), 4, 20).toISOString(), "2026-10-10T01:00:00.000Z");
+  // Viernes 19:30 de Colombia: queda menos de una hora, tambien salta una semana
+  assert.equal(nextWeekly(new Date("2026-10-03T00:30:00Z"), 4, 20).toISOString(), "2026-10-10T01:00:00.000Z");
+  // Siempre es futuro
+  assert.ok(nextWeekly(new Date(), 4, 20).getTime() > Date.now());
 });
