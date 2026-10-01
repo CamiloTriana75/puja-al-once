@@ -151,10 +151,9 @@ export const CATEGORIES = [
   },
 ];
 
-/** Reglas de AutoMod. Los canales de alerta y roles exentos se resuelven al aplicar. */
+/** Reglas de AutoMod (Discord solo admite UNA regla de tipo preset por servidor). Los canales de alerta y roles exentos se resuelven al aplicar. */
 export const AUTOMOD = [
   { key: "odio", name: "Insultos y contenido sexual", kind: "preset", presets: ["Slurs", "SexualContent"], block: true },
-  { key: "palabrotas", name: "Palabrotas (solo aviso al staff)", kind: "preset", presets: ["Profanity"], block: false },
   { key: "menciones", name: "Spam de menciones", kind: "mentions", limit: 6, timeoutSeconds: 120 },
   { key: "spam", name: "Spam", kind: "spam" },
   {

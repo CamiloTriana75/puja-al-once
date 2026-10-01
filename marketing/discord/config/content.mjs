@@ -172,7 +172,7 @@ export const MESSAGES = [
           "**Principio:** primero se habla, luego se sanciona. Casi todo se arregla con un mensaje amable.",
           "",
           "**Escalera:** aviso → silencio (10 min / 1 h / 1 día) → expulsión → baneo. Acoso, odio y contenido ilegal: baneo directo.",
-          "**AutoMod** ya bloquea insultos, spam y menciones masivas; las palabrotas solo avisan en {#logs}.",
+          "**AutoMod** ya bloquea insultos, contenido sexual, spam, invitaciones y menciones masivas, y avisa en {#logs}.",
           "**Siempre:** deja el motivo en {#logs} (quién, qué, qué hiciste).",
           "",
           "**Para reportes del juego:** los comentarios llegan a {#comentarios}; si es un fallo real, ábrelo en {#bugs}.",

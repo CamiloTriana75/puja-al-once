@@ -115,7 +115,7 @@ export async function run({ client, guild, only = [], clean = false }) {
     for (const spec of ROLES) {
       const data = {
         name: spec.name,
-        color: spec.color,
+        colors: { primaryColor: spec.color },
         hoist: !!spec.hoist,
         mentionable: !!spec.mentionable,
         permissions: spec.permissions,
@@ -134,25 +134,33 @@ export async function run({ client, guild, only = [], clean = false }) {
     ok("permisos de @everyone ajustados (sin @everyone/@here ni gestión)");
 
     // Orden: Fundador arriba. Solo si el rol del bot esta por encima de los nuestros.
-    const me = await guild.members.fetchMe();
-    const top = me.roles.highest.position;
-    if (top <= ROLES.length) {
-      warn("El rol del bot no está arriba del todo: arrástralo al primer puesto en Ajustes > Roles y vuelve a ejecutar --only=roles para ordenarlos.");
-    } else {
-      const ordered = ROLES.map((spec) => roles.get(spec.key));
-      await guild.roles.setPositions(ordered.map((role, i) => ({ role, position: top - 1 - i })));
-      ok("roles ordenados");
+    try {
+      const me = await guild.members.fetchMe();
+      const top = me.roles.highest.position;
+      if (top <= ROLES.length) {
+        warn("El rol del bot no está arriba del todo: arrástralo al primer puesto en Ajustes > Roles y repite con --only=roles.");
+      } else {
+        const ordered = ROLES.map((spec) => roles.get(spec.key));
+        await guild.roles.setPositions(ordered.map((role, i) => ({ role, position: top - 1 - i })));
+        ok("roles ordenados");
+      }
+    } catch (error) {
+      warn(`no se pudo ordenar los roles (${hint(error)}). Es solo estético: se pueden arrastrar a mano en Ajustes > Roles.`);
     }
 
     // El dueño del servidor recibe el rol de Fundador.
-    const owner = await guild.fetchOwner();
-    if (!owner.roles.cache.has(roleId("fundador"))) {
-      await owner.roles.add(roleId("fundador"), REASON);
-      ok(`rol Fundador para ${owner.user.username}`);
+    try {
+      const owner = await guild.fetchOwner();
+      if (!owner.roles.cache.has(roleId("fundador"))) {
+        await owner.roles.add(roleId("fundador"), REASON);
+        ok(`rol Fundador para ${owner.user.username}`);
+      }
+    } catch (error) {
+      warn(`no se pudo dar el rol Fundador al dueño (${hint(error)}). Asígnalo a mano: clic derecho a tu usuario > Roles.`);
     }
   }
 
-  // --------------------------------------------------------------------------- canales
+// --------------------------------------------------------------------------- canales
 
   async function ensureChannels({ deferred, communityEnabled }) {
     for (const cat of CATEGORIES) {
@@ -217,7 +225,7 @@ export async function run({ client, guild, only = [], clean = false }) {
     for (const cat of CATEGORIES) {
       cat.channels.forEach((spec, i) => {
         const channel = channels.get(spec.key);
-        if (channel) positions.push({ channel: channel.id, position: i, parent: categories.get(cat.key)?.id, lockPermissions: false });
+        if (channel) positions.push({ channel: channel.id, position: i });
       });
     }
     await guild.channels.setPositions(positions);
@@ -503,7 +511,7 @@ async function main() {
 
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
   await client.login(token);
-  const guild = await client.guilds.fetch(guildId);
+  const guild = await (await client.guilds.fetch(guildId)).fetch();
 
   if (!args.has("--yes")) {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
