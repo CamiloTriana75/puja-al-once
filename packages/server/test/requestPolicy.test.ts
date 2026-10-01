@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clientAddress, isAllowedOrigin, RateLimiter, spaFallbackStatus } from "../src/requestPolicy.js";
+import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus } from "../src/requestPolicy.js";
 import { AuctionRoom } from "../src/AuctionRoom.js";
 
 describe("politica de peticiones", () => {
@@ -135,5 +135,28 @@ describe("spaFallbackStatus (soft-404)", () => {
     // parte", para que anadir Carpetas con punto en la URL no rompa nada.
     expect(spaFallbackStatus("/sala/ABCDE")).toBe(200);
     expect(spaFallbackStatus("/legal")).toBe(200);
+  });
+});
+describe("maintenanceAction", () => {
+  it("no hace nada si el mantenimiento esta apagado", () => {
+    expect(maintenanceAction("/", false)).toBeNull();
+    expect(maintenanceAction("/rooms/public", false)).toBeNull();
+  });
+
+  it("devuelve la pagina de mantenimiento para la app y las salas por enlace", () => {
+    expect(maintenanceAction("/", true)).toBe("page");
+    expect(maintenanceAction("/sala/ABCDE", true)).toBe("page");
+  });
+
+  it("responde JSON 503 en las rutas de la API", () => {
+    expect(maintenanceAction("/rooms/public", true)).toBe("api");
+    expect(maintenanceAction("/matchmake/joinOrCreate/auction", true)).toBe("api");
+    expect(maintenanceAction("/feedback", true)).toBe("api");
+  });
+
+  it("deja pasar la salud y los ficheros estaticos", () => {
+    expect(maintenanceAction("/health/ready", true)).toBeNull();
+    expect(maintenanceAction("/sw.js", true)).toBeNull();
+    expect(maintenanceAction("/assets/index-abc.js", true)).toBeNull();
   });
 });

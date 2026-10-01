@@ -49,3 +49,8 @@ services:
       # secreto: se pega en el panel de Render, nunca en el repositorio.
       - key: FEEDBACK_WEBHOOK_URL
         sync: false
+      # Modo mantenimiento: ponlo a "1" en el panel y reinicia el servicio para
+      # mostrar la pagina de entretiempo (503) a quien entre. Quitalo o pon "0"
+      # para reabrir. Las partidas en curso no se cortan.
+      - key: MAINTENANCE_MODE
+        value: "0"

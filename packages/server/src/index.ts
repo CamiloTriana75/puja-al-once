@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
 import { buildWebhookPayload, parseFeedback } from "./feedback.js";
-import { clientAddress, isAllowedOrigin, RateLimiter, spaFallbackStatus } from "./requestPolicy.js";
+import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus } from "./requestPolicy.js";
 
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
 // AuctionRoom.ts: pnpm fija el cwd de cada paquete al ejecutar sus scripts.
@@ -40,6 +40,22 @@ const app = config({
       res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
       if (req.method === "OPTIONS") {
         res.status(204).end();
+        return;
+      }
+
+      // Mantenimiento: MAINTENANCE_MODE=1 en el panel y reiniciar. Las partidas ya
+      // abiertas siguen por su WebSocket; lo nuevo (paginas, salas, comentarios) recibe 503.
+      const maintenance = maintenanceAction(req.path, process.env.MAINTENANCE_MODE === "1");
+      if (maintenance) {
+        res.setHeader("Retry-After", "300");
+        res.setHeader("Cache-Control", "no-store");
+        if (maintenance === "api") {
+          res.status(503).json({ error: "MAINTENANCE" });
+        } else {
+          res.status(503).sendFile("mantenimiento.html", { root: CLIENT_DIST }, (err) => {
+            if (err && !res.headersSent) res.type("text").send("Puja el Once está en mantenimiento. Vuelve en unos minutos.");
+          });
+        }
         return;
       }
 
