@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { HTTP_URL } from "../net/endpoints.js";
 import { buildCeremonySteps, ceremonyChampions, ceremonyPoints, computeAwards, type CeremonyStep } from "../net/ceremony.js";
 import type { ClientState } from "../net/types.js";
+import { LotArt } from "./game/LotArt.js";
 
 /**
  * Duraciones de design-system/pages/ceremonia.md: entrada ~2s, cada paso de
@@ -75,7 +76,7 @@ function ConfettiCanvas() {
     };
     resize();
 
-    const colors = ["#C6F833", "#16C64F", "#FFFFFF"];
+    const colors = ["#F0B83D", "#15834A", "#0C241C", "#FFFFFF"];
     const particles = Array.from({ length: 140 }, () => ({
       x: Math.random() * canvas.clientWidth,
       y: -20 - Math.random() * canvas.clientHeight * 0.5,
@@ -119,7 +120,7 @@ function ConfettiCanvas() {
   return <canvas ref={ref} aria-hidden className="pointer-events-none absolute inset-0 h-full w-full" />;
 }
 
-/** Una carta de la ceremonia para un puesto: foto, nombre, temporada, dueno, precio, y el rating tapado/destapado. */
+/** Una carta del puesto en grande: cromo con foto, quién la fichó y su rating, tapado hasta el destape. */
 function CeremonyCard({
   entry,
   revealRating,
@@ -130,69 +131,48 @@ function CeremonyCard({
   roomId?: string;
 }) {
   const reducedMotion = useReducedMotion();
-  const [photoFailed, setPhotoFailed] = useState(false);
-  const photoUrl = roomId ? `${HTTP_URL}/photos/revealed/${roomId}/${entry.cardId}.png` : null;
-
-  useEffect(() => setPhotoFailed(false), [entry.cardId]);
+  const photoUrl = roomId ? `${HTTP_URL}/photos/revealed/${roomId}/${entry.cardId}.png` : undefined;
+  const winner = entry.wins && revealRating;
 
   return (
     <li
-      className={`panel relative flex min-h-32 items-stretch gap-3 bg-ink p-3 sm:gap-4 sm:p-4 ${
-        entry.wins && revealRating ? "ring-2 ring-inset ring-lime" : ""
+      className={`relative flex flex-col rounded-[2rem] p-3 transition-[background-color,box-shadow,transform] duration-500 sm:p-4 ${
+        winner ? "bg-gold shadow-[0_40px_70px_-36px_rgba(122,75,0,.95)] lg:-translate-y-2" : "bg-white ring-1 ring-line"
       }`}
     >
-      <div className="relative isolate flex w-20 shrink-0 items-end justify-center overflow-hidden bg-green sm:w-24">
-        <div aria-hidden className="absolute -right-6 top-0 h-full w-1/2 -skew-x-[18deg] bg-lime" />
-        <div aria-hidden className="absolute inset-x-0 bottom-0 h-1/4 bg-deep" />
-        <span aria-hidden className="absolute bottom-3 z-10 font-display text-3xl font-black text-ink">
+      <LotArt photoSrc={photoUrl} revealed alt="" className="aspect-[4/5] w-full rounded-[1.5rem]">
+        <span aria-hidden="true" className="absolute inset-x-0 bottom-3 z-[5] text-center font-headline text-[clamp(2.4rem,5vw,3.6rem)] font-bold text-white/90">
           {entry.card.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("")}
         </span>
-        {!photoFailed && photoUrl && (
-          <img
-            src={photoUrl}
-            alt=""
-            aria-hidden="true"
-            loading="lazy"
-            decoding="async"
-            onError={() => setPhotoFailed(true)}
-            className="absolute inset-0 z-20 h-full w-full object-contain object-bottom"
-          />
-        )}
-        <span className="absolute bottom-1 left-1 z-30 bg-ink px-1.5 py-0.5 font-display text-[10px] font-black text-white">
+        <span className="tnum absolute bottom-2.5 left-2.5 z-20 rounded-full bg-forest px-3 py-1 font-copy text-[0.95rem] font-semibold text-white">
           {entry.card.season}
         </span>
-      </div>
+      </LotArt>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-between py-1">
-        <div className="min-w-0">
-          <p className="line-clamp-2 font-display text-lg font-extrabold uppercase leading-[0.95] tracking-wide text-white sm:text-xl">
-            {entry.card.name}
-          </p>
-          <p className="mt-1 truncate font-body text-xs text-mute sm:text-sm">
-            {entry.card.club} · {entry.playerName} · {entry.card.price} M
-          </p>
-        </div>
-        <div className="mt-2 flex items-end justify-between gap-2">
-          <span className="font-display text-[10px] font-bold uppercase tracking-[0.14em] text-mute sm:text-xs">
-            Rating
-          </span>
-          {entry.wins && revealRating && (
-            <span className="bg-lime px-2 py-1 font-display text-[10px] font-black uppercase tracking-wide text-ink sm:text-xs">
-              Gana el puesto
-            </span>
+      <div className="flex flex-1 flex-col gap-1 px-2 pb-1 pt-4">
+        <p className="line-clamp-2 font-headline text-[clamp(1.3rem,2.2vw,1.8rem)] font-bold leading-[1.08] tracking-[-0.04em] text-forest">
+          {entry.card.name}
+        </p>
+        <p className={`font-copy text-[1.05rem] ${winner ? "text-forest/85" : "text-slate"}`}>
+          {entry.card.club} · {entry.playerName} · {entry.card.price} M
+        </p>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <motion.span
+            key={revealRating ? "revealed" : "hidden"}
+            initial={reducedMotion ? false : { opacity: 0, rotateX: revealRating ? -90 : 0, scale: revealRating ? 0.7 : 1 }}
+            animate={{ opacity: 1, rotateX: 0, scale: 1 }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            className={`tnum grid min-w-[5.5rem] place-items-center rounded-2xl px-5 py-3 font-headline text-[clamp(3rem,6vw,4.6rem)] font-bold leading-none tracking-[-0.06em] ${
+              winner ? "bg-forest text-gold" : revealRating ? "bg-canvas text-forest" : "bg-canvas text-slate"
+            }`}
+          >
+            {revealRating ? entry.card.rating : "?"}
+          </motion.span>
+          {winner && (
+            <span className="rounded-full bg-forest px-4 py-1.5 font-copy text-[1.05rem] font-semibold text-gold">Gana el puesto</span>
           )}
         </div>
       </div>
-
-      <motion.span
-        key={revealRating ? "revealed" : "hidden"}
-        initial={reducedMotion ? false : { opacity: 0, rotateX: revealRating ? -90 : 0 }}
-        animate={{ opacity: 1, rotateX: 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className={`tnum flex min-w-12 items-center justify-center border-l border-white/10 pl-3 font-display text-4xl font-black sm:min-w-16 sm:pl-4 sm:text-5xl ${revealRating ? "text-lime" : "text-mute"}`}
-      >
-        {revealRating ? entry.card.rating : "?"}
-      </motion.span>
     </li>
   );
 }
@@ -297,23 +277,20 @@ export function Ceremony({ state, roomId, onFinished }: Props) {
   const skip = () => setStage({ kind: "done" });
 
   return (
-    <div className="fixed inset-0 z-50 flex min-h-full flex-col overflow-y-auto overscroll-contain bg-deep">
+    <div className="fixed inset-0 z-50 flex min-h-full flex-col overflow-y-auto overscroll-contain bg-canvas text-forest">
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
 
-      <div className="sticky top-0 z-40 bg-deep/95 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-xs font-bold uppercase tracking-[0.16em] text-mute">Final de temporada</p>
-            <p className="font-display text-sm font-black uppercase tracking-wide text-white">
-              {stage.kind === "intro" ? "La hora de la verdad" : stage.kind === "step" ? `Puesto ${stage.index + 1} de ${steps.length}` : "Marcador final"}
-            </p>
-          </div>
+      <div className="sticky top-0 z-40 border-b border-line bg-canvas/92 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3">
+          <p className="min-w-0 flex-1 truncate font-copy text-[1.05rem] font-semibold text-forest">
+            {stage.kind === "intro" ? "Final de la subasta" : stage.kind === "step" ? `Puesto ${stage.index + 1} de ${steps.length}` : "Marcador final"}
+          </p>
           <button
             type="button"
             onClick={skip}
-            className="flex h-11 shrink-0 cursor-pointer items-center gap-2 border-2 border-white/30 px-3 font-display text-xs font-bold uppercase tracking-wide text-white transition-colors duration-200 hover:border-lime hover:text-lime sm:px-4 sm:text-sm"
+            className="flex h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full bg-white px-4 font-copy text-[0.98rem] font-semibold text-forest ring-1 ring-line transition-colors duration-200 hover:ring-forest"
           >
             <SkipIcon />
             Saltar ceremonia
@@ -326,30 +303,29 @@ export function Ceremony({ state, roomId, onFinished }: Props) {
           aria-valuemax={steps.length}
           aria-valuenow={completedSteps}
           aria-valuetext={`${completedSteps} de ${steps.length} puestos revelados`}
-          className="mx-auto mt-3 flex w-full max-w-3xl gap-1"
+          className="mx-auto mt-3 flex w-full max-w-4xl gap-1"
         >
           {steps.map((step, index) => (
             <span
               key={step.slot}
               aria-hidden="true"
-              className={`h-1.5 flex-1 ${index < completedSteps ? "bg-lime" : stage.kind === "step" && index === stage.index ? "bg-green" : "bg-white/15"}`}
+              className={`h-1.5 flex-1 rounded-full ${index < completedSteps ? "bg-pitch" : stage.kind === "step" && index === stage.index ? "bg-gold" : "bg-line"}`}
             />
           ))}
         </div>
       </div>
 
-      {/* Marcador -- cifras tabulares, siempre visible durante la secuencia de puestos y el campeon. */}
       {(stage.kind === "intro" || stage.kind === "step" || stage.kind === "champion") && (
-        <ol className="mx-auto flex w-full max-w-3xl flex-wrap justify-center gap-3 px-4">
+        <ol className="mx-auto mt-5 flex w-full max-w-4xl flex-wrap justify-center gap-2 px-4">
           {players.map((p) => (
-            <li key={p.playerId} className="panel flex items-baseline gap-2 bg-ink px-4 py-2">
-              <span className="font-display text-sm font-bold uppercase text-white">{p.name}</span>
+            <li key={p.playerId} className="flex items-baseline gap-2 rounded-full bg-white px-4 py-2 ring-1 ring-line">
+              <span className="font-copy text-[1rem] font-semibold text-forest">{p.name}</span>
               <motion.span
                 key={scoreboard.get(p.playerId)}
                 initial={reducedMotion ? false : { opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, ease: "easeOut" }}
-                className="tnum font-display text-xl font-black text-lime"
+                className="tnum font-headline text-[1.1rem] font-bold text-pitch"
               >
                 {pointLabel(scoreboard.get(p.playerId) ?? 0)}
               </motion.span>
@@ -358,44 +334,40 @@ export function Ceremony({ state, roomId, onFinished }: Props) {
         </ol>
       )}
 
-      <div className="flex flex-1 items-center justify-center px-4 py-6 sm:py-8">
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
         <AnimatePresence mode="wait">
           {stage.kind === "intro" && (
             <motion.div
               key="intro"
-              initial={reducedMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={reducedMotion ? undefined : { opacity: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="text-center"
             >
-              <h1 className="font-display text-[clamp(2.5rem,9vw,6rem)] font-black uppercase leading-[0.85] tracking-tighter text-lime">
-                La hora
-                <br />
-                de la verdad
+              <h1 className="text-balance font-headline text-[clamp(2.6rem,8vw,6rem)] font-bold leading-[1] tracking-[-0.055em] text-forest">
+                La hora de la verdad
               </h1>
+              <p className="mt-4 font-copy text-[1.2rem] text-slate">Se destapan los ratings, puesto a puesto.</p>
             </motion.div>
           )}
 
           {stage.kind === "step" && steps[stage.index] && (
             <motion.div
               key={`step-${stage.index}`}
-              initial={reducedMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={reducedMotion ? undefined : { opacity: 0 }}
-              className="w-full max-w-4xl"
+              initial={reducedMotion ? false : { opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={reducedMotion ? undefined : { opacity: 0, x: -24 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-[84rem]"
             >
-              <p className="text-center font-display text-xs font-bold uppercase tracking-[0.2em] text-mute">
-                Puesto {stage.index + 1} de {steps.length}
-              </p>
-              <h2 className="mb-6 text-center font-display text-[clamp(2rem,6vw,3.5rem)] font-black uppercase leading-[0.9] tracking-tight text-white">
+              <h2 className="mb-8 text-center font-headline text-[clamp(2.4rem,6vw,4.6rem)] font-bold leading-[1.02] tracking-[-0.05em] text-forest">
                 {steps[stage.index]!.label}
               </h2>
               {steps[stage.index]!.entries.length === 0 ? (
-                <p className="panel bg-ink px-5 py-4 text-center font-display text-lg font-bold uppercase tracking-wide text-mute">
-                  Sin fichaje
-                </p>
+                <p className="rounded-[1.5rem] bg-white px-5 py-6 text-center font-copy text-[1.1rem] text-slate ring-1 ring-line">Sin fichaje</p>
               ) : (
-                <ul className="grid gap-2 sm:grid-cols-2">
+                <ul className="mx-auto grid gap-4 sm:grid-cols-2 lg:gap-6 xl:[grid-template-columns:repeat(var(--cols),minmax(0,1fr))]" style={{ "--cols": Math.min(4, steps[stage.index]!.entries.length), maxWidth: `${Math.min(4, steps[stage.index]!.entries.length) * 22}rem` } as React.CSSProperties}>
                   {steps[stage.index]!.entries.map((entry) => (
                     <CeremonyCard key={entry.playerId} entry={entry} roomId={roomId} revealRating={ratingRevealed || reducedMotion === true} />
                   ))}
@@ -407,32 +379,26 @@ export function Ceremony({ state, roomId, onFinished }: Props) {
           {stage.kind === "champion" && champions.length > 0 && (
             <motion.div
               key="champion"
-              initial={reducedMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={reducedMotion ? false : { opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={reducedMotion ? undefined : { opacity: 0 }}
-              className="relative flex flex-col items-center text-center"
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="on-dark relative flex w-full max-w-3xl flex-col items-center overflow-hidden rounded-[2.5rem] bg-forest px-6 py-12 text-center text-white"
             >
               {!reducedMotion && <ConfettiCanvas />}
-              <span className="text-lime">
+              <span className="grid h-24 w-24 place-items-center rounded-full bg-gold text-forest">
                 <TrophyIcon />
               </span>
-              <motion.p
-                initial={reducedMotion ? false : { opacity: 0, x: -24 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: reducedMotion ? 0 : 0.15 }}
-                className="mt-4 font-display text-sm font-bold uppercase tracking-[0.2em] text-mute"
-              >
-                {champions.length > 1 ? "Campeones" : "Campeón"}
-              </motion.p>
+              <p className="mt-5 font-copy text-[1.15rem] text-white/80">{champions.length > 1 ? "Campeones" : "Campeón"}</p>
               <motion.h1
-                initial={reducedMotion ? false : { opacity: 0, x: -24 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: reducedMotion ? 0 : 0.15 }}
-                className="font-display text-[clamp(2.5rem,10vw,7rem)] font-black uppercase leading-[0.85] tracking-tighter text-lime"
+                initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: reducedMotion ? 0 : 0.2 }}
+                className="text-balance font-headline text-[clamp(2.6rem,9vw,6rem)] font-bold leading-[1] tracking-[-0.055em] text-gold"
               >
                 {champions.map((champion) => champion.name).join(" · ")}
               </motion.h1>
-              <p className="tnum mt-2 font-display text-2xl font-extrabold text-white">
+              <p className="tnum mt-3 font-headline text-[1.4rem] font-semibold text-white">
                 {pointLabel(champions[0]!.points)} pts{champions.length > 1 ? " cada uno" : ""}
               </p>
             </motion.div>
@@ -441,20 +407,17 @@ export function Ceremony({ state, roomId, onFinished }: Props) {
           {stage.kind === "awards" && awards.length > 0 && (
             <motion.div
               key="awards"
-              initial={reducedMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={reducedMotion ? undefined : { opacity: 0 }}
-              className="grid w-full max-w-3xl gap-4 sm:grid-cols-3"
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="grid w-full max-w-4xl gap-4 sm:grid-cols-3"
             >
               {awards.map((award) => (
-                <div key={award.title} className="panel bg-ink p-5">
-                  <p className="font-display text-xs font-bold uppercase tracking-[0.12em] text-lime">
-                    {award.title}
-                  </p>
-                  <p className="mt-2 font-display text-xl font-extrabold uppercase text-white">
-                    {award.playerName}
-                  </p>
-                  <p className="mt-1 font-body text-sm text-mute">{award.detail}</p>
+                <div key={award.title} className="rounded-[1.5rem] bg-white p-6 ring-1 ring-line">
+                  <p className="font-copy text-[1rem] font-semibold text-pitch">{award.title}</p>
+                  <p className="mt-2 font-headline text-[1.4rem] font-bold tracking-[-0.04em] text-forest">{award.playerName}</p>
+                  <p className="mt-1 font-copy text-[0.98rem] text-slate">{award.detail}</p>
                 </div>
               ))}
             </motion.div>
