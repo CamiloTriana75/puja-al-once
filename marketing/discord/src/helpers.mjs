@@ -74,7 +74,7 @@ export function embedData(embed, ctx, imageName, thumbnailName) {
     color: embed.color,
     title: embed.title,
     description: embed.description ? ctx.render(embed.description) : undefined,
-    fields: (embed.fields ?? []).map((f) => ({ name: f.name, value: ctx.render(f.value) })),
+    fields: (embed.fields ?? []).map((f) => ({ name: ctx.render(f.name), value: ctx.render(f.value) })),
   };
   if (embed.footer) data.footer = { text: embed.footer };
   if (imageName) data.image = { url: `attachment://${imageName}` };
