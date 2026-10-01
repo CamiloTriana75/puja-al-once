@@ -1610,6 +1610,20 @@
     "silhouetteId": "facchetti-1968"
   },
   {
+    "cardId": "breitner-1974",
+    "name": "Paul Breitner",
+    "season": 1974,
+    "birthYear": 1951,
+    "club": "Bayern Munich",
+    "league": "Bundesliga",
+    "nation": "GER",
+    "slot": "LB",
+    "rating": 91,
+    "heightCm": 176,
+    "foot": "L",
+    "silhouetteId": "breitner-1974"
+  },
+  {
     "cardId": "lizarazu-2001",
     "name": "Bixente Lizarazu",
     "season": 2001,
@@ -1750,6 +1764,20 @@
     "silhouetteId": "godin-2014"
   },
   {
+    "cardId": "carlos-alberto-1970",
+    "name": "Carlos Alberto",
+    "season": 1970,
+    "birthYear": 1944,
+    "club": "Santos",
+    "league": "Campeonato Brasileiro",
+    "nation": "BRA",
+    "slot": "RB",
+    "rating": 94,
+    "heightCm": 176,
+    "foot": "R",
+    "silhouetteId": "carlos-alberto-1970"
+  },
+  {
     "cardId": "bergomi-1982",
     "name": "Giuseppe Bergomi",
     "season": 1982,
@@ -1792,6 +1820,34 @@
     "silhouetteId": "cancelo-2021"
   },
   {
+    "cardId": "dunga-1994",
+    "name": "Dunga",
+    "season": 1994,
+    "birthYear": 1963,
+    "club": "VfB Stuttgart",
+    "league": "Bundesliga",
+    "nation": "BRA",
+    "slot": "CDM",
+    "rating": 88,
+    "heightCm": 169,
+    "foot": "R",
+    "silhouetteId": "dunga-1994"
+  },
+  {
+    "cardId": "redondo-1998",
+    "name": "Fernando Redondo",
+    "season": 1998,
+    "birthYear": 1969,
+    "club": "Real Madrid",
+    "league": "LaLiga",
+    "nation": "ARG",
+    "slot": "CDM",
+    "rating": 91,
+    "heightCm": 186,
+    "foot": "L",
+    "silhouetteId": "redondo-1998"
+  },
+  {
     "cardId": "mascherano-2014",
     "name": "Javier Mascherano",
     "season": 2014,
@@ -1832,6 +1888,20 @@
     "heightCm": 174,
     "foot": "R",
     "silhouetteId": "matthaus-1990"
+  },
+  {
+    "cardId": "socrates-1982",
+    "name": "Socrates",
+    "season": 1982,
+    "birthYear": 1954,
+    "club": "Corinthians",
+    "league": "Campeonato Brasileiro",
+    "nation": "BRA",
+    "slot": "CM",
+    "rating": 91,
+    "heightCm": 192,
+    "foot": "R",
+    "silhouetteId": "socrates-1982"
   },
   {
     "cardId": "seedorf-2003",

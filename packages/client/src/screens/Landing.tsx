@@ -500,7 +500,7 @@ export function Landing({ error, onCreate, onJoinByCode, onJoinPublicRoom }: Pro
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-canvas font-copy text-forest">
+    <div className={`min-h-screen overflow-x-clip bg-canvas font-copy text-forest ${reduced ? "" : "landing-fade-in"}`}>
       <Nav ctaLabel={inviteCode ? "Unirme" : "Crear sala"} onCta={() => goToEntry()} />
       <Hero inviteCode={inviteCode} reduced={reduced} onPrimary={() => goToEntry()} onHaveCode={() => goToEntry("code")} />
       <WhatIs />

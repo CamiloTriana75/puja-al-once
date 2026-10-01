@@ -57,6 +57,21 @@ html {
   clip-path: var(--clip-panel);
 }
 
+@keyframes landing-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-fade-in {
+  animation: landing-fade-in 500ms cubic-bezier(.16, 1, .3, 1) both;
+}
+
 /* Cifras que no bailan al cambiar: saldos, pujas, cuenta atras. */
 .tnum {
   font-variant-numeric: tabular-nums;
