@@ -287,6 +287,12 @@ const app = config({
     // Va al final a proposito: registrado antes, el comodin de abajo se
     // tragaria /time y las rutas de imagenes.
     if (process.env.NODE_ENV === "production") {
+      // El service worker y el manifiesto nunca deben quedarse en la cache HTTP:
+      // si no, una version nueva tarda dias en llegar a quien ya instalo la app.
+      app.use((req, res, next) => {
+        if (req.path === "/sw.js" || req.path === "/manifest.webmanifest") res.setHeader("Cache-Control", "no-cache");
+        next();
+      });
       app.use(expressStatic(CLIENT_DIST));
       app.get("/{*splat}", (req, res) => {
         // 404 de verdad para lo que parece un fichero inexistente, 200 para

@@ -1,0 +1,20 @@
+{
+  "name": "Puja el Once",
+  "short_name": "Puja el Once",
+  "description": "Subasta de futbolistas a ciegas con tus amigos: pujas por una silueta, se revela quién es y armas tu once.",
+  "lang": "es",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/?origen=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F5F4EC",
+  "theme_color": "#F5F4EC",
+  "categories": ["games", "sports"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
