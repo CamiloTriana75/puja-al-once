@@ -2,11 +2,11 @@ import { Client, Room, type AuthContext } from "@colyseus/core";
 import type { Delayed } from "@colyseus/core";
 import { ArraySchema } from "@colyseus/schema";
 import {
-  acceptTradeOffer, applyBid, applyOutcome, canBid, cardsBySlot, createTradeOffer, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
+  acceptTradeOffer, applyBid, applyOutcome, CHAT_HISTORY_SIZE, canBid, cardsBySlot, createTradeOffer, currentCardId, DEFAULT_RULES, generateRoomCode, openingBidForRating,
   parseDataset, playersEligibleToPass, playersNeedingSlot, resolveAuction, resolvePass,
-  resolveSkipVote, scoreMatch,
+  resolveSkipVote, sanitizeChatText, scoreMatch,
   SLOTS, toPrivate, toPublic,
-  type AuctionOutcome, type AuctionState, type CardSource, type Rng, type Rules, type Slot, type TradeOffer,
+  type AuctionOutcome, type AuctionState, type CardSource, type ChatMessage, type Rng, type Rules, type Slot, type TradeOffer,
 } from "@fut/shared";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -107,6 +107,12 @@ export class AuctionRoom extends Room<AuctionRoomState> {
    */
   private lastReactionAt = new Map<string, number>();
 
+  /** Ultimos mensajes del chat de la sala, para quien entra o se reconecta. Solo memoria: muere con la sala. */
+  private chatLog: ChatMessage[] = [];
+  private chatSeq = 0;
+  /** Instantes de los ultimos mensajes de cada conexion, para el limite de frecuencia. */
+  private chatSentAt = new Map<string, number[]>();
+
   /**
    * Reasigna publicId aleatorios a todo `this.byId` (el dataset de ESTA
    * sala no cambia entre partidas, solo sus identificadores opacos). Se
@@ -178,6 +184,8 @@ export class AuctionRoom extends Room<AuctionRoomState> {
       this.onVoteSkip(client, message?.skip === true);
     });
     this.onMessage("rematch", (client) => this.onRematch(client));
+    this.onMessage("chat", (client, message: { text?: unknown }) => this.onChat(client, message?.text));
+    this.onMessage("chat:history", (client) => client.send("chat:history", this.chatLog));
     this.onMessage("react", (client, message: { emoji?: unknown }) => {
       this.onReact(client, message?.emoji);
     });
@@ -983,6 +991,35 @@ export class AuctionRoom extends Room<AuctionRoomState> {
 
     this.lastReactionAt.set(client.sessionId, now);
     this.broadcast("reaction", { playerId: client.sessionId, emoji });
+  }
+
+  /**
+   * Chat de texto: vale en cualquier fase (tambien en la sala de espera y en
+   * los resultados). El nombre sale del servidor, nunca del mensaje, para que
+   * nadie escriba "en nombre de" otro. Limite: un mensaje cada 600 ms y 6 cada
+   * 10 s por conexion; lo que lo pasa recibe `chat:rejected` para que la
+   * interfaz diga "mas despacio" en vez de tragarse el texto sin avisar.
+   */
+  private onChat(client: Client, raw: unknown): void {
+    const text = sanitizeChatText(raw);
+    if (text === null) return;
+    const player = this.game.players.find((p) => p.playerId === client.sessionId);
+    if (!player) return;
+
+    const now = Date.now();
+    const recent = (this.chatSentAt.get(client.sessionId) ?? []).filter((t) => now - t < 10_000);
+    const last = recent[recent.length - 1] ?? 0;
+    if (now - last < 600 || recent.length >= 6) {
+      client.send("chat:rejected", { reason: "RATE_LIMITED" });
+      return;
+    }
+    recent.push(now);
+    this.chatSentAt.set(client.sessionId, recent);
+
+    const message: ChatMessage = { id: `${now}-${++this.chatSeq}`, playerId: client.sessionId, name: player.name, text, at: now };
+    this.chatLog.push(message);
+    if (this.chatLog.length > CHAT_HISTORY_SIZE) this.chatLog.shift();
+    this.broadcast("chat", message);
   }
 
   /**

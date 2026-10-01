@@ -8,3 +8,4 @@ export * from "./scoring.js";
 export * from "./dataset.js";
 export * from "./roomCode.js";
 export * from "./trade.js";
+export * from "./chat.js";

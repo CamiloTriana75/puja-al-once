@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { isConsentedLeave } from "./connectionStatus.js";
 import { WS_URL } from "./endpoints.js";
 import { describeRoomLookupError, fetchPublicRooms, lookupRoomByCode, type RoomVisibility } from "./roomLookup.js";
+import type { ChatMessage } from "./chat.js";
 import type { ClientState, TradeOfferView } from "./types.js";
 
 /**
@@ -117,6 +118,10 @@ export interface Connection {
    */
   reactions: IncomingReaction[];
   tradeOffers: TradeOfferView[];
+  /** Chat de la sala, mas antiguo primero. El servidor guarda los ultimos 50 y los reenvia al entrar o reconectar. */
+  chat: ChatMessage[];
+  /** Sube cada vez que el servidor rechaza un mensaje por ir demasiado rapido; la interfaz avisa con "mas despacio". */
+  chatRejectedSeq: number;
   /** Retira una reaccion de `reactions` por `id` -- lo llama `Reactions.onExpire` cuando su burbuja ya termino de animarse. */
   dismissReaction: (id: string) => void;
   /** Crea una sala nueva. Nunca coincide con una existente -- a diferencia de `joinOrCreate`, `create` no busca hueco en otra sala antes. */
@@ -143,6 +148,8 @@ export function useRoom(): Connection {
   const [bidErrorSeq, setBidErrorSeq] = useState(0);
   const [reactions, setReactions] = useState<IncomingReaction[]>([]);
   const [tradeOffers, setTradeOffers] = useState<TradeOfferView[]>([]);
+  const [chat, setChat] = useState<ChatMessage[]>([]);
+  const [chatRejectedSeq, setChatRejectedSeq] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("connected");
 
   // Token de reconexion de la sala VIVA -- se actualiza en cada attach() (el
@@ -197,6 +204,7 @@ export function useRoom(): Connection {
     clearRetryTimeout();
     setReactions([]);
     setTradeOffers([]);
+    setChat([]);
     setConnectionStatus("connected");
 
     // onStateChange dispara en cada patch: React vuelve a pintar con el objeto vivo.
@@ -242,6 +250,22 @@ export function useRoom(): Connection {
     // que esta lista tampoco crezca sin limite. El servidor tambien nos
     // hace eco de la reaccion propia; esa ya se pinto optimistamente en el
     // boton, asi que guardarla aqui la duplicaria en pantalla.
+    // Chat: el servidor difunde cada mensaje (tambien el propio: no hay pintado
+    // optimista, asi lo que se ve es siempre lo que recibio la sala) y, al pedirlo
+    // abajo, devuelve el historial. Se deduplica por id porque un mensaje nuevo
+    // puede llegar antes que el historial.
+    const MAX_CHAT = 100;
+    joined.onMessage("chat", (msg: ChatMessage) => {
+      setChat((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg].slice(-MAX_CHAT)));
+    });
+    joined.onMessage("chat:history", (history: ChatMessage[]) => {
+      setChat((prev) => {
+        const known = new Set(history.map((m) => m.id));
+        return [...history, ...prev.filter((m) => !known.has(m.id))].slice(-MAX_CHAT);
+      });
+    });
+    joined.onMessage("chat:rejected", () => setChatRejectedSeq((n) => n + 1));
+    joined.send("chat:history");
     joined.onMessage("reaction", (msg: { playerId: string; emoji: number }) => {
       if (msg.playerId === joined.sessionId) return;
       const reaction: IncomingReaction = { id: `${Date.now()}-${Math.random()}`, ...msg };
@@ -431,6 +455,6 @@ export function useRoom(): Connection {
 
   return {
     room, state, connectionStatus, retryNow,
-    startError, bidError, bidErrorSeq, reactions, tradeOffers, dismissReaction, createRoom, joinByCode, joinPublicRoom, send, leave,
+    startError, bidError, bidErrorSeq, reactions, tradeOffers, chat, chatRejectedSeq, dismissReaction, createRoom, joinByCode, joinPublicRoom, send, leave,
   };
 }

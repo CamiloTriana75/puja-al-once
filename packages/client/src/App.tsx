@@ -1,5 +1,6 @@
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
+import { ChatDock } from "./components/ChatDock.js";
 import { ConnectionBanner } from "./components/ConnectionBanner.js";
 import { FeedbackHost } from "./components/FeedbackDialog.js";
 import { Auction } from "./screens/Auction.js";
@@ -28,7 +29,7 @@ const SCREEN_VARIANTS = {
 
 export default function App() {
   const {
-    room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, reactions, tradeOffers, dismissReaction,
+    room, state, connectionStatus, retryNow, startError, bidError, bidErrorSeq, reactions, tradeOffers, chat, chatRejectedSeq, dismissReaction,
     createRoom, joinByCode, joinPublicRoom, send,
   } = useRoom();
   const inGame = state && state.phase !== "LOBBY";
@@ -120,6 +121,16 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
       </main>
+      {/* Fuera de AnimatePresence: un `fixed` dentro de la transicion de pantalla se ancla al contenedor transformado. */}
+      {room && state && (
+        <ChatDock
+          messages={chat}
+          myId={room.sessionId}
+          rejectedSeq={chatRejectedSeq}
+          onSend={(text) => send("chat", { text })}
+          lifted={!!inGame && state.phase !== "RESULTS"}
+        />
+      )}
     </MotionConfig>
   );
 }
