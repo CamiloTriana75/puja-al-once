@@ -123,8 +123,12 @@ export async function run({ client, guild, only = [], clean = false }) {
       };
       const existing = roles.get(spec.key);
       if (existing) {
-        await existing.edit(data);
-        skip(`rol actualizado: ${spec.name}`);
+        try {
+          await existing.edit(data);
+          skip(`rol actualizado: ${spec.name}`);
+        } catch (error) {
+          warn(`no se pudo editar ${spec.name} (${hint(error)}) — sube el rol del bot al primer puesto en Ajustes > Roles`);
+        }
       } else {
         roles.set(spec.key, await guild.roles.create(data));
         ok(`rol creado: ${spec.name}`);
