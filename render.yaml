@@ -59,3 +59,10 @@ services:
       # jugador para los limites. Ver docs/PRODUCCION.md.
       - key: TRUST_CLOUDFLARE
         value: "0"
+      # Panel de Colyseus Monitor (salas y jugadores en vivo) en /colyseus, tras
+      # usuario y contrasena. Sin MONITOR_PASSWORD (minimo 12 caracteres) el panel
+      # no existe. Es un secreto: se pone en el panel de Render, nunca aqui.
+      - key: MONITOR_PASSWORD
+        sync: false
+      - key: MONITOR_USER
+        value: admin

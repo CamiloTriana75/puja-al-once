@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@colyseus/core": "0.16.25",
+    "@colyseus/monitor": "0.16.7",
     "@colyseus/schema": "3.0.76",
     "@colyseus/tools": "0.16.20",
     "@colyseus/ws-transport": "0.16.5",

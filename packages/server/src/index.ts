@@ -1,10 +1,12 @@
 import { matchMaker } from "@colyseus/core";
+import { monitor } from "@colyseus/monitor";
 import config, { listen } from "@colyseus/tools";
 import { json as expressJson, static as expressStatic } from "express";
 import { appendFile, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
+import { MONITOR_MIN_PASSWORD_LENGTH, monitorGuard } from "./monitorAccess.js";
 import { buildWebhookPayload, parseFeedback } from "./feedback.js";
 import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus, staticCacheControl } from "./requestPolicy.js";
 
@@ -81,6 +83,25 @@ const app = config({
       }
       next();
     });
+
+    // Panel de Colyseus (salas y jugadores en vivo). Solo existe si MONITOR_PASSWORD
+    // tiene al menos MONITOR_MIN_PASSWORD_LENGTH caracteres; el usuario es MONITOR_USER
+    // (por defecto "admin"). Va tras autenticacion y con limite de intentos: lista el
+    // estado de todas las partidas, asi que jamas se monta sin contrasena.
+    const monitorPassword = process.env.MONITOR_PASSWORD ?? "";
+    if (monitorPassword.length >= MONITOR_MIN_PASSWORD_LENGTH) {
+      app.use(
+        "/colyseus",
+        monitorGuard({
+          user: process.env.MONITOR_USER || "admin",
+          password: monitorPassword,
+          addressOf: (req) => clientAddress(req.headers, req.socket.remoteAddress),
+        }),
+        monitor(),
+      );
+    } else if (monitorPassword !== "") {
+      console.warn(`[monitor] MONITOR_PASSWORD debe tener al menos ${MONITOR_MIN_PASSWORD_LENGTH} caracteres: el panel no se monta.`);
+    }
 
     app.get("/time", (_req, res) => res.json({ now: Date.now() }));
     app.get("/health/live", (_req, res) => res.json({ status: "ok" }));

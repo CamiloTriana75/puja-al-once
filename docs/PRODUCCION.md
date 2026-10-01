@@ -78,6 +78,12 @@ El flujo automatizado es manual a propósito. Un push a `main` no despliega: `au
 - Ese procedimiento revierte el código, no la configuración: revisa aparte los cambios de variables de entorno.
 - Si la instancia se reinicia, informa que las partidas que estaban activas se perdieron. V1 no tiene almacenamiento persistente de salas.
 
+## Monitor en vivo (Colyseus Monitor)
+
+Con `MONITOR_PASSWORD` definida (mínimo 12 caracteres) en Render, el servidor monta el panel de Colyseus en `https://TU-DOMINIO/colyseus`: salas abiertas, jugadores conectados, CPU y memoria, y el estado de cada sala. Pide usuario (`MONITOR_USER`, por defecto `admin`) y contraseña, y bloquea la IP 10 minutos tras 10 intentos fallidos. Sin contraseña (o con una corta) el panel no existe. Sigue accesible en modo mantenimiento. Ver el estado de las partidas es sensible: no compartas la contraseña.
+
+Para vigilar la caída del sitio, añade un monitor de UptimeRobot a `/health/live` cada 5 minutos: avisa si se cae y evita que Render gratis se duerma.
+
 ## Cloudflare delante de Render (cuando haya dominio propio)
 
 Un subdominio `onrender.com` no se puede poner detrás de Cloudflare: hace falta un dominio propio. Con él, Cloudflare (plan gratuito) aporta CDN, protección DDoS básica, reglas de WAF y límites de peticiones. El servidor ya está preparado:

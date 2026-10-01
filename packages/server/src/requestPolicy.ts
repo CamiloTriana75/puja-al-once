@@ -135,7 +135,7 @@ export function spaFallbackStatus(pathname: string): 200 | 404 {
  * Modo mantenimiento (MAINTENANCE_MODE=1). Decide que hacer con una peticion:
  *  - "page": una pagina o ruta de la app -> pagina de mantenimiento con 503.
  *  - "api": crear/buscar salas o enviar comentarios -> JSON 503.
- *  - null: pasa. Las comprobaciones de salud tienen que seguir en 200 o Render
+ *  - null: pasa. El monitor de Colyseus y las comprobaciones de salud tienen que seguir en 200 o Render
  *    marcaria la instancia como caida y la reiniciaria en pleno mantenimiento.
  *    Los ficheros estaticos tambien pasan: la pagina no los necesita, pero el
  *    service worker y el manifiesto si deben poder actualizarse.
@@ -143,6 +143,8 @@ export function spaFallbackStatus(pathname: string): 200 | 404 {
 export function maintenanceAction(pathname: string, enabled: boolean): "page" | "api" | null {
   if (!enabled) return null;
   if (pathname.startsWith("/health/")) return null;
+  // El panel de monitor (protegido con contrasena) tiene que seguir accesible mientras se actualiza.
+  if (pathname === "/colyseus" || pathname.startsWith("/colyseus/")) return null;
   if (/^\/(matchmake|rooms|feedback|time|photos|silhouettes)(\/|$)/.test(pathname)) return "api";
   const lastSegment = pathname.split("/").filter(Boolean).pop() ?? "";
   // Un fichero con extension (assets, iconos, sw.js...) pasa; una ruta limpia es una pagina.
