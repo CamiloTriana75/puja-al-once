@@ -13,15 +13,15 @@ import { join } from "node:path";
  * aqui salen el canonical y el og:url de index.html, el Sitemap de
  * robots.txt y el <loc> de sitemap.xml, para que no puedan discrepar.
  *
- * Es la que produce el servicio de render.yaml. El sufijo `-vyo6` no es
+ * Es la que produce el servicio de render.yaml. El sufijo `-3u8j` no es
  * decorativo: Render no tenia libre el nombre tal cual y le anadio uno
  * propio al crear el servicio. Ese hostname es el que existe, asi que es
- * el que va aqui; el nombre del servicio en render.yaml sigue siendo el
- * corto. Si el dominio cambia -- dominio propio, otro nombre de servicio
+ * el que va aqui. Si apunta a un host que no existe, la imagen de la vista
+ * previa del enlace (og:image) da 404 y WhatsApp/Discord no la muestran. Si el dominio cambia -- dominio propio, otro nombre de servicio
  * -- cambiala aqui, o exporta VITE_SITE_URL para no tocar el fichero. Es
  * publico, no un secreto.
  */
-const DEFAULT_SITE_URL = "https://subasta-futbolera-vyo6.onrender.com";
+const DEFAULT_SITE_URL = "https://puja-al-once-3u8j.onrender.com";
 
 function siteUrl(): string {
   return (process.env.VITE_SITE_URL ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
