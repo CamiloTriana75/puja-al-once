@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
 import { MONITOR_MIN_PASSWORD_LENGTH, monitorGuard } from "./monitorAccess.js";
-import { buildWebhookPayload, parseFeedback } from "./feedback.js";
+import { buildWebhookPayload, parseFeedback, postToWebhook } from "./feedback.js";
 import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus, staticCacheControl } from "./requestPolicy.js";
 
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
@@ -137,18 +137,12 @@ const app = config({
       }
       console.log(`[feedback] ${record.kind}: ${record.message.replace(/\s+/g, " ").slice(0, 200)}`);
 
-      const webhook = process.env.FEEDBACK_WEBHOOK_URL;
-      if (webhook) {
-        try {
-          await fetch(webhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(buildWebhookPayload(parsed.entry)),
-            signal: AbortSignal.timeout(4000),
-          });
-        } catch (error) {
-          console.warn("[feedback] el webhook no respondio:", error);
-        }
+      const webhook = process.env.FEEDBACK_WEBHOOK_URL?.trim();
+      if (!webhook) {
+        console.warn("[feedback] FEEDBACK_WEBHOOK_URL no esta definida: el comentario solo queda en el fichero y en estos registros.");
+      } else {
+        const result = await postToWebhook(webhook, buildWebhookPayload(parsed.entry));
+        if (!result.ok) console.warn(`[feedback] Discord no acepto el comentario (estado ${result.status}): ${result.detail}`);
       }
       res.status(201).json({ ok: true });
     });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWebhookPayload, CONTACT_MAX, MESSAGE_MAX, parseFeedback } from "../src/feedback.js";
+import { buildWebhookPayload, CONTACT_MAX, MESSAGE_MAX, parseFeedback, postToWebhook } from "../src/feedback.js";
 
 describe("parseFeedback", () => {
   it("acepta un comentario valido y lo normaliza", () => {
@@ -69,5 +69,39 @@ describe("buildWebhookPayload", () => {
   it("respeta el limite de descripcion de Discord", () => {
     const payload = buildWebhookPayload({ kind: "bug", message: "x".repeat(MESSAGE_MAX), contact: "" }, at);
     expect(payload.embeds[0]!.description.length).toBeLessThanOrEqual(4096);
+  });
+});
+
+describe("postToWebhook", () => {
+  const payload = buildWebhookPayload({ kind: "bug", message: "La foto no carga", contact: "" });
+  const reply = (status: number, body = "") => (async () => new Response(body === "" ? null : body, { status })) as unknown as typeof fetch;
+
+  it("da por bueno un 2xx", async () => {
+    expect(await postToWebhook("https://discord.com/api/webhooks/1/x", payload, reply(204))).toEqual({ ok: true, status: 204, detail: "" });
+  });
+
+  it("devuelve el estado y el motivo cuando Discord rechaza, sin filtrar la URL", async () => {
+    const result = await postToWebhook("https://discord.com/api/webhooks/1/x", payload, reply(404, '{"message":"Unknown Webhook at https://discord.com/api/webhooks/1/x"}'));
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(404);
+    expect(result.detail).toContain("Unknown Webhook");
+    expect(result.detail).not.toContain("discord.com/api/webhooks");
+  });
+
+  it("si falla la red devuelve estado 0 en vez de lanzar", async () => {
+    const boom = (async () => {
+      throw new Error("fallo de red");
+    }) as unknown as typeof fetch;
+    expect(await postToWebhook("https://discord.com/api/webhooks/1/x", payload, boom)).toMatchObject({ ok: false, status: 0 });
+  });
+
+  it("quita espacios y saltos de linea de la URL pegada", async () => {
+    let seen = "";
+    const spy = (async (url: string) => {
+      seen = url;
+      return new Response(null, { status: 204 });
+    }) as unknown as typeof fetch;
+    await postToWebhook("  https://discord.com/api/webhooks/1/x" + String.fromCharCode(10), payload, spy);
+    expect(seen).toBe("https://discord.com/api/webhooks/1/x");
   });
 });

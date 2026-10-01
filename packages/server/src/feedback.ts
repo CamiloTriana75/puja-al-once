@@ -88,3 +88,37 @@ export function buildWebhookPayload(entry: FeedbackEntry, at = new Date()): Disc
     ],
   };
 }
+
+export interface WebhookResult {
+  ok: boolean;
+  /** Estado HTTP de Discord, o 0 si ni siquiera hubo respuesta. */
+  status: number;
+  /** Cuerpo del error (recortado), para el registro; nunca la URL, que es secreta. */
+  detail: string;
+}
+
+/**
+ * Envia el comentario al webhook y DICE lo que contesto Discord. Antes el estado
+ * se ignoraba: una URL mal pegada (404 "Unknown Webhook") o un cuerpo rechazado
+ * (400) no dejaban ni rastro en los registros y los comentarios "no llegaban".
+ */
+export async function postToWebhook(
+  url: string,
+  payload: DiscordWebhookPayload,
+  fetchImpl: typeof fetch = fetch,
+): Promise<WebhookResult> {
+  try {
+    const response = await fetchImpl(url.trim(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(4000),
+    });
+    if (response.ok) return { ok: true, status: response.status, detail: "" };
+    const detail = (await response.text().catch(() => "")).replace(/https?:\/\/\S+/g, "<url>").slice(0, 200);
+    return { ok: false, status: response.status, detail };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { ok: false, status: 0, detail: message.replace(/https?:\/\/\S+/g, "<url>").slice(0, 200) };
+  }
+}
