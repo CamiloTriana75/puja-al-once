@@ -33,3 +33,11 @@ graphify-out/
 # Hojas de contactos para revisar las siluetas a ojo (scripts/contact-sheet.ts).
 # Artefacto de revision local, se regenera solo.
 /contact-sheets/
+
+# Herramientas de agentes de IA (skills, agentes, hooks, estado de Impeccable).
+# Son locales de cada maquina, no parte del proyecto.
+.agent/
+.github/agents/
+.github/hooks/
+.github/skills/
+.impeccable/
