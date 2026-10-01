@@ -41,3 +41,7 @@ graphify-out/
 .github/hooks/
 .github/skills/
 .impeccable/
+
+# Comentarios de jugadores guardados por el servidor (ver packages/server/src/index.ts).
+feedback.jsonl
+packages/server/feedback.jsonl

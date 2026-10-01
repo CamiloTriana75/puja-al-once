@@ -1,10 +1,11 @@
 import { matchMaker } from "@colyseus/core";
 import config, { listen } from "@colyseus/tools";
-import { static as expressStatic } from "express";
-import { readFile } from "node:fs/promises";
+import { json as expressJson, static as expressStatic } from "express";
+import { appendFile, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
+import { buildWebhookPayload, parseFeedback } from "./feedback.js";
 import { clientAddress, isAllowedOrigin, RateLimiter, spaFallbackStatus } from "./requestPolicy.js";
 
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
@@ -14,6 +15,12 @@ const PHOTOS_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../../../da
 const CLIENT_DIST = resolve(dirname(fileURLToPath(import.meta.url)), "../../client/dist");
 const publicListLimiter = new RateLimiter();
 const roomLookupLimiter = new RateLimiter();
+const feedbackLimiter = new RateLimiter();
+
+// Los comentarios se anaden a un fichero JSONL y, si hay webhook, tambien se
+// envian alli. En Render free el disco se borra en cada despliegue: el webhook
+// (FEEDBACK_WEBHOOK_URL, compatible con Discord) es lo que los conserva.
+const FEEDBACK_FILE = process.env.FEEDBACK_FILE ?? resolve(process.cwd(), "feedback.jsonl");
 
 const app = config({
   initializeGameServer: (gameServer) => {
@@ -62,6 +69,52 @@ const app = config({
     app.get("/time", (_req, res) => res.json({ now: Date.now() }));
     app.get("/health/live", (_req, res) => res.json({ status: "ok" }));
     app.get("/health/ready", (_req, res) => res.json({ status: "ok" }));
+
+    // Comentarios de los jugadores. Cuerpo pequeno, limite por IP y campo trampa
+    // contra bots; el filtro de origen de arriba tambien aplica.
+    app.post("/feedback", expressJson({ limit: "8kb" }), async (req, res) => {
+      const address = clientAddress(req.headers, req.socket.remoteAddress);
+      if (!feedbackLimiter.allow(address, 5, 10 * 60_000)) {
+        res.setHeader("Retry-After", "600");
+        res.status(429).json({ error: "RATE_LIMITED" });
+        return;
+      }
+
+      const parsed = parseFeedback(req.body);
+      if (!parsed.ok) {
+        // El campo trampa responde como si hubiera ido bien: el bot no aprende nada.
+        if (parsed.error === "SPAM") {
+          res.status(204).end();
+          return;
+        }
+        res.status(400).json({ error: parsed.error });
+        return;
+      }
+
+      const record = { at: new Date().toISOString(), ...parsed.entry };
+      try {
+        await appendFile(FEEDBACK_FILE, `${JSON.stringify(record)}
+`, "utf8");
+      } catch (error) {
+        console.warn("[feedback] no se pudo escribir el fichero:", error);
+      }
+      console.log(`[feedback] ${record.kind}: ${record.message.replace(/\s+/g, " ").slice(0, 200)}`);
+
+      const webhook = process.env.FEEDBACK_WEBHOOK_URL;
+      if (webhook) {
+        try {
+          await fetch(webhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(buildWebhookPayload(parsed.entry)),
+            signal: AbortSignal.timeout(4000),
+          });
+        } catch (error) {
+          console.warn("[feedback] el webhook no respondio:", error);
+        }
+      }
+      res.status(201).json({ ok: true });
+    });
 
     // Unicamente el lobby publico aparece aqui: no revela nombres ni estado
     // de cartas y omite salas vacias, llenas, privadas o ya iniciadas.

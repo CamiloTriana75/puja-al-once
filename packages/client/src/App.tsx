@@ -1,6 +1,7 @@
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "framer-motion";
 import { useEffect } from "react";
 import { ConnectionBanner } from "./components/ConnectionBanner.js";
+import { FeedbackHost } from "./components/FeedbackDialog.js";
 import { Auction } from "./screens/Auction.js";
 import { Landing } from "./screens/Landing.js";
 import { Lobby } from "./screens/Lobby.js";
@@ -66,6 +67,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <FeedbackHost />
       <main className="min-h-screen bg-canvas text-forest">
         {/* Por encima de cualquier pantalla: la conexion se puede caer estando
           en Landing, Lobby, Auction o Results por igual (ver ConnectionBanner). */}
