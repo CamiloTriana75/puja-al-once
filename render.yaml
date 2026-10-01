@@ -14,7 +14,7 @@
 
 services:
   - type: web
-    name: subasta-futbolera
+    name: puja-al-once
     # La imagen ya compila cliente y servidor en un solo proceso: este
     # servicio es el juego entero, no un backend al que haya que pegarle
     # un frontend aparte.
