@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Heart, Server, Wrench } from "lucide-react";
 import { DONATE_URL } from "../../config/donate.js";
+import { DONORS, type Donor } from "../../data/donors.js";
 import { CONTAINER, EASE_OUT } from "./ui.js";
 
 const USES = [
@@ -9,7 +10,7 @@ const USES = [
 ];
 
 /** Apartado de apoyo voluntario. No se pinta si no hay enlace de PayPal configurado. */
-export function Support({ url = DONATE_URL }: { url?: string | null }) {
+export function Support({ url = DONATE_URL, donors = DONORS }: { url?: string | null; donors?: readonly Donor[] }) {
   if (!url) return null;
   return (
     <section id="apoyar" aria-labelledby="apoyar-title" className="px-4 pb-24 sm:px-6 lg:px-8 lg:pb-32">
@@ -34,7 +35,7 @@ export function Support({ url = DONATE_URL }: { url?: string | null }) {
             </h2>
             <p className="mt-5 max-w-lg font-copy text-[1.15rem] leading-[1.6] text-slate">
               Puja el Once es un proyecto independiente, sin anuncios ni cuentas. Si lo disfrutas con tus amigos, puedes dejar una
-              aportación voluntaria. No desbloquea nada: el juego es igual para todos.
+              aportación voluntaria. No desbloquea nada en el juego, que es igual para todos, pero sí tendrás un hueco en los créditos si quieres.
             </p>
             <div className="mt-8">
               <a
@@ -61,6 +62,23 @@ export function Support({ url = DONATE_URL }: { url?: string | null }) {
                 </li>
               ))}
             </ul>
+            <div className="mt-6 rounded-2xl bg-white p-5 ring-1 ring-line">
+              <h3 className="font-headline text-[1.05rem] font-semibold tracking-[-0.02em] text-forest">Gracias a quienes ya apoyan</h3>
+              {donors.length > 0 ? (
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {donors.map((donor) => (
+                    <li key={donor.name} className="rounded-full bg-pitch-soft px-4 py-1.5 font-copy text-[1.02rem] font-medium text-forest">
+                      {donor.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-2 font-copy text-[1.02rem] leading-[1.5] text-slate">Aquí saldrá el nombre de quien apoye el proyecto. Puedes ser el primero.</p>
+              )}
+              <p className="mt-3 font-copy text-[0.95rem] leading-[1.5] text-slate">
+                ¿Quieres aparecer? Tras donar, <a href="/legal/contacto.html" className="font-semibold text-pine underline underline-offset-2">escríbenos</a> con el nombre que prefieras. Solo se publica si tú lo pides.
+              </p>
+            </div>
             <p className="mt-6 font-copy text-[0.95rem] leading-[1.5] text-slate">
               Es una aportación personal para costear y desarrollar el juego: no es una entidad benéfica ni la donación es deducible. El pago lo gestiona
               PayPal; nosotros no vemos tus datos de pago.

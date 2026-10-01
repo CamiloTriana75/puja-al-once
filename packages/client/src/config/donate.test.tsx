@@ -48,4 +48,16 @@ describe("Support", () => {
     expect(link.getAttribute("target")).toBe("_blank");
     expect(screen.getByText(/no es una entidad benéfica/)).toBeTruthy();
   });
+
+  it("agradece por su nombre a quien dio permiso y avisa de que solo se publica si lo pide", () => {
+    render(<Support url="https://www.paypal.me/pujaelonce" donors={[{ name: "Ana" }, { name: "Beto" }]} />);
+    expect(screen.getByText("Ana")).toBeTruthy();
+    expect(screen.getByText("Beto")).toBeTruthy();
+    expect(screen.getByText(/Solo se publica si tú lo pides/)).toBeTruthy();
+  });
+
+  it("sin donantes invita a ser el primero en vez de dejar un hueco vacio", () => {
+    render(<Support url="https://www.paypal.me/pujaelonce" donors={[]} />);
+    expect(screen.getByText(/Puedes ser el primero/)).toBeTruthy();
+  });
 });
