@@ -10,8 +10,8 @@
  *   logo-wordmark.png  rotulo recortado, fondo transparente
  *   icons/icon-192.png, icons/icon-512.png, icons/icon-maskable-512.png
  *   apple-touch-icon.png
- *   og-image.png       1200x630 para compartir el enlace
  *
+ * La imagen social (og-image.png) sale de tools/build-og-image.py, que usa estos recortes.
  * El favicon NO sale de aqui: a 32 px la mano se vuelve una mancha, asi que
  * sigue siendo el balon simple de tools/build-pwa-icons.cjs.
  */
@@ -148,31 +148,6 @@ async function onCanvas({ size, radius, content, scale }) {
   fs.writeFileSync(
     path.join(PUBLIC, "apple-touch-icon.png"),
     await sharp(await onCanvas({ size: 512, radius: 0, content: symbolPng, scale: 0.78 })).resize(180, 180).png().toBuffer(),
-  );
-
-  // Imagen social 1200x630: simbolo a la izquierda, rotulo a la derecha.
-  const W = 1200, H = 630;
-  const symOg = await sharp(symbolPng).resize(400, 400).toBuffer();
-  const wordMeta = await sharp(wordmarkPng).metadata();
-  const wordW = 560;
-  const wordH = Math.round((wordMeta.height / wordMeta.width) * wordW);
-  const wordOg = await sharp(wordmarkPng).resize(wordW, wordH).toBuffer();
-  const base = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-      <rect width="${W}" height="${H}" fill="#F5F4EC"/>
-      <rect y="${H - 22}" width="${W}" height="22" fill="#15834A"/>
-      <rect y="${H - 22}" width="${W / 3}" height="22" fill="#F0B83D"/>
-    </svg>`,
-  );
-  fs.writeFileSync(
-    path.join(PUBLIC, "og-image.png"),
-    await sharp(base)
-      .composite([
-        { input: symOg, left: 110, top: Math.round((H - 22 - 400) / 2) },
-        { input: wordOg, left: 560, top: Math.round((H - 22 - wordH) / 2) },
-      ])
-      .png({ compressionLevel: 9 })
-      .toBuffer(),
   );
 
   console.log({ symbol: sym, lockup: lock, wordmarkCut: cut, wordmark: wordTight });

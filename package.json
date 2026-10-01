@@ -19,7 +19,7 @@
     "silhouettes:sheet:check": "tsx scripts/check-contact-sheet.ts",
     "silhouettes:candidates": "tsx scripts/candidate-sheet.ts",
     "silhouettes:candidates:thumbs": "tsx scripts/fetch-candidate-thumbs.ts",
-    "og:assets": "node tools/build-logo.cjs tools/brand/logo-source.png"
+    "og:assets": "node tools/build-logo.cjs tools/brand/logo-source.png && python tools/build-og-image.py"
   },
   "devDependencies": {
     "@fut/shared": "workspace:*",
