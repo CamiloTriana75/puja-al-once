@@ -21,6 +21,8 @@ export function DeadlineClock({
   const reducedMotion = useReducedMotion() ?? false;
   const seconds = Math.max(0, remainingMs) / 1000;
   const urgent = mode === "bidding" && seconds < 5;
+  // Ultimos 2 s: el latido se acelera y se hace mas fuerte, con un temblor corto.
+  const critical = mode === "bidding" && seconds < 2;
   const fraction = windowMs > 0 ? Math.min(1, Math.max(0, remainingMs / windowMs)) : 0;
 
   const label =
@@ -45,8 +47,14 @@ export function DeadlineClock({
       ) : (
         <motion.p
           aria-hidden="true"
-          animate={urgent && !reducedMotion ? { scale: [1, 1.04, 1] } : { scale: 1 }}
-          transition={urgent ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+          animate={
+            urgent && !reducedMotion
+              ? critical
+                ? { scale: [1, 1.1, 1], x: [0, -3, 3, -2, 0] }
+                : { scale: [1, 1.04, 1], x: 0 }
+              : { scale: 1, x: 0 }
+          }
+          transition={urgent ? { duration: critical ? 0.35 : 0.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
           className={`tnum mt-1 origin-left font-headline text-[clamp(3.6rem,7.5vw,6rem)] font-bold leading-[0.95] tracking-[-0.06em] ${urgent ? "text-gold" : "text-white"}`}
         >
           {mode === "bidding" ? seconds.toFixed(1) : Math.ceil(seconds)}

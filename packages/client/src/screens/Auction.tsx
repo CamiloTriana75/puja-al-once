@@ -1,15 +1,18 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowLeftRight, Check, Hand, Hourglass, ThumbsDown, ThumbsUp } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AuctionCard } from "../components/AuctionCard.js";
 import { BidControls } from "../components/BidControls.js";
 import { ClueRow } from "../components/ClueRow.js";
 import { DeadlineClock, type ClockMode } from "../components/game/DeadlineClock.js";
 import { GameHeader } from "../components/game/GameHeader.js";
+import { KickoffSequence } from "../components/game/KickoffSequence.js";
 import { LiveTicker, type TickerItem } from "../components/game/LiveTicker.js";
 import { RivalCard, type RivalTag } from "../components/game/RivalCard.js";
+import { SaleSequence } from "../components/game/SaleSequence.js";
 import { SLOT_ABBR, SLOT_LABEL, SLOT_ORDER } from "../components/game/slots.js";
 import { MatchHistory } from "../components/MatchHistory.js";
+import { AnimatedPrice } from "../motion/AnimatedPrice.js";
 import { REACTIONS, Reactions } from "../components/Reactions.js";
 import type { FloatingReaction } from "../components/Reactions.js";
 import { RevealBar } from "../components/RevealBar.js";
@@ -113,6 +116,23 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
   }, [state.slotIndex]);
   const showSummary = summarySlotIndex !== null && summarySlotIndex === state.slotIndex;
 
+  // Arranque de partida: solo al montar la pantalla con la subasta recien abierta
+  // (primer puesto, ninguna carta revelada, nadie ha pujado), tambien en la
+  // revancha. Entrar a mitad de partida o recargar mas tarde no la repite.
+  const [kickoff, setKickoff] = useState(
+    () => state.phase === "BIDDING" && state.slotIndex === 0 && state.revealedCards.size === 0 && state.currentBid === 0,
+  );
+  const endKickoff = useCallback(() => setKickoff(false), []);
+
+  // Secuencia de venta (mazo, "¡Vendido!" y pase del balon): una vez por carta
+  // adjudicada, nunca si se descarta. Clic o Esc la saltan.
+  const sold = lastReveal?.ownerId ? lastReveal : undefined;
+  const [saleCardId, setSaleCardId] = useState<string | null>(null);
+  useEffect(() => {
+    if (sold) setSaleCardId(sold.cardId);
+  }, [sold?.cardId]);
+  const clearSale = useCallback(() => setSaleCardId(null), []);
+
   const nameOf = (playerId: string) => state.players.get(playerId)?.name ?? "Jugador";
 
   const clockMode: ClockMode =
@@ -178,15 +198,11 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
                     <p className="font-copy text-[1.02rem] text-slate">
                       {hasActiveBid ? "Va ganando" : state.phase === "BIDDING" ? "Precio de salida" : "Nadie ha pujado"}
                     </p>
-                    <motion.p
-                      key={hasActiveBid ? state.currentBid : state.openingBid}
-                      initial={reducedMotion ? false : { y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="tnum font-headline text-[clamp(2.4rem,4.6vw,3.6rem)] font-bold leading-none tracking-[-0.055em] text-forest"
-                    >
-                      {hasActiveBid ? state.currentBid : state.openingBid} M
-                    </motion.p>
+                    <AnimatedPrice
+                      value={hasActiveBid ? state.currentBid : state.openingBid}
+                      bidderName={hasActiveBid ? (state.currentBidderId === myId ? "Tú" : nameOf(state.currentBidderId)) : null}
+                      className="font-headline text-[clamp(2.4rem,4.6vw,3.6rem)] font-bold leading-none tracking-[-0.055em]"
+                    />
                   </div>
                   {hasActiveBid && (
                     <p className="rounded-full bg-gold px-4 py-1.5 font-copy text-[1.05rem] font-semibold text-forest">
@@ -263,6 +279,24 @@ export function Auction({ state, myId, roomId, error, errorSeq, reactions, onDis
 
       {inTransferMarket && <div className="mx-auto hidden w-full max-w-[90rem] px-8 pb-8 sm:block">{reactionsFor()}</div>}
       {!inTransferMarket && <LiveTicker items={tickerItems} />}
+
+      {kickoff && <KickoffSequence playerNames={[...state.players.values()].map((player) => player.name)} onDone={endKickoff} />}
+
+      {sold && saleCardId === sold.cardId && (
+        <SaleSequence
+          key={sold.cardId}
+          roomId={roomId}
+          cardId={sold.cardId}
+          club={sold.club}
+          buyer={nameOf(sold.ownerId)}
+          price={sold.price}
+          slot={sold.slot}
+          cardName={sold.name}
+          season={sold.season}
+          ownedSlots={[...new Set([...(state.players.get(sold.ownerId)?.squad.keys() ?? []), sold.slot])]}
+          onDone={clearSale}
+        />
+      )}
 
       {showSummary && (
         <RoundSummary
@@ -352,7 +386,7 @@ function SkipVote({
   );
 }
 
-/** Ventana de traspasos entre la defensa y el mediocampo (AuctionRoom.TRANSFER_MARKET_SLOT_INDEX). */
+/** Ventana de traspasos entre el mediocampo y el ataque (AuctionRoom.TRANSFER_MARKET_SLOT_INDEX). */
 function TransferMarket({
   state,
   myId,
@@ -414,7 +448,7 @@ function TransferMarket({
         <div className="max-w-2xl">
           <h1 className="font-headline text-[clamp(2rem,4.4vw,3.4rem)] font-bold leading-[1.02] tracking-[-0.05em]">Mercado de transferencias</h1>
           <p className="mt-3 font-copy text-[1.12rem] leading-[1.55] text-white/90">
-            La defensa ya está cerrada: reajusta tu once antes del mediocampo. Cada operación cambia un jugador por otro y el dinero es opcional. Todo el mercado ve las ofertas y los saldos.
+            La defensa y el mediocampo ya están cerrados: reajusta tu once antes del ataque. Cada operación cambia un jugador por otro y el dinero es opcional. Todo el mercado ve las ofertas y los saldos.
           </p>
         </div>
         <button

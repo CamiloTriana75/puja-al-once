@@ -15,7 +15,7 @@ interface Props {
  * abajo. Los once puestos del juego forman un 4-3-3: defensa de cuatro, un
  * pivote y dos interiores, y extremos con delantero.
  */
-const POSITIONS: Record<string, { x: number; y: number }> = {
+export const POSITIONS: Record<string, { x: number; y: number }> = {
   GK: { x: 50, y: 92 },
   LB: { x: 13, y: 74 },
   CB1: { x: 37, y: 76.5 },
@@ -35,7 +35,7 @@ function lastName(name: string): string {
 }
 
 /** Líneas del campo: viewBox 300x400, mismo aspecto que el contenedor. */
-function PitchLines() {
+export function PitchLines() {
   return (
     <svg viewBox="0 0 300 400" preserveAspectRatio="none" className="absolute inset-0 h-full w-full" fill="none" aria-hidden="true">
       <g stroke="white" strokeOpacity=".6" strokeWidth="2" vectorEffect="non-scaling-stroke">
