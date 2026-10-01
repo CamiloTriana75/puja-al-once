@@ -1,4 +1,4 @@
-# Design System — Subasta Futbolera
+# Design System — Subasta Puja el Once
 
 **Fuente de verdad global.** Toda pantalla parte de aquí. Una página solo se desvía si existe un fichero en `design-system/pages/<pagina>.md`, y entonces ese fichero manda sobre este.
 

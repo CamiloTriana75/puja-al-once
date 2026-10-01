@@ -1,4 +1,4 @@
-# Cómo jugar a Subasta Futbolera
+# Cómo jugar a Subasta Puja el Once
 
 ## Crear o encontrar una sala
 

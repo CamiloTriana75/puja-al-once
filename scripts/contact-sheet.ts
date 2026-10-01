@@ -404,7 +404,7 @@ function renderCandidatesPage(
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Candidatos de foto &middot; Futbolera</title>
+<title>Candidatos de foto &middot; Puja el Once</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>

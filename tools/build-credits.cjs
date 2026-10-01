@@ -78,7 +78,7 @@ fs.writeFileSync(path.join(root, "CREDITS.md"), md);
 console.log(`CREDITS.md: ${attributions.length} imagenes, ${lics.length} licencias, ${md.length} bytes`);
 
 // --- creditos.html (pagina publica en el cliente) ---
-const pageTitle = "Créditos · Futbolera";
+const pageTitle = "Créditos · Puja el Once";
 const pageDescription = "Autor, licencia y fuente de las 149 fotografías de Wikimedia Commons usadas en las cartas.";
 const nav = [
   ["../actualizaciones.html", "Actualizaciones", false],
@@ -133,7 +133,7 @@ const html = `<!doctype html>
   -->
   <link rel="canonical" href="%SITE_URL%/legal/creditos.html" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Futbolera" />
+  <meta property="og:site_name" content="Puja el Once" />
   <meta property="og:locale" content="es_ES" />
   <meta property="og:title" content="${esc(pageTitle)}" />
   <meta property="og:description" content="${esc(pageDescription)}" />
@@ -141,7 +141,7 @@ const html = `<!doctype html>
   <meta property="og:image" content="%SITE_URL%/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Futbolera: puja a ciegas por un jugador de fútbol oculto y arma tu once." />
+  <meta property="og:image:alt" content="Puja el Once: puja a ciegas por un jugador de fútbol oculto y arma tu once." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${esc(pageTitle)}" />
   <meta name="twitter:description" content="${esc(pageDescription)}" />
@@ -150,9 +150,9 @@ const html = `<!doctype html>
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/" aria-label="Volver a la portada de Futbolera">
-      <mark>F</mark>
-      <span class="brand-name">Futbolera<b>· subasta de cromos</b></span>
+    <a class="brand" href="/" aria-label="Volver a la portada de Puja el Once">
+      <mark>P</mark>
+      <span class="brand-name">Puja el Once<b>· subasta de cromos</b></span>
     </a>
     <a class="back" href="/">← Jugar</a>
   </header>
@@ -160,7 +160,7 @@ const html = `<!doctype html>
   <main class="wrap">
     <span class="updated">01·10·2026</span>
     <h1>Créditos <em>y atribuciones</em></h1>
-    <p class="lede">Cada carta de Futbolera usa la fotografía real de su jugador, descargada de Wikimedia Commons. Estas tablas son la atribución que exigen las licencias; sin ellas, el juego incumpliría sus términos. Más abajo, los créditos del sonido, los iconos y las tipografías.</p>
+    <p class="lede">Cada carta de Puja el Once usa la fotografía real de su jugador, descargada de Wikimedia Commons. Estas tablas son la atribución que exigen las licencias; sin ellas, el juego incumpliría sus términos. Más abajo, los créditos del sonido, los iconos y las tipografías.</p>
 
     <section>
       <h2>Qué se hace con cada imagen</h2>
@@ -188,7 +188,7 @@ ${licenseBlocks}
   </main>
 
   <footer class="page">
-    <span>Futbolera · juego de amigos, sin ánimo de lucro</span>
+    <span>Puja el Once · juego de amigos, sin ánimo de lucro</span>
     <nav class="legal-nav" aria-label="Páginas legales">
 ${nav}
     </nav>

@@ -218,7 +218,7 @@ function LaptopScreen({ view }: { view: DemoView }) {
   return (
     <div className="absolute inset-0 flex flex-col bg-canvas font-copy text-forest">
       <div className="flex items-center justify-between border-b border-line px-4 py-2">
-        <span className="font-headline text-[0.72rem] font-bold tracking-[-0.03em]">Futbolera</span>
+        <span className="font-headline text-[0.72rem] font-bold tracking-[-0.03em]">Puja el Once</span>
         <span className="text-[0.6rem] font-semibold">8/11 Mediapunta</span>
         <span className="rounded-full bg-white px-2 py-0.5 text-[0.55rem] ring-1 ring-line">Sala A7K2M</span>
       </div>
@@ -364,7 +364,7 @@ function Nav({ ctaLabel, onCta }: { ctaLabel: string; onCta: () => void }) {
         }`}
     >
       <div className={`${CONTAINER} flex h-[4.5rem] items-center justify-between gap-6`}>
-        <a href="#inicio" aria-label="Futbolera, inicio" className="rounded-lg">
+        <a href="#inicio" aria-label="Puja el Once, inicio" className="rounded-lg">
           <Wordmark className="text-[1.45rem]" />
         </a>
         <nav aria-label="Secciones de la portada" className="hidden items-center gap-8 md:flex">
@@ -480,7 +480,7 @@ function WhatIs() {
   return (
     <section aria-labelledby="what-title" className="px-4 pb-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl text-center">
-        <SectionTitle id="what-title">¿Qué es Futbolera?</SectionTitle>
+        <SectionTitle id="what-title">¿Qué es Puja el Once?</SectionTitle>
         <p className="mt-6 font-copy text-[1.3rem] leading-[1.6] text-slate">
           Un juego de subastas para 2 a 4 amigos que se juega en el navegador. Cada ronda es un puesto del once: se puja por futbolistas
           escondidos tras una silueta y, al final, la ceremonia voltea los ratings para ver quién fichó mejor.

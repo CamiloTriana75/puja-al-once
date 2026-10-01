@@ -3,7 +3,7 @@ import { useState } from "react";
 import { openFeedback } from "../net/feedback.js";
 import { Modal } from "./Modal.js";
 
-const STORAGE_KEY = "futbolera:aviso-fase-temprana";
+const STORAGE_KEY = "pujaelonce:aviso-fase-temprana";
 
 function alreadyAccepted(): boolean {
   try {
@@ -41,7 +41,7 @@ export function EarlyAccessNotice() {
         </div>
 
         <p className="font-copy text-[1.1rem] leading-[1.55] text-forest">
-          Futbolera está en <strong className="font-semibold">fase temprana de desarrollo</strong>. Puedes jugar con normalidad, pero conviene saber esto:
+          Puja el Once está en <strong className="font-semibold">fase temprana de desarrollo</strong>. Puedes jugar con normalidad, pero conviene saber esto:
         </p>
 
         <ul className="flex flex-col gap-3">

@@ -49,7 +49,7 @@ describe("buildWebhookPayload", () => {
   it("monta un embed con el tipo, el mensaje y el contacto", () => {
     const payload = buildWebhookPayload({ kind: "bug", message: "La foto no carga", contact: "ana@correo.com" }, at);
     expect(payload.embeds[0]).toMatchObject({
-      title: "Error en Futbolera",
+      title: "Error en Puja el Once",
       description: "La foto no carga",
       timestamp: "2026-10-01T12:00:00.000Z",
       fields: [{ name: "Contacto", value: "ana@correo.com" }],

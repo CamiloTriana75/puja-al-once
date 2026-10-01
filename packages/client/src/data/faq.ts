@@ -22,12 +22,12 @@ export interface FaqEntry {
 
 export const FAQ: FaqEntry[] = [
   {
-    question: "¿Cuántos jugadores caben en una partida de Futbolera?",
+    question: "¿Cuántos jugadores caben en una partida de Puja el Once?",
     answer:
       "De 2 a 4 jugadores por partida. La sala de espera admite cuatro asientos y el arranque automático se dispara en cuanto los conectados pulsan todos Listo, así que una partida a dos es igual de válida que una a cuatro.",
   },
   {
-    question: "¿Cuánto cuesta Futbolera?",
+    question: "¿Cuánto cuesta Puja el Once?",
     answer:
       "Nada. No hay compras, ni monedas, ni suscripciones, ni anuncios: se entra, se juega la subasta y se termina. Tampoco hace falta registro ni tarjeta.",
   },

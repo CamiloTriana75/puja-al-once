@@ -4,12 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Futbolera — Subastas de jugadores de fútbol</title>
+    <title>Puja el Once: subasta de futbolistas a ciegas online</title>
     <meta
       name="description"
-      content="Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada."
+      content="Juego online gratis de subasta de fútbol para 2-4 amigos: pujas por futbolistas a ciegas, se revela quién es y armas tu once. Sin instalar ni registrarte."
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="application-name" content="Puja el Once" />
+    <meta name="apple-mobile-web-app-title" content="Puja el Once" />
     <meta name="theme-color" content="#F5F4EC" />
     <link rel="canonical" href="%SITE_URL%/" />
 
@@ -30,12 +32,12 @@
       y se ve solo el titulo, sin imagen ni descripcion.
     -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Futbolera" />
+    <meta property="og:site_name" content="Puja el Once" />
     <meta property="og:locale" content="es_ES" />
-    <meta property="og:title" content="Futbolera — Subastas de jugadores de fútbol" />
+    <meta property="og:title" content="Puja el Once: subasta de futbolistas a ciegas online" />
     <meta
       property="og:description"
-      content="Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada."
+      content="Juego online gratis de subasta de fútbol para 2-4 amigos: pujas por futbolistas a ciegas, se revela quién es y armas tu once. Sin instalar ni registrarte."
     />
     <meta property="og:url" content="%SITE_URL%/" />
     <meta property="og:image" content="%SITE_URL%/og-image.png" />
@@ -43,19 +45,35 @@
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Futbolera: puja a ciegas por un jugador de fútbol oculto y arma tu once."
+      content="Puja el Once: puja a ciegas por un jugador de fútbol oculto y arma tu once."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Futbolera — Subastas de jugadores de fútbol" />
+    <meta name="twitter:title" content="Puja el Once: subasta de futbolistas a ciegas online" />
     <!--
       Identica a og:description a proposito. Cabe de sobra en el limite de
       X y mantenerlas distintas es solo una forma de que se separen.
     -->
     <meta
       name="twitter:description"
-      content="Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada."
+      content="Juego online gratis de subasta de fútbol para 2-4 amigos: pujas por futbolistas a ciegas, se revela quién es y armas tu once. Sin instalar ni registrarte."
     />
     <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
+
+    <!--
+      WebSite: le dice a Google el nombre exacto del sitio y sus variantes de
+      escritura (la gente teclea "pujaelonce" y "puja el 11" ademas de
+      "Puja el Once").
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Puja el Once",
+        "alternateName": ["PujaElOnce", "Puja el 11"],
+        "url": "%SITE_URL%/",
+        "inLanguage": "es"
+      }
+    </script>
 
     <!--
       VideoGame: el tipo de schema.org mas cercano que existe, y no
@@ -69,10 +87,10 @@
       {
         "@context": "https://schema.org",
         "@type": "VideoGame",
-        "name": "Futbolera",
-        "alternateName": "Subastas de jugadores de fútbol",
+        "name": "Puja el Once",
+        "alternateName": ["Subasta de futbolistas a ciegas", "Juego de subasta de fútbol online"],
         "url": "%SITE_URL%/",
-        "description": "Juego online de subastas de fútbol para 2-4 amigos. El jugador está oculto, pujas a ciegas y al revelar ves su temporada. Sin instalar nada.",
+        "description": "Juego online gratis de subasta de fútbol para 2-4 amigos: pujas por futbolistas a ciegas, se revela quién es y armas tu once. Sin instalar ni registrarte.",
         "inLanguage": "es",
         "image": ["%SITE_URL%/og-image.png"],
         "genre": ["Juego de mesa", "Juego de subastas", "Fútbol"],
@@ -110,7 +128,7 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "¿Cuántos jugadores caben en una partida de Futbolera?",
+            "name": "¿Cuántos jugadores caben en una partida de Puja el Once?",
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "De 2 a 4 jugadores por partida. La sala de espera admite cuatro asientos y el arranque automático se dispara en cuanto los conectados pulsan todos Listo, así que una partida a dos es igual de válida que una a cuatro."
@@ -118,7 +136,7 @@
           },
           {
             "@type": "Question",
-            "name": "¿Cuánto cuesta Futbolera?",
+            "name": "¿Cuánto cuesta Puja el Once?",
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Nada. No hay compras, ni monedas, ni suscripciones, ni anuncios: se entra, se juega la subasta y se termina. Tampoco hace falta registro ni tarjeta."
@@ -171,7 +189,7 @@
     -->
     <noscript>
       <div style="max-width: 42rem; margin: 0 auto; padding: 3rem 1.5rem; font-family: system-ui, sans-serif; color: #fff; background: #0b3d2e; line-height: 1.6">
-        <h1 style="font-size: 2rem; text-transform: uppercase; margin: 0 0 1rem">Futbolera — Subastas de jugadores de fútbol</h1>
+        <h1 style="font-size: 2rem; text-transform: uppercase; margin: 0 0 1rem">Puja el Once: subasta de futbolistas a ciegas online</h1>
         <p>
           Juego online de subastas de fútbol para 2-4 amigos, en el navegador y
           sin instalar nada. El nombre del jugador está oculto: pujas a ciegas

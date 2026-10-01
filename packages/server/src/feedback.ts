@@ -74,11 +74,11 @@ export interface DiscordWebhookPayload {
 export function buildWebhookPayload(entry: FeedbackEntry, at = new Date()): DiscordWebhookPayload {
   const fields = entry.contact ? [{ name: "Contacto", value: entry.contact.slice(0, 1000) }] : undefined;
   return {
-    username: "Futbolera",
+    username: "Puja el Once",
     allowed_mentions: { parse: [] },
     embeds: [
       {
-        title: `${KIND_LABEL[entry.kind]} en Futbolera`,
+        title: `${KIND_LABEL[entry.kind]} en Puja el Once`,
         description: entry.message.slice(0, 4000),
         color: KIND_COLOR[entry.kind],
         timestamp: at.toISOString(),

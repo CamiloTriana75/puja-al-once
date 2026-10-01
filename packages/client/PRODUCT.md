@@ -12,7 +12,7 @@ Grupos de 2 a 4 amigos hispanohablantes que saben de fútbol. Juegan casi siempr
 
 ## Product Purpose
 
-Futbolera es un juego de subastas a ciegas en el navegador. Cada carta es un futbolista de una temporada concreta, visible solo como silueta y cuatro pistas (altura, pie, origen, década). Se puja con un presupuesto de 1.000 M; al caer el martillo se revela quién es y de qué temporada. El rating se oculta hasta la ceremonia final, que da un punto por puesto al mejor y corona al ganador. Éxito: que el grupo quiera la revancha.
+Puja el Once es un juego de subastas a ciegas en el navegador. Cada carta es un futbolista de una temporada concreta, visible solo como silueta y cuatro pistas (altura, pie, origen, década). Se puja con un presupuesto de 1.000 M; al caer el martillo se revela quién es y de qué temporada. El rating se oculta hasta la ceremonia final, que da un punto por puesto al mejor y corona al ganador. Éxito: que el grupo quiera la revancha.
 
 ## Positioning
 
@@ -35,7 +35,7 @@ La mecánica que nadie puede copiar: pujar sin saber a quién, y descubrir que e
 
 ## Brand Commitments
 
-- Nombre: Futbolera. Español neutro, tuteo, tono de grupo de amigos.
+- Nombre: Puja el Once. Español neutro, tuteo, tono de grupo de amigos.
 - Una sola identidad para portada y juego, inspirada en https://landing.scoutium.com/ (TeamScope) y en la portada actual. El usuario la marcó como vinculante para todas las pantallas.
 - Nada de la interfaz actual es intocable.
 

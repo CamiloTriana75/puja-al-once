@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import gavelUrl from "../assets/gavel.wav";
 
-const STORAGE_KEY = "futbolera:silencio";
+const STORAGE_KEY = "pujaelonce:silencio";
 const listeners = new Set<() => void>();
 
 function readMuted(): boolean {

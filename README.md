@@ -1,4 +1,4 @@
-# Subasta Futbolera
+# Subasta Puja el Once
 
 Juego de subastas para 2-4 jugadores (el lobby tambien deja empezar solo, util
 para probar una partida rapido). Cada ronda sale la foto recortada de un

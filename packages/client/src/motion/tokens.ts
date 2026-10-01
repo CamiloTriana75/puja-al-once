@@ -1,5 +1,5 @@
 /**
- * Lenguaje de movimiento de Futbolera. Todas las animaciones del juego salen
+ * Lenguaje de movimiento de Puja el Once. Todas las animaciones del juego salen
  * de aqui para que duren y se muevan igual en cualquier pantalla.
  *
  * - Retroalimentacion de interfaz: 150-500 ms.

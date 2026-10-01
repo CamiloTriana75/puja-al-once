@@ -3,7 +3,7 @@
   cuadrado lima del header. Trazo engrosado de 1.8 a 2.2 porque a 16px
   el original se cierra. Escala 24x24 tal cual, la caja esta al ras.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Futbolera">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Puja el Once">
   <rect width="24" height="24" fill="#C6F833"/>
   <g fill="none" stroke="#12100F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="9"/>

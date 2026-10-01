@@ -1,4 +1,4 @@
-/** Balón de marca: ocupa el lugar de la «o» de Futbolera. */
+/** Balón de marca: ocupa el lugar de la «O» de «Once». */
 export function BallMark({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
@@ -17,11 +17,11 @@ export function BallMark({ className = "" }: { className?: string }) {
 export function Wordmark({ tone = "dark", className = "" }: { tone?: "dark" | "light"; className?: string }) {
   return (
     <span className={`inline-flex items-center font-headline font-bold tracking-[-0.045em] ${tone === "dark" ? "text-forest" : "text-white"} ${className}`}>
-      <span className="sr-only">Futbolera</span>
+      <span className="sr-only">Puja el Once</span>
       <span aria-hidden="true" className="inline-flex items-center">
-        Futb
+        Puja el 
         <BallMark className="mx-[0.03em] h-[0.74em] w-[0.74em] translate-y-[0.04em]" />
-        lera
+        nce
       </span>
     </span>
   );

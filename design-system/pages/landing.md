@@ -1,4 +1,4 @@
-# Landing — Futbolera
+# Landing — Puja el Once
 
 La landing es la entrada emocional a una subasta con amigos. Conserva el sistema deportivo de `MASTER.md`, con más ritmo y escala que el resto de las pantallas.
 
