@@ -66,7 +66,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <main className="min-h-screen bg-deep text-white">
+      <main className="min-h-screen bg-canvas text-forest">
         {/* Por encima de cualquier pantalla: la conexion se puede caer estando
           en Landing, Lobby, Auction o Results por igual (ver ConnectionBanner). */}
         <ConnectionBanner status={connectionStatus} onRetry={retryNow} />

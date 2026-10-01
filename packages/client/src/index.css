@@ -11,6 +11,25 @@
 
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --font-body: "Barlow", system-ui, sans-serif;
+
+  /*
+   * Identidad unica (portada y juego): papel marfil, tinta bosque, verde de
+   * campo para la accion y oro para lo caliente. Sobre campo, texto blanco
+   * (4.8:1); el bosque sobre campo se queda en 3.4:1.
+   */
+  --color-canvas: #F5F4EC;
+  --color-forest: #0C241C;
+  --color-pitch: #15834A;
+  --color-pitch-soft: #E4F0DF;
+  --color-pine: #0E5138;
+  --color-gold: #F0B83D;
+  --color-gold-ink: #7A4B00;
+  --color-slate: #536158;
+  --color-line: #D1DCCF;
+  --color-alert: #B3261E;
+
+  --font-headline: "Unbounded Variable", "Arial Black", sans-serif;
+  --font-copy: "Jost Variable", "Futura", "Century Gothic", system-ui, sans-serif;
 }
 
 :root {
@@ -19,9 +38,19 @@
 }
 
 body {
-  background: var(--color-deep);
-  color: white;
-  font-family: var(--font-body);
+  background: var(--color-canvas);
+  color: var(--color-forest);
+  font-family: var(--font-copy);
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-forest);
+}
+
+html {
+  scrollbar-color: #B9C8B6 var(--color-canvas);
+  accent-color: var(--color-pitch);
 }
 
 .panel {
@@ -33,9 +62,21 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-:where(button, a, input, [tabindex]):focus-visible {
-  outline: 3px solid var(--color-lime);
+:where(button, a, input, select, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-pine);
   outline-offset: 2px;
+}
+
+/* Sobre bosque o campo el pino no se ve: foco oro. */
+.on-dark :where(button, a, input, select, [tabindex]):focus-visible {
+  outline-color: var(--color-gold);
+}
+
+/* Bandas de campo: franjas de césped segado sobre el degradado. */
+.pitch-stripes {
+  background-image:
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.07) 0 72px, transparent 72px 144px),
+    linear-gradient(120deg, #0E5138 0%, #15834A 100%);
 }
 
 /*
@@ -77,4 +118,36 @@ body {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Césped del cromo: el mismo campo segado que las bandas, a escala de carta. */
+.lot-field {
+  background-image:
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.07) 0 12%, transparent 12% 24%),
+    linear-gradient(165deg, #1B9758 0%, #15834A 55%, #0E6B3D 100%);
+}
+
+/* Cinta de última hora: el contenido va duplicado y se desplaza media pista. */
+@keyframes ticker-run {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  animation: ticker-run 38s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { animation: none; }
+}
+
+/* Césped en franjas horizontales: el campo de la alineación, con el ataque arriba. */
+.pitch-field {
+  background-image:
+    repeating-linear-gradient(180deg, rgb(0 0 0 / 0.07) 0 12.5%, transparent 12.5% 25%),
+    linear-gradient(180deg, #1B9758 0%, #15834A 100%);
 }
