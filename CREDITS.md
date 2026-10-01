@@ -58,6 +58,17 @@ fichero lo declara, y el LICENSE del repo aplica al codigo.
 `Public domain` y `CC0` no exigen atribucion, pero se listan igual para dejar
 constancia de su procedencia.
 
+## Sonido y animaciones
+
+- **Golpe de mazo**: efecto de sonido "Gavel of Justice" de IntrepidMedia,
+  publicado en Pixabay (<https://pixabay.com/sound-effects/gavel-of-justice-124029/>)
+  bajo la Pixabay Content License (uso libre, sin atribucion obligatoria). Se
+  recorta a un solo golpe y se baja el volumen para el juego.
+- **Animacion del mazo**: ilustracion vectorial animada (SVG) aportada por el
+  autor del proyecto; se recolorea con la paleta del juego.
+- **Iconos**: [Lucide](https://lucide.dev) (licencia ISC).
+- **Tipografias**: Unbounded y Jost, autoalojadas con Fontsource (SIL Open Font License).
+
 ## Detalle por imagen
 
 ### CC BY-SA 3.0

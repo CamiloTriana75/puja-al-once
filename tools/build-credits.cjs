@@ -53,6 +53,15 @@ for (const l of lics) md += `| ${l} | ${by[l].length} |\n`;
 md += `| **Total** | **${attributions.length}** |\n\n`;
 md += "`Public domain` y `CC0` no exigen atribucion, pero se listan igual para dejar\n";
 md += "constancia de su procedencia.\n\n";
+md += "## Sonido y animaciones\n\n";
+md += "- **Golpe de mazo**: efecto de sonido \"Gavel of Justice\" de IntrepidMedia,\n";
+md += "  publicado en Pixabay (<https://pixabay.com/sound-effects/gavel-of-justice-124029/>)\n";
+md += "  bajo la Pixabay Content License (uso libre, sin atribucion obligatoria). Se\n";
+md += "  recorta a un solo golpe y se baja el volumen para el juego.\n";
+md += "- **Animacion del mazo**: ilustracion vectorial animada (SVG) aportada por el\n";
+md += "  autor del proyecto; se recolorea con la paleta del juego.\n";
+md += "- **Iconos**: [Lucide](https://lucide.dev) (licencia ISC).\n";
+md += "- **Tipografias**: Unbounded y Jost, autoalojadas con Fontsource (SIL Open Font License).\n\n";
 md += "## Detalle por imagen\n\n";
 for (const l of lics) {
   md += `### ${l}\n\n`;
@@ -149,9 +158,9 @@ const html = `<!doctype html>
   </header>
 
   <main class="wrap">
-    <span class="updated">26·09·2026</span>
+    <span class="updated">01·10·2026</span>
     <h1>Créditos <em>y atribuciones</em></h1>
-    <p class="lede">Cada carta de Futbolera usa la fotografía real de su jugador, descargada de Wikimedia Commons. Estas tablas son la atribución que exigen las licencias; sin ellas, el juego incumpliría sus términos.</p>
+    <p class="lede">Cada carta de Futbolera usa la fotografía real de su jugador, descargada de Wikimedia Commons. Estas tablas son la atribución que exigen las licencias; sin ellas, el juego incumpliría sus términos. Más abajo, los créditos del sonido, los iconos y las tipografías.</p>
 
     <section>
       <h2>Qué se hace con cada imagen</h2>
@@ -165,6 +174,15 @@ const html = `<!doctype html>
 ${lics.map((l) => `        <li><strong>${esc(l)}</strong>: ${by[l].length} imágenes</li>`).join("\n")}
       </ul>
       <p><code>Public domain</code> y <code>CC0</code> no exigen atribución, pero se listan igual para dejar constancia de su procedencia. El código del juego es MIT (ver <a href="propiedad-intelectual.html">propiedad intelectual</a>).</p>
+    </section>
+    <section>
+      <h2>Sonido y animaciones</h2>
+      <ul>
+        <li><strong>Golpe de mazo:</strong> efecto de sonido <a href="https://pixabay.com/sound-effects/gavel-of-justice-124029/" rel="noopener" target="_blank">«Gavel of Justice»</a> de IntrepidMedia, publicado en Pixabay bajo la Pixabay Content License (uso libre, sin atribución obligatoria). Lo recortamos a un solo golpe y bajamos el volumen para el juego.</li>
+        <li><strong>Animación del mazo:</strong> ilustración vectorial animada (SVG) aportada por el autor del proyecto; la recoloreamos con la paleta del juego.</li>
+        <li><strong>Iconos:</strong> <a href="https://lucide.dev" rel="noopener" target="_blank">Lucide</a> (licencia ISC).</li>
+        <li><strong>Tipografías:</strong> Unbounded y Jost, autoalojadas con Fontsource (SIL Open Font License).</li>
+      </ul>
     </section>
 ${licenseBlocks}
   </main>

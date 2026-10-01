@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cookies · Futbolera</title>
-  <meta name="description" content="No usamos cookies, ni propias ni de terceros. La partida se juega por conexión directa, sin nada guardado." />
+  <meta name="description" content="No usamos cookies, ni propias ni de terceros. La partida se juega por conexión directa, sin nada que te rastree." />
   <link rel="canonical" href="%SITE_URL%/legal/cookies.html" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Futbolera" />
   <meta property="og:locale" content="es_ES" />
   <meta property="og:title" content="Cookies · Futbolera" />
-  <meta property="og:description" content="No usamos cookies, ni propias ni de terceros. La partida se juega por conexión directa, sin nada guardado." />
+  <meta property="og:description" content="No usamos cookies, ni propias ni de terceros. La partida se juega por conexión directa, sin nada que te rastree." />
   <meta property="og:url" content="%SITE_URL%/legal/cookies.html" />
   <meta property="og:image" content="%SITE_URL%/og-image.png" />
   <meta property="og:image:width" content="1200" />
@@ -18,7 +18,7 @@
   <meta property="og:image:alt" content="Futbolera: puja a ciegas por un jugador de fútbol oculto y arma tu once." />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Cookies · Futbolera" />
-  <meta name="twitter:description" content="No usamos cookies, ni propias ni de terceros. La partida se juega por conexión directa, sin nada guardado." />
+  <meta name="twitter:description" content="No usamos cookies, ni propias ni de terceros. La partida se juega por conexión directa, sin nada que te rastree." />
   <meta name="twitter:image" content="%SITE_URL%/og-image.png" />
   <link rel="stylesheet" href="./legal.css" />
 </head>
@@ -32,7 +32,7 @@
   </header>
 
   <main class="wrap">
-    <span class="updated">26·09·2026</span>
+    <span class="updated">01·10·2026</span>
     <h1>Cookies</h1>
     <p class="lede">No usamos cookies. Esta página existe para decirlo con la letra pequeña en orden.</p>
 
@@ -43,8 +43,18 @@
 
     <section>
       <h2>Entonces, ¿cómo entra la partida?</h2>
-      <p>La conexión a una sala se mantiene por <strong>WebSocket</strong>, un canal técnico que el navegador gestiona solo y que se cierra al salir. Todo el estado de la subasta vive en la memoria del servidor mientras la sala está abierta; nada se escribe en tu navegador ni en nuestros discos.</p>
-      <p>Ni siquiera guardamos tu nombre localmente: cada vez que entras lo escribes otra vez.</p>
+      <p>La conexión a una sala se mantiene por <strong>WebSocket</strong>, un canal técnico que el navegador gestiona solo y que se cierra al salir. Todo el estado de la subasta vive en la memoria del servidor mientras la sala está abierta; salvo las dos preferencias de abajo, nada se escribe en tu navegador, y la partida no se escribe en nuestros discos.</p>
+      <p>Ni siquiera guardamos tu nombre: cada vez que entras lo escribes otra vez.</p>
+    </section>
+
+    <section>
+      <h2>Lo poco que sí se guarda en tu navegador</h2>
+      <p>Hay dos preferencias mínimas que el navegador recuerda por ti. No son cookies, no se envían al servidor y no sirven para identificarte:</p>
+      <ul>
+        <li><strong>Silencio del sonido</strong> (<code>futbolera:silencio</code>, almacenamiento local): si silenciaste el golpe de mazo, para no preguntártelo cada vez.</li>
+        <li><strong>Aviso de fase temprana visto</strong> (<code>futbolera:aviso-fase-temprana</code>, almacenamiento de sesión): para no repetirte el aviso mientras no cierres la pestaña.</li>
+      </ul>
+      <p>Puedes borrarlas cuando quieras desde los datos del sitio de tu navegador; el juego sigue funcionando igual.</p>
     </section>
 
     <section>
