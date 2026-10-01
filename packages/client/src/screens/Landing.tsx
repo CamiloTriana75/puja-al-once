@@ -11,6 +11,7 @@ import { CtaBand } from "./landing/CtaBand.js";
 import { LaptopFrame, PhoneFrame } from "./landing/DeviceFrames.js";
 import { EnterSection } from "./landing/EnterSection.js";
 import { Features } from "./landing/Features.js";
+import { InstallApp } from "./landing/InstallApp.js";
 import { scrollToSection, useResetScrollOnLeave, useOnScreen, usePageVisible, useSmoothScroll } from "./landing/hooks.js";
 import { Numbers } from "./landing/Numbers.js";
 import { RoundLoop } from "./landing/RoundLoop.js";
@@ -516,6 +517,7 @@ export function Landing({ error, onCreate, onJoinByCode, onJoinPublicRoom }: Pro
       <RoundLoop />
       <Seasons onPlay={() => goToEntry()} />
       <Numbers />
+      <InstallApp />
       <CtaBand
         onCreate={() => goToEntry()}
         phone={

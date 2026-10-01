@@ -43,7 +43,7 @@
 
     <section>
       <h2>Entonces, ¿cómo entra la partida?</h2>
-      <p>La conexión a una sala se mantiene por <strong>WebSocket</strong>, un canal técnico que el navegador gestiona solo y que se cierra al salir. Todo el estado de la subasta vive en la memoria del servidor mientras la sala está abierta; salvo las dos preferencias de abajo, nada se escribe en tu navegador, y la partida no se escribe en nuestros discos.</p>
+      <p>La conexión a una sala se mantiene por <strong>WebSocket</strong>, un canal técnico que el navegador gestiona solo y que se cierra al salir. Todo el estado de la subasta vive en la memoria del servidor mientras la sala está abierta; salvo las dos preferencias de abajo y, si instalas la app, los ficheros estáticos de la web, nada se escribe en tu navegador, y la partida no se escribe en nuestros discos.</p>
       <p>Ni siquiera guardamos tu nombre: cada vez que entras lo escribes otra vez.</p>
     </section>
 
@@ -55,6 +55,12 @@
         <li><strong>Aviso de fase temprana visto</strong> (<code>pujaelonce:aviso-fase-temprana</code>, almacenamiento de sesión): para no repetirte el aviso mientras no cierres la pestaña.</li>
       </ul>
       <p>Puedes borrarlas cuando quieras desde los datos del sitio de tu navegador; el juego sigue funcionando igual.</p>
+    </section>
+
+    <section>
+      <h2>Si instalas la app</h2>
+      <p>Puja el Once puede instalarse como app desde el navegador. Para eso registra un <strong>service worker</strong>, un pequeño programa del navegador que guarda en tu dispositivo, en la memoria caché del sitio, solo los ficheros estáticos de la web (código, estilos, tipografías e iconos) y una página de aviso para cuando no hay conexión.</p>
+      <p>No guarda partidas, salas, nombres, cartas ni fotos de jugadores, y no sirve para identificarte ni seguirte. Puedes quitarlo borrando los datos del sitio o desinstalando la app; el juego sigue funcionando igual desde el navegador.</p>
     </section>
 
     <section>
