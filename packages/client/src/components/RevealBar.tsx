@@ -1,58 +1,40 @@
+import { Gavel } from "lucide-react";
 import type { CardView, ClientState } from "../net/types.js";
 
-interface Props {
-  card: CardView;
-  state: ClientState;
-}
-
 /**
- * La tarjeta ya muestra nombre y temporada al revelarse (AuctionCard.tsx).
- * Esta barra añade lo que la tarjeta no cabe: club, liga, rating y quien se
- * lo llevo.
+ * El veredicto del martillo: quién se la lleva, por cuánto y de qué club y
+ * liga viene. El rating sale como «?» hasta la ceremonia final (D3).
  */
-export function RevealBar({ card, state }: Props) {
-  // `card` (CardView, la carta en mesa) solo expone `publicId`, opaco y sin
-  // relacion con `RevealedCardView.cardId` -- ver net/types.ts. No hay
-  // ningun campo compartido para cruzar ambos. Pero durante REVEAL
-  // `currentCard` es siempre la carta que se acaba de publicar, y
-  // `revealedCards` es un MapSchema que conserva el orden de insercion
-  // (mismo razonamiento que `lastReveal` en Auction.tsx): la ultima entrada
-  // insertada es siempre esa carta.
+export function RevealBar({ card, state }: { card: CardView; state: ClientState }) {
   void card;
   const revealed = [...state.revealedCards.values()].at(-1);
   if (!revealed) return null;
 
   const owner = revealed.ownerId ? state.players.get(revealed.ownerId)?.name : null;
-  // D3: el rating llega a 0 hasta RESULTS -- esta barra solo se pinta durante
-  // la partida (Auction.tsx la monta mientras phase !== "RESULTS"), asi que
-  // aqui SIEMPRE esta oculto. "?" en --mute sobre --ink (design-system/pages/partida.md).
-  const ratingHidden = revealed.rating <= 0;
 
   return (
-    <div className="panel flex flex-wrap items-center gap-x-8 gap-y-3 bg-ink px-6 py-4 pr-12">
-      <p className={`tnum font-display text-6xl font-black leading-none ${ratingHidden ? "text-mute" : "text-lime"}`}>
-        {ratingHidden ? "?" : revealed.rating}
+    <div className="reveal-in rounded-[1.75rem] bg-white p-6 ring-1 ring-line">
+      <p className="flex items-center gap-2 font-copy text-[1.05rem] text-slate">
+        <Gavel className="h-5 w-5 text-pitch" aria-hidden="true" />
+        {owner ? "Se la lleva" : "Nadie la quiso"}
       </p>
-
-      <div>
-        <p className="font-display text-xl font-extrabold uppercase tracking-wide text-white">
-          {revealed.club}
-        </p>
-        <p className="font-body text-sm text-mute">
-          {revealed.league} · {revealed.nation} · temporada {revealed.season}
-        </p>
-      </div>
-
-      <p className="ml-auto font-display text-xl font-bold uppercase tracking-wide">
+      <p className="mt-1 font-headline text-[clamp(1.7rem,3.4vw,2.6rem)] font-bold leading-[1.05] tracking-[-0.045em] text-forest">
         {owner ? (
           <>
-            <span className="text-mute">Para</span> <span className="text-green">{owner}</span>{" "}
-            <span className="tnum text-white">{revealed.price} M</span>
+            {owner} <span className="tnum text-pitch">por {revealed.price} M</span>
           </>
         ) : (
-          <span className="text-mute">Descartado: nadie lo quiso</span>
+          "Descartada"
         )}
       </p>
+      <div className="mt-5 flex items-center gap-4 border-t border-line pt-4">
+        <div className="min-w-0">
+          <p className="truncate font-copy text-[1.1rem] font-semibold text-forest">{revealed.club}</p>
+          <p className="truncate font-copy text-[0.98rem] text-slate">
+            {revealed.league}, {revealed.nation}, temporada {revealed.season}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

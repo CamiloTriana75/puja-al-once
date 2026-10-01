@@ -89,7 +89,7 @@ function ReactionBubble({ reaction, onExpire, offsetX, noRise }: BubbleProps) {
       style={{ left: `calc(50% + ${offsetX}px)` }}
     >
       <span className="text-4xl leading-none">{reaction.emoji}</span>
-      <span className="mt-1 whitespace-nowrap bg-ink px-2 py-0.5 font-display text-xs font-bold uppercase tracking-wide text-white">
+      <span className="mt-1 whitespace-nowrap rounded-full bg-forest px-2.5 py-0.5 font-copy text-[0.85rem] font-medium text-white shadow-md">
         {reaction.senderName}
       </span>
     </motion.div>
@@ -193,7 +193,7 @@ export function Reactions({ myName, incoming = [], onSend, noRise = false, onExp
             onClick={() => send(emoji)}
             disabled={cooling}
             aria-label={`Reaccionar: ${REACTION_NAMES[index]}`}
-            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center border-2 border-white/20 bg-ink text-2xl transition-colors duration-200 hover:border-lime disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-[1.35rem] ring-1 ring-line transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:ring-pitch disabled:cursor-not-allowed disabled:opacity-40"
           >
             {emoji}
           </button>

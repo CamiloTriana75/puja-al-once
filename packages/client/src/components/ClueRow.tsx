@@ -1,3 +1,4 @@
+import { CalendarRange, Earth, Footprints, Ruler } from "lucide-react";
 import type { CardView } from "../net/types.js";
 
 const FOOT: Record<string, string> = { L: "Zurdo", R: "Diestro", B: "Ambidiestro" };
@@ -6,31 +7,26 @@ const CONTINENT: Record<string, string> = {
 };
 
 /**
- * Las pistas son el juego: lo unico que se sabe antes de pujar.
- * font-body, no font-display: MASTER.md S3 lista "cuerpo, pistas, listas"
- * explicitamente en la familia Barlow (no la condensada), con peso 400-600
- * -- de ahi font-semibold como techo, no font-bold/extrabold.
- *
- * Cuatro pistas y no cinco: la edad se quito a proposito. Con el nombre y la
- * temporada de la carta, la edad ya se deduce en el reveal, asi que durante la
- * puja solo servia para acortar la lista de candidatos -- y el servidor
- * tampoco la manda (`packages/server/src/schema.ts`), no es que esta fila la
- * esconda. Dos columnas en movil, cuatro en escritorio.
+ * Las pistas son el juego: lo único que se sabe antes de pujar. Cuatro y no
+ * cinco: la edad no viaja durante la puja (`packages/server/src/schema.ts`).
  */
 export function ClueRow({ card }: { card: CardView }) {
-  const clues: [string, string][] = [
-    ["Altura", `${card.heightCm} cm`],
-    ["Pie", FOOT[card.foot] ?? card.foot],
-    ["Origen", CONTINENT[card.continent] ?? card.continent],
-    ["Década", card.decade],
+  const clues = [
+    { label: "Altura", value: `${card.heightCm} cm`, Icon: Ruler },
+    { label: "Pie", value: FOOT[card.foot] ?? card.foot, Icon: Footprints },
+    { label: "Origen", value: CONTINENT[card.continent] ?? card.continent, Icon: Earth },
+    { label: "Década", value: card.decade, Icon: CalendarRange },
   ];
 
   return (
-    <dl className="grid grid-cols-2 gap-px bg-white/10 sm:grid-cols-4">
-      {clues.map(([label, value]) => (
-        <div key={label} className="bg-ink px-4 py-3">
-          <dt className="font-body text-xs font-semibold uppercase tracking-[0.08em] text-mute">{label}</dt>
-          <dd className="tnum font-body text-xl font-semibold text-white">{value}</dd>
+    <dl className="grid grid-cols-2 gap-2">
+      {clues.map(({ label, value, Icon }) => (
+        <div key={label} className="flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 ring-1 ring-line">
+          <Icon className="h-5 w-5 shrink-0 text-pitch" aria-hidden="true" strokeWidth={2} />
+          <div className="min-w-0">
+            <dt className="font-copy text-[0.85rem] text-slate">{label}</dt>
+            <dd className="tnum truncate font-headline text-[1rem] font-semibold tracking-[-0.02em] text-forest">{value}</dd>
+          </div>
         </div>
       ))}
     </dl>
