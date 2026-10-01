@@ -33,8 +33,8 @@ npm run setup             # aplica todo (pide confirmación escribiendo SI)
 ```
 
 Opciones: `npm run setup -- --only=content` (solo una parte: `roles, channels, settings, content,
-emojis, automod, onboarding, webhook, invite`), `--limpiar` (borra los canales de plantilla "general",
-"Canales de texto"…) y `--yes` (sin confirmación). Si algo falla, el script lo dice y sigue con lo
+emojis, automod, onboarding, webhook, invite`), `--limpiar` (borra los canales que trae la plantilla de Discord:
+"bienvenida-y-reglas", "recursos", "moderator-only", "Canales de texto"…; los nuestros llevan emoji y nunca se tocan) y `--yes` (sin confirmación). Si algo falla, el script lo dice y sigue con lo
 demás; corrige y vuelve a ejecutar.
 
 ## Después

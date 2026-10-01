@@ -192,3 +192,28 @@ test("si el servidor no admite Comunidad, los foros se crean como canales de tex
     console.log = quiet;
   }
 });
+
+test("--limpiar borra los canales de plantilla de Discord pero nunca los nuestros", async () => {
+  const quiet = console.log;
+  console.log = () => {};
+  try {
+    const { client, guild, channels } = makeServer();
+    await run({ client, guild });
+    const before = [...channels.values()].length;
+
+    const category = await guild.channels.create({ name: "Información", type: ChannelType.GuildCategory });
+    await guild.channels.create({ name: "bienvenida-y-reglas", type: ChannelType.GuildText, parent: category.id });
+    await guild.channels.create({ name: "recursos", type: ChannelType.GuildText, parent: category.id });
+    await guild.channels.create({ name: "Lounge", type: ChannelType.GuildVoice });
+    assert.equal([...channels.values()].length, before + 4);
+
+    const failures = await run({ client, guild, only: ["channels"], clean: true });
+    assert.deepEqual(failures, []);
+    assert.equal([...channels.values()].length, before, "solo se borran los 4 de plantilla");
+    const names = [...channels.values()].map((c) => c.name);
+    for (const kept of ["☕ Lounge", "📢｜anuncios", "💬｜general"]) assert.ok(names.includes(kept), `se conserva ${kept}`);
+    for (const gone of ["Lounge", "Información", "recursos", "bienvenida-y-reglas"]) assert.ok(!names.includes(gone), `se borra ${gone}`);
+  } finally {
+    console.log = quiet;
+  }
+});

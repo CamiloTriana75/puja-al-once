@@ -241,13 +241,23 @@ export async function run({ client, guild, only = [], clean = false }) {
 
   async function cleanTemplateChannels() {
     const ours = new Set([...channels.values(), ...categories.values()].map((c) => c.id));
-    const templateNames = new Set(["general", "General", "Text Channels", "Voice Channels", "Canales de texto", "Canales de voz"]);
+    // Nombres exactos de las plantillas de Discord ("para un club o comunidad", en ingles y en español).
+    // Los nuestros llevan emoji y "｜", asi que nunca coinciden con estos.
+    const templateNames = new Set([
+      "general", "General", "Text Channels", "Voice Channels", "Canales de texto", "Canales de voz",
+      "Información", "Information", "bienvenida-y-reglas", "anuncios", "recursos", "moderator-only", "solo-moderadores",
+      "planes-de-quedadas", "no-relacionado", "Lounge", "Sala de reuniones", "Meeting Room", "welcome-and-rules", "resources",
+      "announcements", "meeting-plans", "off-topic",
+    ]);
     const all = await guild.channels.fetch();
-    for (const channel of all.values()) {
-      if (!channel || ours.has(channel.id) || !templateNames.has(channel.name)) continue;
+    const doomed = [...all.values()].filter((c) => c && !ours.has(c.id) && templateNames.has(c.name));
+    // Primero los canales y despues las categorias vacias.
+    doomed.sort((a, b) => Number(a.type === ChannelType.GuildCategory) - Number(b.type === ChannelType.GuildCategory));
+    for (const channel of doomed) {
       await channel.delete(REASON);
       ok(`canal de plantilla borrado: ${channel.name}`);
     }
+    if (!doomed.length) skip("no quedan canales de plantilla");
   }
 
   // --------------------------------------------------------------------------- ajustes
