@@ -43,12 +43,6 @@ services:
     envVars:
       - key: PUBLIC_ORIGINS
         sync: false
-      # Webhook de Discord (o compatible) al que llegan los comentarios del
-      # formulario. Opcional: sin el, solo se guardan en feedback.jsonl, que en
-      # el plan gratuito de Render se borra en cada despliegue. La URL es un
-      # secreto: se pega en el panel de Render, nunca en el repositorio.
-      - key: FEEDBACK_WEBHOOK_URL
-        sync: false
       # Modo mantenimiento: ponlo a "1" en el panel y reinicia el servicio para
       # mostrar la pagina de entretiempo (503) a quien entre. Quitalo o pon "0"
       # para reabrir. Las partidas en curso no se cortan.

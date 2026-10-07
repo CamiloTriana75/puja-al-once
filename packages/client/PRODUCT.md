@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Grupos de 2 a 4 amigos hispanohablantes que saben de fútbol. Juegan casi siempre desde PC, cada uno en su casa y hablando por llamada (Discord), en una partida de una tarde. El trabajo: pujar contra los demás por futbolistas ocultos, armar el mejor once y presumir (o sufrir) el resultado.
+Grupos de 2 a 4 amigos hispanohablantes que saben de fútbol. Juegan casi siempre desde PC, cada uno en su casa y hablando por llamada, en una partida de una tarde. El trabajo: pujar contra los demás por futbolistas ocultos, armar el mejor once y presumir (o sufrir) el resultado.
 
 ## Product Purpose
 

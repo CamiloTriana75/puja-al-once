@@ -17,7 +17,7 @@ import { join } from "node:path";
  * decorativo: Render no tenia libre el nombre tal cual y le anadio uno
  * propio al crear el servicio. Ese hostname es el que existe, asi que es
  * el que va aqui. Si apunta a un host que no existe, la imagen de la vista
- * previa del enlace (og:image) da 404 y WhatsApp/Discord no la muestran. Si el dominio cambia -- dominio propio, otro nombre de servicio
+ * previa del enlace (og:image) da 404 y las plataformas de mensajería no la muestran. Si el dominio cambia -- dominio propio, otro nombre de servicio
  * -- cambiala aqui, o exporta VITE_SITE_URL para no tocar el fichero. Es
  * publico, no un secreto.
  */
