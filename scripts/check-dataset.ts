@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   cardsBySlot, DEFAULT_RULES, MIN_CARDS_PER_SLOT, openingBidForRating, parseDataset, SLOTS,
 } from "@fut/shared";
@@ -42,6 +42,8 @@ const bySilhouette = new Map(attributions.map((a) => [a.silhouetteId, a]));
 
 const attributionProblems: string[] = [];
 for (const card of cards) {
+  // Una carta sin foto (sale con sus iniciales) no publica ninguna imagen ajena: no hay a quien citar.
+  if (!existsSync(`data/photos/${card.silhouetteId}.png`)) continue;
   const entry = bySilhouette.get(card.silhouetteId);
   if (!entry) {
     attributionProblems.push(`Sin atribucion: ${card.silhouetteId} (${card.name} ${card.season})`);
