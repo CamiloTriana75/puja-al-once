@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AuctionRoom } from "./AuctionRoom.js";
 import { MONITOR_MIN_PASSWORD_LENGTH, monitorGuard } from "./monitorAccess.js";
-import { buildWebhookPayload, parseFeedback, postToWebhook } from "./feedback.js";
+import { parseFeedback } from "./feedback.js";
 import { clientAddress, isAllowedOrigin, maintenanceAction, RateLimiter, spaFallbackStatus, staticCacheControl } from "./requestPolicy.js";
 
 // Ancladas al modulo, no al cwd -- mismo motivo que DATASET_PATH en
@@ -19,9 +19,7 @@ const publicListLimiter = new RateLimiter();
 const roomLookupLimiter = new RateLimiter();
 const feedbackLimiter = new RateLimiter();
 
-// Los comentarios se anaden a un fichero JSONL y, si hay webhook, tambien se
-// envian alli. En Render free el disco se borra en cada despliegue: el webhook
-// (FEEDBACK_WEBHOOK_URL, compatible con Discord) es lo que los conserva.
+// Los comentarios se anaden a un fichero JSONL durante la vida del proceso.
 const FEEDBACK_FILE = process.env.FEEDBACK_FILE ?? resolve(process.cwd(), "feedback.jsonl");
 
 const app = config({
@@ -137,13 +135,6 @@ const app = config({
       }
       console.log(`[feedback] ${record.kind}: ${record.message.replace(/\s+/g, " ").slice(0, 200)}`);
 
-      const webhook = process.env.FEEDBACK_WEBHOOK_URL?.trim();
-      if (!webhook) {
-        console.warn("[feedback] FEEDBACK_WEBHOOK_URL no esta definida: el comentario solo queda en el fichero y en estos registros.");
-      } else {
-        const result = await postToWebhook(webhook, buildWebhookPayload(parsed.entry));
-        if (!result.ok) console.warn(`[feedback] Discord no acepto el comentario (estado ${result.status}): ${result.detail}`);
-      }
       res.status(201).json({ ok: true });
     });
 
